@@ -1,11 +1,9 @@
-# Maintainer: Thomas Lübking <thomas.luebking at gmail>
-
-pkgname=qarma
+pkgname=guid
 pkgver=r71.968836b
 pkgrel=1
-pkgdesc="A drop-in replacement clone for zenity, written in Qt5/6"
+pkgdesc="Create cross-platform GUI dialogs in a breeze for Linux, macOS and Windows"
 arch=('i686' 'x86_64')
-url="https://github.com/luebking/qarma"
+url="https://github.com/misa-ki/guid"
 license=('GPL')
 depends=('qt5-base')
 makedepends=('git' 'gcc')
@@ -23,8 +21,6 @@ build()
 
 package()
 {
-    install -Dm755 qarma -t "$pkgdir/usr/bin"
-    ln -s /usr/bin/qarma "$pkgdir/usr/bin/qarma-askpass"
+    install -Dm755 guid -t "$pkgdir/usr/bin"
+    ln -s /usr/bin/guid "$pkgdir/usr/bin/guid-askpass"
 }
-
-# vim:set ts=2 sw=2 et:

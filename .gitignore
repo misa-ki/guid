@@ -4,8 +4,8 @@ Makefile
 moc_*
 pkg
 src
-qarma
-qarma-askpass
+guid
+guid-askpass
 zenity
 *.tar*
 *.stash

@@ -1,23 +1,24 @@
 /*
- *   Qarma - a Zenity clone for Qt4 and Qt5
- *   Copyright 2014 by Thomas Lübking <thomas.luebking@gmail.com>
+ * Create cross-platform GUI dialogs in a breeze for Linux, macOS and
+ * Windows. Run `guid --help` for details.
  *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2
+ * Copyright (C) 2021  Misaki F. <https://github.com/misa-ki/guid>
+ * Copyright (C) 2014  Thomas Lübking <thomas.luebking@gmail.com>
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2.
  *
- *   You should have received a copy of the GNU General Public
- *   License along with this program; if not, write to the
- *   Free Software Foundation, Inc.,
- *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef QARMA_H
-#define QARMA_H
+#ifndef GUID_H
+#define GUID_H
 
 class QDialog;
 class QTreeWidgetItem;
@@ -25,11 +26,11 @@ class QTreeWidgetItem;
 #include <QApplication>
 #include <QPair>
 
-class Qarma : public QApplication
+class Guid : public QApplication
 {
     Q_OBJECT
 public:
-    Qarma(int &argc, char **argv);
+    Guid(int &argc, char **argv);
     enum Type { Invalid, Calendar, Entry, Error, Info, FileSelection, List, Notification, Progress, Question, Warning,
                 Scale, TextInfo, ColorSelection, FontSelection, Password, Forms };
     static void printHelp(const QString &category = QString());
@@ -73,4 +74,4 @@ private:
     Type m_type;
 };
 
-#endif //QARMA_H
+#endif //GUID_H

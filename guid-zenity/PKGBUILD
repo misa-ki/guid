@@ -1,0 +1,20 @@
+pkgname=guid-zenity
+pkgver=1000.0.0
+pkgrel=1
+pkgdesc="Create cross-platform GUI dialogs in a breeze for Linux, macOS and Windows"
+arch=('any')
+url="https://github.com/misa-ki/guid"
+license=('GPL')
+
+conflicts=('zenity')
+provides=('zenity')
+replaces=('zenity')
+
+depends=('guid')
+license=('GPL')
+
+build()
+{
+    mkdir -p $pkgdir/usr/bin
+    ln -s /usr/bin/guid $pkgdir/usr/bin/zenity
+}

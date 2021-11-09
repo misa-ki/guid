@@ -1,17 +1,6 @@
-qarma
+About
 =====
 
-Qarma is a tool to create dialog boxes, based on Qt.
-It's a clone of Zenity which was written for GTK+.
+guid (for "GUI dialogs") is a QT program allowing to create dialogs from the command line. The same parameters can be used for Linux, macOS and Windows.
 
-
-Q: Why do you waste time cloning a perfectly fine tool?
-
-A:
-"The answer is that GTK+ is primarily intended to be used on the GNOME desktop"
-"GTK+ must focus on being the toolkit of the GNOME platform first, and tackle integration second."
-
-See this [LWN Article](https://lwn.net/Articles/562856/) and this [blog post](http://blogs.gnome.org/mclasen/2014/03/21/dialogs-in-gtk-3-12/).
-
-Q: Does the name mean anything?
-A: Yes.
+guid is a fork of [qarma](https://github.com/luebking/qarma), which is a fork of [Zenity](https://gitlab.gnome.org/GNOME/zenity).
