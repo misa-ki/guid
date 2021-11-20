@@ -1389,7 +1389,7 @@ char Guid::showFontSelection(const QStringList &args)
     return 0;
 }
 
-static void buildList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader)
+static void buildList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader, Qt::ItemFlags &flags)
 {
     QTreeWidget *tw = *tree;
 
@@ -1413,7 +1413,10 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
             if (i == values.count())
                 break;
         }
-        tw->addTopLevelItem(new QTreeWidgetItem(tw, itemValues));
+        QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
+        flags |= item->flags();
+        item->setFlags(flags);
+        tw->addTopLevelItem(item);
     }
 
     for (int i = 0; i < columns.count(); ++i)
@@ -1422,6 +1425,7 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
     values.clear();
     columns.clear();
     showHeader = false;
+    flags = Qt::NoItemFlags;
     *tree = NULL;
 }
 
@@ -1442,6 +1446,7 @@ char Guid::showForms(const QStringList &args)
     QTreeWidget *lastList = NULL;
     QStringList lastListValues, lastListColumns, lastComboValues;
     bool lastListHeader(false);
+    Qt::ItemFlags lastListFlags;
     QComboBox *lastCombo = NULL;
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--add-entry") {
@@ -1453,12 +1458,22 @@ char Guid::showForms(const QStringList &args)
         } else if (args.at(i) == "--add-calendar") {
             fl->addRow(NEXT_ARG, new QCalendarWidget(dlg));
         } else if (args.at(i) == "--add-list") {
-            buildList(&lastList, lastListValues, lastListColumns, lastListHeader);
+            buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
             fl->addRow(NEXT_ARG, lastList = new QTreeWidget(dlg));
         } else if (args.at(i) == "--list-values") {
             lastListValues = NEXT_ARG.split('|');
         } else if (args.at(i) == "--column-values") {
             lastListColumns = NEXT_ARG.split('|');
+        } else if (args.at(i) == "--editable") {
+            if (lastList)
+                lastListFlags |= Qt::ItemIsEditable;
+            else
+                WARN_UNKNOWN_ARG("--add-list");
+        } else if (args.at(i) == "--multiple") {
+            if (lastList)
+                lastList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         } else if (args.at(i) == "--add-combo") {
             fl->addRow(NEXT_ARG, lastCombo = new QComboBox(dlg));
             lastCombo->addItems(lastComboValues);
@@ -1482,7 +1497,7 @@ char Guid::showForms(const QStringList &args)
             fl->addRow(new QCheckBox(NEXT_ARG, dlg));
         } else { WARN_UNKNOWN_ARG("--forms") }
     }
-    buildList(&lastList, lastListValues, lastListColumns, lastListHeader);
+    buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
 
 
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
@@ -1672,6 +1687,8 @@ void Guid::printHelp(const QString &category)
                             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
                             Help("--list-values=List of values separated by |", tr("List of values for List")) <<
                             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
+                            Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+                            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
                             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
                             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
                             Help("--show-header", tr("Show the columns header")) <<
