@@ -474,15 +474,33 @@ void Guid::dialogFinished(int status)
             QStringList result;
             if (tw) {
                 bool done(false);
+                QString selected;
                 foreach (const QTreeWidgetItem *twi, tw->selectedItems()) {
                     done = true;
-                    result << twi->text(0);
+                    selected = "";
+                    for (int i = 0; i < tw->columnCount(); ++i) {
+                        if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
+                            if (!selected.isEmpty())
+                                selected += ',';
+                            selected += twi->text(i);
+                        }
+                    }
+                    result << selected;
                 }
                 if (!done) { // checkable
                     for (int i = 0; i < tw->topLevelItemCount(); ++i) {
                         const QTreeWidgetItem *twi = tw->topLevelItem(i);
-                        if (twi->checkState(0) == Qt::Checked)
-                            result << twi->text(1);
+                        if (twi->checkState(0) == Qt::Checked) {
+                            selected = "";
+                            for (int i = 0; i < tw->columnCount(); ++i) {
+                                if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
+                                    if (!selected.isEmpty())
+                                        selected += ',';
+                                    selected += twi->text(i);
+                                }
+                            }
+                            result << selected;
+                        }
                     }
                 }
             }
@@ -824,6 +842,7 @@ char Guid::showList(const QStringList &args)
     QStringList columns;
     QStringList values;
     QList<int> hiddenCols;
+    dlg->setProperty("guid_print_column", 1);
     dlg->setProperty("guid_separator", "|");
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--text")
@@ -843,7 +862,7 @@ char Guid::showList(const QStringList &args)
             if (ok)
                 hiddenCols << v-1;
         } else if (args.at(i) == "--print-column") {
-            qWarning("TODO: --print-column");
+            dlg->setProperty("guid_print_column", NEXT_ARG);
         } else if (args.at(i) == "--checklist") {
             tw->setSelectionMode(QAbstractItemView::NoSelection);
             tw->setAllColumnsShowFocus(false);
