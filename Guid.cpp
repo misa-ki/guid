@@ -338,8 +338,11 @@ static QString value(const QWidget *w, const QString &pattern)
     } else IF_IS(QTreeWidget) {
         QString s;
         foreach (QTreeWidgetItem *item, t->selectedItems()) {
-            for (int i = 0; i < t->columnCount(); ++i)
+            for (int i = 0; i < t->columnCount(); ++i) {
+                if (!s.isEmpty())
+                    s += ',';
                 s += item->text(i);
+            }
         }
         return s;
     } else IF_IS(QComboBox) {
