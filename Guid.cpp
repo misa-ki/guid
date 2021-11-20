@@ -599,10 +599,25 @@ char Guid::showCalendar(const QStringList &args)
     QDate date = QDate::currentDate();
     int d,m,y;
     date.getDate(&y, &m, &d);
+    QLabel *label = new QLabel("");
     bool ok;
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--text") {
-            vl->addWidget(new QLabel(NEXT_ARG, dlg));
+            label = new QLabel(NEXT_ARG, dlg);
+            vl->addWidget(label);
+        } else if (args.at(i) == "--align") {
+            if (label) {
+                QString alignment = NEXT_ARG;
+                if (alignment == "left")
+                    label->setAlignment(Qt::AlignLeft);
+                else if (alignment == "center")
+                    label->setAlignment(Qt::AlignCenter);
+                else if (alignment == "right")
+                    label->setAlignment(Qt::AlignRight);
+                else
+                    qDebug() << "argument --align: unknown value" << args.at(i);
+            } else
+                WARN_UNKNOWN_ARG("--text");
         } else if (args.at(i) == "--day") {
             d = NEXT_ARG.toUInt(&ok);
             if (!ok)
@@ -854,7 +869,20 @@ char Guid::showList(const QStringList &args)
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--text")
             lbl->setText(labelText(NEXT_ARG));
-        else if (args.at(i) == "--multiple")
+        else if (args.at(i) == "--align") {
+            if (lbl) {
+                QString alignment = NEXT_ARG;
+                if (alignment == "left")
+                    lbl->setAlignment(Qt::AlignLeft);
+                else if (alignment == "center")
+                    lbl->setAlignment(Qt::AlignCenter);
+                else if (alignment == "right")
+                    lbl->setAlignment(Qt::AlignRight);
+                else
+                    qDebug() << "argument --align: unknown value" << args.at(i);
+            } else
+                WARN_UNKNOWN_ARG("--text");
+        } else if (args.at(i) == "--multiple")
             tw->setSelectionMode(QAbstractItemView::ExtendedSelection);
         else if (args.at(i) == "--column") {
             columns << NEXT_ARG;
@@ -1208,7 +1236,20 @@ char Guid::showScale(const QStringList &args)
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--text")
             lbl->setText(labelText(NEXT_ARG));
-        else if (args.at(i) == "--value")
+        else if (args.at(i) == "--align") {
+            if (lbl) {
+                QString alignment = NEXT_ARG;
+                if (alignment == "left")
+                    lbl->setAlignment(Qt::AlignLeft);
+                else if (alignment == "center")
+                    lbl->setAlignment(Qt::AlignCenter);
+                else if (alignment == "right")
+                    lbl->setAlignment(Qt::AlignRight);
+                else
+                    qDebug() << "argument --align: unknown value" << args.at(i);
+            } else
+                WARN_UNKNOWN_ARG("--text");
+        } else if (args.at(i) == "--value")
             sld->setValue(NEXT_ARG.toInt());
         else if (args.at(i) == "--min-value") {
             int v = NEXT_ARG.toInt(&ok);
@@ -1520,6 +1561,19 @@ char Guid::showForms(const QStringList &args)
             lastListHeader = true;
         } else if (args.at(i) == "--text") {
             label->setText(labelText(NEXT_ARG));
+        } else if (args.at(i) == "--align") {
+            if (label) {
+                QString alignment = NEXT_ARG;
+                if (alignment == "left")
+                    label->setAlignment(Qt::AlignLeft);
+                else if (alignment == "center")
+                    label->setAlignment(Qt::AlignCenter);
+                else if (alignment == "right")
+                    label->setAlignment(Qt::AlignRight);
+                else
+                    qDebug() << "argument --align: unknown value" << args.at(i);
+            } else
+                WARN_UNKNOWN_ARG("--text");
         } else if (args.at(i) == "--separator") {
             dlg->setProperty("guid_separator", NEXT_ARG);
         } else if (args.at(i) == "--list-row-separator") {
@@ -1610,6 +1664,7 @@ void Guid::printHelp(const QString &category)
                             Help("--attach=WINDOW", tr("Set the parent window to attach to")));
         helpDict["calendar"] = CategoryHelp(tr("Calendar options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
+                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
                             Help("--day=DAY", tr("Set the calendar day")) <<
                             Help("--month=MONTH", tr("Set the calendar month")) <<
                             Help("--year=YEAR", tr("Set the calendar year")) <<
@@ -1646,6 +1701,7 @@ void Guid::printHelp(const QString &category)
                             Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")));
         helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
+                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
                             Help("--column=COLUMN", tr("Set the column header")) <<
                             Help("--checklist", tr("Use check boxes for first column")) <<
                             Help("--radiolist", tr("Use radio buttons for first column")) <<
@@ -1686,6 +1742,7 @@ void Guid::printHelp(const QString &category)
                             Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
         helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
+                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
                             Help("--value=VALUE", tr("Set initial value")) <<
                             Help("--min-value=VALUE", tr("Set minimum value")) <<
                             Help("--max-value=VALUE", tr("Set maximum value")) <<
@@ -1729,6 +1786,7 @@ void Guid::printHelp(const QString &category)
                             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
                             Help("--show-header", tr("Show the columns header")) <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
+                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
                             Help("--separator=SEPARATOR", tr("Set output separator character")) <<
                             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
                             Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")));
