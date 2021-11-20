@@ -1451,6 +1451,7 @@ char Guid::showForms(const QStringList &args)
     QFormLayout *fl;
     vl->addLayout(fl = new QFormLayout);
 
+    QLineEdit *lastEntry = new QLineEdit("");
     QTreeWidget *lastList = NULL;
     QStringList lastListValues, lastListColumns, lastComboValues;
     bool lastListHeader(false);
@@ -1458,7 +1459,29 @@ char Guid::showForms(const QStringList &args)
     QComboBox *lastCombo = NULL;
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--add-entry") {
-            fl->addRow(NEXT_ARG, new QLineEdit(dlg));
+            lastEntry = new QLineEdit(dlg);
+            fl->addRow(NEXT_ARG, lastEntry);
+        } else if (args.at(i) == "--int") {
+            if (lastEntry) {
+                lastEntry->setValidator(new QIntValidator(INT_MIN, INT_MAX, this));
+                lastEntry->setText(QString::number(NEXT_ARG.toInt()));
+            } else {
+                WARN_UNKNOWN_ARG("--add-entry");
+            }
+        } else if (args.at(i) == "--float") {
+            if (lastEntry) {
+                QLocale dv_locale(QLocale::C);
+                dv_locale.setNumberOptions(QLocale::RejectGroupSeparator);
+                
+                QDoubleValidator *dv = new QDoubleValidator(DBL_MIN, DBL_MAX, 2, this);
+                dv->setNotation(QDoubleValidator::StandardNotation);
+                dv->setLocale(dv_locale);
+                
+                lastEntry->setValidator(dv);
+                lastEntry->setText(QString::number(NEXT_ARG.toDouble(), 'f', 2));
+            } else {
+                WARN_UNKNOWN_ARG("--add-entry");
+            }
         } else if (args.at(i) == "--add-password") {
             QLineEdit *le;
             fl->addRow(NEXT_ARG, le = new QLineEdit(dlg));
@@ -1692,6 +1715,8 @@ void Guid::printHelp(const QString &category)
                             Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")));
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
                             Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
+                            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+                            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
                             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
                             Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
                             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
