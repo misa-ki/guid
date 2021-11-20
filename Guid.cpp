@@ -336,15 +336,20 @@ static QString value(const QWidget *w, const QString &pattern)
     IF_IS(QLineEdit) {
         return t->text();
     } else IF_IS(QTreeWidget) {
-        QString s;
+        QString selected_items;
+        QString selected_row;
         foreach (QTreeWidgetItem *item, t->selectedItems()) {
+            selected_row = "";
             for (int i = 0; i < t->columnCount(); ++i) {
-                if (!s.isEmpty())
-                    s += ',';
-                s += item->text(i);
+                if (!selected_row.isEmpty())
+                    selected_row += ',';
+                selected_row += item->text(i);
             }
+            if (!selected_items.isEmpty())
+                selected_items += w->property("guid_list_row_separator").toString();
+            selected_items += selected_row;
         }
-        return s;
+        return selected_items;
     } else IF_IS(QComboBox) {
         return t->currentText();
     } else IF_IS(QCalendarWidget) {
@@ -512,8 +517,10 @@ void Guid::dialogFinished(int status)
             QStringList result;
             QString format = sender()->property("guid_date_format").toString();
             for (int i = 0; i < fl->count(); ++i) {
-                if (QLayoutItem *li = fl->itemAt(i, QFormLayout::FieldRole))
+                if (QLayoutItem *li = fl->itemAt(i, QFormLayout::FieldRole)) {
+                    li->widget()->setProperty("guid_list_row_separator", sender()->property("guid_list_row_separator").toString());
                     result << value(li->widget(), format);
+                }
             }
             printf("%s\n", qPrintable(result.join(sender()->property("guid_separator").toString())));
             break;
@@ -1433,6 +1440,7 @@ char Guid::showForms(const QStringList &args)
 {
     NEW_DIALOG
     dlg->setProperty("guid_separator", "|");
+    dlg->setProperty("guid_list_row_separator", "~");
 
     QLabel *label;
     vl->addWidget(label = new QLabel(dlg));
@@ -1491,6 +1499,8 @@ char Guid::showForms(const QStringList &args)
             label->setText(labelText(NEXT_ARG));
         } else if (args.at(i) == "--separator") {
             dlg->setProperty("guid_separator", NEXT_ARG);
+        } else if (args.at(i) == "--list-row-separator") {
+            dlg->setProperty("guid_list_row_separator", NEXT_ARG);
         } else if (args.at(i) == "--forms-date-format") {
             dlg->setProperty("guid_date_format", NEXT_ARG);
         } else if (args.at(i) == "--add-checkbox") {
@@ -1689,6 +1699,7 @@ void Guid::printHelp(const QString &category)
                             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
                             Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
                             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+                            Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
                             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
                             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
                             Help("--show-header", tr("Show the columns header")) <<
