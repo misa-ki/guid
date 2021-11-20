@@ -935,6 +935,7 @@ char Guid::showList(const QStringList &args)
     int columnCount = qMax(columns.count(), 1);
     tw->setColumnCount(columnCount);
     tw->setHeaderLabels(columns);
+    tw->setStyleSheet("QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 5px; font-weight: bold;}");
     foreach (const int &i, hiddenCols)
         tw->setColumnHidden(i, true);
 
