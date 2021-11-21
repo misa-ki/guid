@@ -1536,6 +1536,8 @@ char Guid::showForms(const QStringList &args)
             le->setEchoMode(QLineEdit::Password);
         } else if (args.at(i) == "--add-calendar") {
             fl->addRow(NEXT_ARG, new QCalendarWidget(dlg));
+        } else if (args.at(i) == "--add-text") {
+            fl->addRow(new QLabel(NEXT_ARG));
         } else if (args.at(i) == "--add-list") {
             buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
             fl->addRow(NEXT_ARG, lastList = new QTreeWidget(dlg));
@@ -1788,6 +1790,8 @@ void Guid::printHelp(const QString &category)
                             Help("--show-header", tr("Show the columns header")) <<
                             Help("", tr("")) <<
                             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+                            Help("", tr("")) <<
+                            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
                             Help("", tr("")) <<
                             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
                             Help("--separator=SEPARATOR", tr("Set output separator character")));
