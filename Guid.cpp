@@ -1524,6 +1524,12 @@ char Guid::showForms(const QStringList &args)
             } else {
                 WARN_UNKNOWN_ARG("--add-entry");
             }
+        } else if (args.at(i) == "--entry-width") {
+            if (lastEntry) {
+                lastEntry->setMaximumWidth(NEXT_ARG.toInt());
+            } else {
+                WARN_UNKNOWN_ARG("--add-entry");
+            }
         } else if (args.at(i) == "--add-password") {
             QLineEdit *le;
             fl->addRow(NEXT_ARG, le = new QLineEdit(dlg));
@@ -1771,6 +1777,7 @@ void Guid::printHelp(const QString &category)
                             Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
                             Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
                             Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+                            Help("--entry-width=WIDTH", "GUID ONLY! " + tr("Set the entry width")) <<
                             Help("", tr("")) <<
                             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
                             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
