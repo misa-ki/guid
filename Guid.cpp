@@ -1537,16 +1537,6 @@ char Guid::showForms(const QStringList &args)
             lastListValues = NEXT_ARG.split('|');
         } else if (args.at(i) == "--column-values") {
             lastListColumns = NEXT_ARG.split('|');
-        } else if (args.at(i) == "--editable") {
-            if (lastList)
-                lastListFlags |= Qt::ItemIsEditable;
-            else
-                WARN_UNKNOWN_ARG("--add-list");
-        } else if (args.at(i) == "--multiple") {
-            if (lastList)
-                lastList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-            else
-                WARN_UNKNOWN_ARG("--add-list");
         } else if (args.at(i) == "--add-combo") {
             fl->addRow(NEXT_ARG, lastCombo = new QComboBox(dlg));
             lastCombo->addItems(lastComboValues);
@@ -1555,9 +1545,19 @@ char Guid::showForms(const QStringList &args)
             lastComboValues = NEXT_ARG.split('|');
             if (lastCombo) {
                 lastCombo->addItems(lastComboValues);
-                lastComboValues.clear();
-                lastCombo = NULL;
             }
+        } else if (args.at(i) == "--editable") {
+            if (lastList)
+                lastListFlags |= Qt::ItemIsEditable;
+            else if (lastCombo)
+                lastCombo->setEditable(true);
+            else
+                WARN_UNKNOWN_ARG("--add-list");
+        } else if (args.at(i) == "--multiple") {
+            if (lastList)
+                lastList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         } else if (args.at(i) == "--show-header") {
             lastListHeader = true;
         } else if (args.at(i) == "--text") {
@@ -1583,7 +1583,14 @@ char Guid::showForms(const QStringList &args)
             dlg->setProperty("guid_date_format", NEXT_ARG);
         } else if (args.at(i) == "--add-checkbox") {
             fl->addRow(new QCheckBox(NEXT_ARG, dlg));
-        } else { WARN_UNKNOWN_ARG("--forms") }
+        } else {
+            WARN_UNKNOWN_ARG("--forms");
+        }
+        
+        if (lastCombo) {
+            lastComboValues.clear();
+            lastCombo = NULL;
+        }
     }
     buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
 
@@ -1759,6 +1766,7 @@ void Guid::printHelp(const QString &category)
                             Help("", tr("")) <<
                             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
                             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
+                            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
                             Help("", tr("")) <<
                             Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
                             Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
