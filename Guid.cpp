@@ -1769,8 +1769,18 @@ char Guid::showForms(const QStringList &args)
                     label->setAlignment(Qt::AlignRight);
                 else
                     qDebug() << "argument --align: unknown value" << args.at(i);
+            } else if (lastWidget == "text") {
+                QString alignment = NEXT_ARG;
+                if (alignment == "left")
+                    lastText->setAlignment(Qt::AlignLeft);
+                else if (alignment == "center")
+                    lastText->setAlignment(Qt::AlignCenter);
+                else if (alignment == "right")
+                    lastText->setAlignment(Qt::AlignRight);
+                else
+                    qDebug() << "argument --align: unknown value" << args.at(i);
             } else
-                WARN_UNKNOWN_ARG("--text");
+                WARN_UNKNOWN_ARG("--add-text");
         }
         
         /********************************************************************************
@@ -2006,6 +2016,7 @@ void Guid::printHelp(const QString &category)
                             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("", tr("")) <<
                             Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
+                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
                             Help("", tr("")) <<
                             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
                             Help("--separator=SEPARATOR", tr("Set output separator character")));
