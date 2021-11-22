@@ -31,6 +31,7 @@
 #include <QDBusInterface>
 #include <QDesktopWidget>
 #include <QDialogButtonBox>
+#include <QDoubleSpinBox>
 #include <QEvent>
 #include <QFileDialog>
 #include <QFontDialog>
@@ -50,6 +51,7 @@
 #include <QSettings>
 #include <QSlider>
 #include <QSocketNotifier>
+#include <QSpinBox>
 #include <QStringBuilder>
 #include <QStringList>
 #include <QTextBrowser>
@@ -358,6 +360,12 @@ static QString value(const QWidget *w, const QString &pattern)
         return t->selectedDate().toString(pattern);
     } else IF_IS(QCheckBox) {
         return t->isChecked() ? "true" : "false";
+    } else IF_IS(QSpinBox) {
+        int v = t->value();
+        return QString::number(v);
+    } else IF_IS(QDoubleSpinBox) {
+        double v = t->value();
+        return QString::number(v);
     }
     return QString();
 }
@@ -1493,25 +1501,112 @@ char Guid::showForms(const QStringList &args)
     QFormLayout *fl;
     vl->addLayout(fl = new QFormLayout);
 
-    QLineEdit *lastEntry = new QLineEdit("");
+    QLineEdit *lastEntry = NULL;
+    QLineEdit *lastPassword = NULL;
+    QLabel *lastText = NULL;
     QTreeWidget *lastList = NULL;
     QStringList lastListValues, lastListColumns, lastComboValues;
     bool lastListHeader(false);
     Qt::ItemFlags lastListFlags;
     QComboBox *lastCombo = NULL;
+    QSpinBox *lastSpinBox = NULL;
+    QDoubleSpinBox *lastDoubleSpinBox = NULL;
+    QString lastWidget = NULL;
     for (int i = 0; i < args.count(); ++i) {
-        if (args.at(i) == "--add-entry") {
+        /********************************************************************************
+         * WIDGETS
+         ********************************************************************************/
+        
+        // QCalendarWidget: --add-calendar
+        if (args.at(i) == "--add-calendar") {
+            lastWidget = "calendar";
+            fl->addRow(NEXT_ARG, new QCalendarWidget(dlg));
+        }
+        
+        // QCheckBox: --add-checkbox
+        else if (args.at(i) == "--add-checkbox") {
+            lastWidget = "checkbox";
+            fl->addRow(new QCheckBox(NEXT_ARG, dlg));
+        }
+        
+        // QLineEdit: --add-entry
+        else if (args.at(i) == "--add-entry") {
+            lastWidget = "entry";
             lastEntry = new QLineEdit(dlg);
             fl->addRow(NEXT_ARG, lastEntry);
-        } else if (args.at(i) == "--int") {
-            if (lastEntry) {
+        }
+        
+        // QLineEdit: --add-password
+        else if (args.at(i) == "--add-password") {
+            lastWidget = "password";
+            lastPassword = new QLineEdit(dlg);
+            lastPassword->setEchoMode(QLineEdit::Password);
+            fl->addRow(NEXT_ARG, lastPassword);
+        }
+        
+        // QSpinBox: --add-spin-box
+        else if (args.at(i) == "--add-spin-box") {
+            lastWidget = "spin-box";
+            lastSpinBox = new QSpinBox();
+            fl->addRow(NEXT_ARG, lastSpinBox);
+        }
+        
+        // QDoubleSpinBox: --add-double-spin-box
+        else if (args.at(i) == "--add-double-spin-box") {
+            lastWidget = "double-spin-box";
+            lastDoubleSpinBox = new QDoubleSpinBox();
+            fl->addRow(NEXT_ARG, lastDoubleSpinBox);
+        }
+        
+        // QLabel: --add-text
+        else if (args.at(i) == "--add-text") {
+            lastWidget = "text";
+            lastText = new QLabel(NEXT_ARG);
+            fl->addRow(lastText);
+        }
+        
+        // QComboBox: --add-combo
+        else if (args.at(i) == "--add-combo") {
+            lastWidget = "combo";
+            fl->addRow(NEXT_ARG, lastCombo = new QComboBox(dlg));
+            lastCombo->addItems(lastComboValues);
+            lastComboValues.clear();
+        }
+        
+        // QTreeWidget: --add-list
+        else if (args.at(i) == "--add-list") {
+            lastWidget = "list";
+            buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
+            fl->addRow(NEXT_ARG, lastList = new QTreeWidget(dlg));
+        }
+        
+        // labelText: --text
+        else if (args.at(i) == "--text") {
+            lastWidget = "label";
+            label->setText(labelText(NEXT_ARG));
+        }
+        
+        /********************************************************************************
+         * WIDGET SETTINGS
+         ********************************************************************************/
+        
+        /******************************
+         * entry
+         ******************************/
+        
+        // --int
+        else if (args.at(i) == "--int") {
+            if (lastWidget == "entry") {
                 lastEntry->setValidator(new QIntValidator(INT_MIN, INT_MAX, this));
                 lastEntry->setText(QString::number(NEXT_ARG.toInt()));
             } else {
                 WARN_UNKNOWN_ARG("--add-entry");
             }
-        } else if (args.at(i) == "--float") {
-            if (lastEntry) {
+        }
+        
+        // --float
+        else if (args.at(i) == "--float") {
+            if (lastWidget == "entry") {
                 QLocale dv_locale(QLocale::C);
                 dv_locale.setNumberOptions(QLocale::RejectGroupSeparator);
                 
@@ -1524,54 +1619,147 @@ char Guid::showForms(const QStringList &args)
             } else {
                 WARN_UNKNOWN_ARG("--add-entry");
             }
-        } else if (args.at(i) == "--entry-width") {
-            if (lastEntry) {
+        }
+        
+        /******************************
+         * entry || password || spin-box || double-spin-box || combo
+         ******************************/
+        
+        // --field-width
+        else if (args.at(i) == "--field-width") {
+            if (lastWidget == "entry") {
                 lastEntry->setMaximumWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "password") {
+                lastPassword->setMaximumWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "spin-box") {
+                lastSpinBox->setFixedWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "double-spin-box") {
+                lastDoubleSpinBox->setFixedWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "combo") {
+                lastCombo->setFixedWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "list") {
+                lastList->setFixedWidth(NEXT_ARG.toInt());
             } else {
                 WARN_UNKNOWN_ARG("--add-entry");
             }
-        } else if (args.at(i) == "--add-password") {
-            QLineEdit *le;
-            fl->addRow(NEXT_ARG, le = new QLineEdit(dlg));
-            le->setEchoMode(QLineEdit::Password);
-        } else if (args.at(i) == "--add-calendar") {
-            fl->addRow(NEXT_ARG, new QCalendarWidget(dlg));
-        } else if (args.at(i) == "--add-text") {
-            fl->addRow(new QLabel(NEXT_ARG));
-        } else if (args.at(i) == "--add-list") {
-            buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
-            fl->addRow(NEXT_ARG, lastList = new QTreeWidget(dlg));
-        } else if (args.at(i) == "--list-values") {
-            lastListValues = NEXT_ARG.split('|');
-        } else if (args.at(i) == "--column-values") {
-            lastListColumns = NEXT_ARG.split('|');
-        } else if (args.at(i) == "--add-combo") {
-            fl->addRow(NEXT_ARG, lastCombo = new QComboBox(dlg));
-            lastCombo->addItems(lastComboValues);
-            lastComboValues.clear();
-        } else if (args.at(i) == "--combo-values") {
+        }
+        
+        /******************************
+         * spin-box || double-spin-box
+         ******************************/
+        
+        // --min-value
+        else if (args.at(i) == "--min-value") {
+            if (lastWidget == "spin-box")
+                lastSpinBox->setMinimum(NEXT_ARG.toInt());
+            else if (lastWidget == "double-spin-box")
+                lastDoubleSpinBox->setMinimum(NEXT_ARG.toDouble());
+            else
+                WARN_UNKNOWN_ARG("--add-spin-box");
+        }
+        
+        // --max-value
+        else if (args.at(i) == "--max-value") {
+            if (lastWidget == "spin-box")
+                lastSpinBox->setMaximum(NEXT_ARG.toInt());
+            else if (lastWidget == "double-spin-box")
+                lastDoubleSpinBox->setMaximum(NEXT_ARG.toDouble());
+            else
+                WARN_UNKNOWN_ARG("--add-spin-box");
+        }
+        
+        // --prefix
+        else if (args.at(i) == "--prefix") {
+            if (lastWidget == "spin-box")
+                lastSpinBox->setPrefix(NEXT_ARG);
+            else if (lastWidget == "double-spin-box")
+                lastDoubleSpinBox->setPrefix(NEXT_ARG);
+            else
+                WARN_UNKNOWN_ARG("--add-spin-box");
+        }
+        
+        // --suffix
+        else if (args.at(i) == "--suffix") {
+            if (lastWidget == "spin-box")
+                lastSpinBox->setSuffix(NEXT_ARG);
+            else if (lastWidget == "double-spin-box")
+                lastDoubleSpinBox->setSuffix(NEXT_ARG);
+            else
+                WARN_UNKNOWN_ARG("--add-spin-box");
+        }
+        
+        /******************************
+         * double-spin-box
+         ******************************/
+        
+        // --decimals
+        else if (args.at(i) == "--decimals") {
+            if (lastWidget == "double-spin-box")
+                lastDoubleSpinBox->setDecimals(NEXT_ARG.toInt());
+            else
+                WARN_UNKNOWN_ARG("--add-double-spin-box");
+        }
+        
+        /******************************
+         * combo
+         ******************************/
+        
+        // --combo-values
+        else if (args.at(i) == "--combo-values") {
             lastComboValues = NEXT_ARG.split('|');
-            if (lastCombo) {
+            if (lastWidget == "combo") {
                 lastCombo->addItems(lastComboValues);
             }
-        } else if (args.at(i) == "--editable") {
-            if (lastList)
+        }
+        
+        /******************************
+         * combo || list
+         ******************************/
+        
+        // --editable
+        else if (args.at(i) == "--editable") {
+            if (lastWidget == "list")
                 lastListFlags |= Qt::ItemIsEditable;
-            else if (lastCombo)
+            else if (lastWidget == "combo")
                 lastCombo->setEditable(true);
             else
                 WARN_UNKNOWN_ARG("--add-list");
-        } else if (args.at(i) == "--multiple") {
-            if (lastList)
+        }
+        
+        /******************************
+         * list
+         ******************************/
+        
+        // --list-values
+        else if (args.at(i) == "--list-values") {
+            lastListValues = NEXT_ARG.split('|');
+        }
+        
+        // --column-values
+        else if (args.at(i) == "--column-values") {
+            lastListColumns = NEXT_ARG.split('|');
+        }
+        
+        // --multiple
+        else if (args.at(i) == "--multiple") {
+            if (lastWidget == "list")
                 lastList->setSelectionMode(QAbstractItemView::ExtendedSelection);
             else
                 WARN_UNKNOWN_ARG("--add-list");
-        } else if (args.at(i) == "--show-header") {
+        }
+        
+        // --show-header
+        else if (args.at(i) == "--show-header") {
             lastListHeader = true;
-        } else if (args.at(i) == "--text") {
-            label->setText(labelText(NEXT_ARG));
-        } else if (args.at(i) == "--align") {
-            if (label) {
+        }
+        
+        /******************************
+         * label
+         ******************************/
+        
+        // --align
+        else if (args.at(i) == "--align") {
+            if (lastWidget == "label") {
                 QString alignment = NEXT_ARG;
                 if (alignment == "left")
                     label->setAlignment(Qt::AlignLeft);
@@ -1583,26 +1771,35 @@ char Guid::showForms(const QStringList &args)
                     qDebug() << "argument --align: unknown value" << args.at(i);
             } else
                 WARN_UNKNOWN_ARG("--text");
-        } else if (args.at(i) == "--separator") {
-            dlg->setProperty("guid_separator", NEXT_ARG);
-        } else if (args.at(i) == "--list-row-separator") {
-            dlg->setProperty("guid_list_row_separator", NEXT_ARG);
-        } else if (args.at(i) == "--forms-date-format") {
-            dlg->setProperty("guid_date_format", NEXT_ARG);
-        } else if (args.at(i) == "--add-checkbox") {
-            fl->addRow(new QCheckBox(NEXT_ARG, dlg));
-        } else {
-            WARN_UNKNOWN_ARG("--forms");
         }
         
-        if (lastCombo) {
-            lastComboValues.clear();
-            lastCombo = NULL;
+        /********************************************************************************
+         * DIALOG SETTINGS
+         ********************************************************************************/
+        
+        // --forms-date-format
+        else if (args.at(i) == "--forms-date-format") {
+            dlg->setProperty("guid_date_format", NEXT_ARG);
+        }
+        
+        // --separator
+        else if (args.at(i) == "--separator") {
+            dlg->setProperty("guid_separator", NEXT_ARG);
+        }
+        
+        // --list-row-separator
+        else if (args.at(i) == "--list-row-separator") {
+            dlg->setProperty("guid_list_row_separator", NEXT_ARG);
+        }
+        
+        // else
+        else {
+            WARN_UNKNOWN_ARG("--forms");
         }
     }
+    
     buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
-
-
+    
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
     return 0;
@@ -1775,11 +1972,12 @@ void Guid::printHelp(const QString &category)
                             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
                             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
                             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("", tr("")) <<
                             Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
                             Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
                             Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-                            Help("--entry-width=WIDTH", "GUID ONLY! " + tr("Set the entry width")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("", tr("")) <<
                             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
                             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
@@ -1787,9 +1985,25 @@ void Guid::printHelp(const QString &category)
                             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
                             Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
                             Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("--show-header", tr("Show the columns header")) <<
                             Help("", tr("")) <<
                             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+                            Help("", tr("")) <<
+                            Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
+                            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+                            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+                            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+                            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+                            Help("", tr("")) <<
+                            Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
+                            Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
+                            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+                            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+                            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+                            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("", tr("")) <<
                             Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
                             Help("", tr("")) <<
@@ -1835,7 +2049,8 @@ void Guid::printHelp(const QString &category)
                             
         helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
                             Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
-                            Help("--username", tr("Display the username option")));
+                            Help("--username", tr("Display the username option")) <<
+                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
                             
         helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
