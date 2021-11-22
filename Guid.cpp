@@ -854,6 +854,8 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
     }
 }
 
+#define QHEADERVIEW_SECTION_STYLE "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 5px; font-weight: bold;}"
+
 char Guid::showList(const QStringList &args)
 {
     NEW_DIALOG
@@ -943,7 +945,7 @@ char Guid::showList(const QStringList &args)
     int columnCount = qMax(columns.count(), 1);
     tw->setColumnCount(columnCount);
     tw->setHeaderLabels(columns);
-    tw->setStyleSheet("QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 5px; font-weight: bold;}");
+    tw->setStyleSheet(QHEADERVIEW_SECTION_STYLE);
     foreach (const int &i, hiddenCols)
         tw->setColumnHidden(i, true);
 
@@ -1478,6 +1480,8 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
 
     for (int i = 0; i < columns.count(); ++i)
         tw->resizeColumnToContents(i);
+
+    tw->setStyleSheet(QHEADERVIEW_SECTION_STYLE);
 
     values.clear();
     columns.clear();
