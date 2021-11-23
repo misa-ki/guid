@@ -360,12 +360,14 @@ static QString value(const QWidget *w, const QString &pattern)
         return t->selectedDate().toString(pattern);
     } else IF_IS(QCheckBox) {
         return t->isChecked() ? "true" : "false";
+    } else IF_IS(QSlider) {
+        return QString::number(t->value());
     } else IF_IS(QSpinBox) {
         return QString::number(t->value());
     } else IF_IS(QWidget) {
         QString widgets_value;
         QString widget_value;
-        if (t->property("guid_cols_container").toBool()) {
+        if (t->property("guid_cols_container").toBool() || t->property("guid_scale_container").toBool()) {
             QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             foreach(QWidget *widget, wChildren) {
                 widget_value = value(widget, pattern);
@@ -1459,7 +1461,7 @@ char Guid::showFontSelection(const QStringList &args)
     return 0;
 }
 
-static void buildList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader, Qt::ItemFlags &flags)
+static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader, Qt::ItemFlags &flags)
 {
     QTreeWidget *tw = *tree;
 
@@ -1505,31 +1507,31 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
 
 #define SET_FORMS_COL1(LABEL_COL1, WIDGET_COL1) \
     labelCol1 = LABEL_COL1; \
-    hbox_layout->addWidget(WIDGET_COL1); \
-    hbox_layout->setAlignment(WIDGET_COL1, Qt::AlignTop);
+    colsHBoxLayout->addWidget(WIDGET_COL1); \
+    colsHBoxLayout->setAlignment(WIDGET_COL1, Qt::AlignTop);
 
 #define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
-    set_col2_label(hbox_layout, LABEL_COL2); \
-    hbox_layout->addWidget(WIDGET_COL2); \
-    hbox_layout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
-    set_forms_columns(cols_container, hbox_layout, dlg->property("guid_separator").toString(), columns_are_set); \
-    fl->addRow(labelCol1, cols_container);
+    set_col2_label(colsHBoxLayout, LABEL_COL2); \
+    colsHBoxLayout->addWidget(WIDGET_COL2); \
+    colsHBoxLayout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
+    set_forms_columns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
+    fl->addRow(labelCol1, colsContainer);
 
-static void set_forms_columns(QWidget* &cols_container, QHBoxLayout* &hbox_layout, QString prop_separator, bool &columns_are_set)
+static void set_forms_columns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLayout, QString prop_separator, bool &columnsAreSet)
 {
-    cols_container = new QWidget();
-    cols_container->setProperty("guid_cols_container", true);
-    cols_container->setProperty("guid_separator", prop_separator);
-    hbox_layout->setContentsMargins(0, 0, 0, 0);
-    cols_container->setLayout(hbox_layout);
-    columns_are_set = true;
+    colsContainer = new QWidget();
+    colsContainer->setProperty("guid_cols_container", true);
+    colsContainer->setProperty("guid_separator", prop_separator);
+    colsHBoxLayout->setContentsMargins(0, 0, 0, 0);
+    colsContainer->setLayout(colsHBoxLayout);
+    columnsAreSet = true;
 }
 
-static void set_col2_label(QHBoxLayout* &hbox_layout, QLabel* label)
+static void set_col2_label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
 {
     label->setContentsMargins(0, 2, 0, 0);
-    hbox_layout->addWidget(label);
-    hbox_layout->setAlignment(label, Qt::AlignTop);
+    colsHBoxLayout->addWidget(label);
+    colsHBoxLayout->setAlignment(label, Qt::AlignTop);
 }
 
 char Guid::showForms(const QStringList &args)
@@ -1548,10 +1550,10 @@ char Guid::showForms(const QStringList &args)
     vl->addLayout(fl = new QFormLayout);
     vl->layout()->setSpacing(15);
 
-    bool columns_are_set = false;
+    bool columnsAreSet = false;
     QLabel *labelCol1 = NULL;
-    QHBoxLayout *hbox_layout = NULL;
-    QWidget *cols_container = NULL;
+    QHBoxLayout *colsHBoxLayout = NULL;
+    QWidget *colsContainer = NULL;
     
     QLineEdit *lastEntry = NULL;
     
@@ -1565,6 +1567,12 @@ char Guid::showForms(const QStringList &args)
     Qt::ItemFlags lastListFlags;
     
     QComboBox *lastCombo = NULL;
+    
+    QHBoxLayout *scaleHBoxLayout = NULL;
+    QWidget *scaleContainer = NULL;
+    QLabel *lastScaleLabel = NULL;
+    QSlider *lastScale = NULL;
+    QLabel *lastScaleVal = NULL;
     
     QSpinBox *lastSpinBox = NULL;
     QDoubleSpinBox *lastDoubleSpinBox = NULL;
@@ -1580,7 +1588,7 @@ char Guid::showForms(const QStringList &args)
         // --col1
         if (args.at(i) == "--col1") {
             lastColumn = "col1";
-            hbox_layout = new QHBoxLayout;
+            colsHBoxLayout = new QHBoxLayout;
         }
         
         // --col2
@@ -1717,7 +1725,7 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--add-list") {
             lastWidget = "list";
             QLabel *labelList = new QLabel(NEXT_ARG);
-            buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
+            buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
             lastList = new QTreeWidget(dlg);
             
             if (lastColumn == "col1") {
@@ -1726,6 +1734,35 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL2(labelList, lastList)
             } else {
                 fl->addRow(labelList, lastList);
+            }
+        }
+        
+        // QSlider: --add-scale
+        else if (args.at(i) == "--add-scale") {
+            lastWidget = "scale";
+            
+            lastScaleLabel = new QLabel(NEXT_ARG);
+            lastScale = new QSlider(Qt::Horizontal, dlg);
+            lastScale->setRange(0, 100);
+            lastScaleVal = new QLabel(dlg);
+            lastScaleVal->setNum(0);
+            connect(lastScale, SIGNAL(valueChanged(int)), lastScaleVal, SLOT(setNum(int)));
+            
+            scaleHBoxLayout = new QHBoxLayout();
+            scaleHBoxLayout->setContentsMargins(0, 0, 0, 0);
+            scaleHBoxLayout->addWidget(lastScale);
+            scaleHBoxLayout->addWidget(lastScaleVal);
+            
+            scaleContainer = new QWidget();
+            scaleContainer->setProperty("guid_scale_container", true);
+            scaleContainer->setLayout(scaleHBoxLayout);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(lastScaleLabel, scaleContainer)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(lastScaleLabel, scaleContainer)
+            } else {
+                fl->addRow(lastScaleLabel, scaleContainer);
             }
         }
         
@@ -1797,26 +1834,6 @@ char Guid::showForms(const QStringList &args)
          * spin-box || double-spin-box
          ******************************/
         
-        // --min-value
-        else if (args.at(i) == "--min-value") {
-            if (lastWidget == "spin-box")
-                lastSpinBox->setMinimum(NEXT_ARG.toInt());
-            else if (lastWidget == "double-spin-box")
-                lastDoubleSpinBox->setMinimum(NEXT_ARG.toDouble());
-            else
-                WARN_UNKNOWN_ARG("--add-spin-box");
-        }
-        
-        // --max-value
-        else if (args.at(i) == "--max-value") {
-            if (lastWidget == "spin-box")
-                lastSpinBox->setMaximum(NEXT_ARG.toInt());
-            else if (lastWidget == "double-spin-box")
-                lastDoubleSpinBox->setMaximum(NEXT_ARG.toDouble());
-            else
-                WARN_UNKNOWN_ARG("--add-spin-box");
-        }
-        
         // --prefix
         else if (args.at(i) == "--prefix") {
             if (lastWidget == "spin-box")
@@ -1847,6 +1864,36 @@ char Guid::showForms(const QStringList &args)
                 lastDoubleSpinBox->setDecimals(NEXT_ARG.toInt());
             else
                 WARN_UNKNOWN_ARG("--add-double-spin-box");
+        }
+        
+        /******************************
+         * spin-box || double-spin-box || scale
+         ******************************/
+        
+        // --min-value
+        else if (args.at(i) == "--min-value") {
+            if (lastWidget == "spin-box") {
+                lastSpinBox->setMinimum(NEXT_ARG.toInt());
+            } else if (lastWidget == "double-spin-box") {
+                lastDoubleSpinBox->setMinimum(NEXT_ARG.toDouble());
+            } else if (lastWidget == "scale") {
+                lastScale->setMinimum(NEXT_ARG.toInt());
+            } else {
+                WARN_UNKNOWN_ARG("--add-spin-box");
+            }
+        }
+        
+        // --max-value
+        else if (args.at(i) == "--max-value") {
+            if (lastWidget == "spin-box") {
+                lastSpinBox->setMaximum(NEXT_ARG.toInt());
+            } else if (lastWidget == "double-spin-box") {
+                lastDoubleSpinBox->setMaximum(NEXT_ARG.toDouble());
+            } else if (lastWidget == "scale") {
+                lastScale->setMaximum(NEXT_ARG.toInt());
+            } else {
+                WARN_UNKNOWN_ARG("--add-spin-box");
+            }
         }
         
         /******************************
@@ -1903,6 +1950,42 @@ char Guid::showForms(const QStringList &args)
         }
         
         /******************************
+         * scale
+         ******************************/
+        
+        // --value
+        else if (args.at(i) == "--value") {
+            if (lastWidget == "scale")
+                lastScale->setValue(NEXT_ARG.toInt());
+            else
+                WARN_UNKNOWN_ARG("--add-scale");
+        }
+        
+        // --step
+        else if (args.at(i) == "--step") {
+            if (lastWidget == "scale")
+                lastScale->setSingleStep(NEXT_ARG.toInt());
+            else
+                WARN_UNKNOWN_ARG("--add-scale");
+        }
+        
+        // --print-partial
+        else if (args.at(i) == "--print-partial") {
+            if (lastWidget == "scale")
+                connect(lastScale, SIGNAL(valueChanged(int)), SLOT(printInteger(int)));
+            else
+                WARN_UNKNOWN_ARG("--add-scale");
+        }
+        
+        // --hide-value
+        else if (args.at(i) == "--hide-value") {
+            if (lastWidget == "scale")
+                lastScaleVal->hide();
+            else
+                WARN_UNKNOWN_ARG("--add-scale");
+        }
+        
+        /******************************
          * label
          ******************************/
         
@@ -1952,14 +2035,14 @@ char Guid::showForms(const QStringList &args)
         }
         
         lastComboValues.clear();
-        if (columns_are_set) {
+        if (columnsAreSet) {
             labelCol1 = new QLabel();
             lastColumn = "";
-            columns_are_set = false;
+            columnsAreSet = false;
         }
     }
     
-    buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
+    buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
     
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
@@ -2153,6 +2236,14 @@ void Guid::printHelp(const QString &category)
                             Help("--show-header", tr("Show the columns header")) <<
                             Help("", tr("")) <<
                             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+                            Help("", tr("")) <<
+                            Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
+                            Help("--value=VALUE", tr("Set initial value")) <<
+                            Help("--min-value=VALUE", tr("Set minimum value")) <<
+                            Help("--max-value=VALUE", tr("Set maximum value")) <<
+                            Help("--step=VALUE", tr("Set step size")) <<
+                            Help("--hide-value", tr("Hide value")) <<
+                            Help("--print-partial", tr("Print partial values")) <<
                             Help("", tr("")) <<
                             Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
                             Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
