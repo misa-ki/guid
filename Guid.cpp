@@ -361,11 +361,22 @@ static QString value(const QWidget *w, const QString &pattern)
     } else IF_IS(QCheckBox) {
         return t->isChecked() ? "true" : "false";
     } else IF_IS(QSpinBox) {
-        int v = t->value();
-        return QString::number(v);
-    } else IF_IS(QDoubleSpinBox) {
-        double v = t->value();
-        return QString::number(v);
+        return QString::number(t->value());
+    } else IF_IS(QWidget) {
+        QString widgets_value;
+        QString widget_value;
+        if (t->property("guid_cols_container").toBool()) {
+            QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+            foreach(QWidget *widget, wChildren) {
+                widget_value = value(widget, pattern);
+                if (qstrcmp(widget->metaObject()->className(), "QLabel") == 0)
+                    continue;
+                if (!widgets_value.isEmpty())
+                    widgets_value += t->property("guid_separator").toString();
+                widgets_value += widget_value;
+            }
+        }
+        return widgets_value;
     }
     return QString();
 }
@@ -854,7 +865,7 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
     }
 }
 
-#define QHEADERVIEW_SECTION_STYLE "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 5px; font-weight: bold;}"
+#define QTREEWIDGET_STYLE "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 3px; font-weight: bold;}"
 
 char Guid::showList(const QStringList &args)
 {
@@ -945,7 +956,7 @@ char Guid::showList(const QStringList &args)
     int columnCount = qMax(columns.count(), 1);
     tw->setColumnCount(columnCount);
     tw->setHeaderLabels(columns);
-    tw->setStyleSheet(QHEADERVIEW_SECTION_STYLE);
+    tw->setStyleSheet(QTREEWIDGET_STYLE);
     foreach (const int &i, hiddenCols)
         tw->setColumnHidden(i, true);
 
@@ -1455,6 +1466,7 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
     if (!tw)
         return;
 
+    tw->setRootIsDecorated(false);
     int columnCount = columns.count();
     tw->setHeaderHidden(!showHeader);
     if (columns.count()) {
@@ -1475,19 +1487,49 @@ static void buildList(QTreeWidget **tree, QStringList &values, QStringList &colu
         QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
         flags |= item->flags();
         item->setFlags(flags);
+        item->setTextAlignment(0, Qt::AlignLeft);
         tw->addTopLevelItem(item);
     }
 
     for (int i = 0; i < columns.count(); ++i)
         tw->resizeColumnToContents(i);
 
-    tw->setStyleSheet(QHEADERVIEW_SECTION_STYLE);
+    tw->setStyleSheet(QTREEWIDGET_STYLE);
 
     values.clear();
     columns.clear();
     showHeader = false;
     flags = Qt::NoItemFlags;
     *tree = NULL;
+}
+
+#define SET_FORMS_COL1(LABEL_COL1, WIDGET_COL1) \
+    labelCol1 = LABEL_COL1; \
+    hbox_layout->addWidget(WIDGET_COL1); \
+    hbox_layout->setAlignment(WIDGET_COL1, Qt::AlignTop);
+
+#define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
+    set_col2_label(hbox_layout, LABEL_COL2); \
+    hbox_layout->addWidget(WIDGET_COL2); \
+    hbox_layout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
+    set_forms_columns(cols_container, hbox_layout, dlg->property("guid_separator").toString(), columns_are_set); \
+    fl->addRow(labelCol1, cols_container);
+
+static void set_forms_columns(QWidget* &cols_container, QHBoxLayout* &hbox_layout, QString prop_separator, bool &columns_are_set)
+{
+    cols_container = new QWidget();
+    cols_container->setProperty("guid_cols_container", true);
+    cols_container->setProperty("guid_separator", prop_separator);
+    hbox_layout->setContentsMargins(0, 0, 0, 0);
+    cols_container->setLayout(hbox_layout);
+    columns_are_set = true;
+}
+
+static void set_col2_label(QHBoxLayout* &hbox_layout, QLabel* label)
+{
+    label->setContentsMargins(0, 2, 0, 0);
+    hbox_layout->addWidget(label);
+    hbox_layout->setAlignment(label, Qt::AlignTop);
 }
 
 char Guid::showForms(const QStringList &args)
@@ -1504,84 +1546,187 @@ char Guid::showForms(const QStringList &args)
 
     QFormLayout *fl;
     vl->addLayout(fl = new QFormLayout);
+    vl->layout()->setSpacing(15);
 
+    bool columns_are_set = false;
+    QLabel *labelCol1 = NULL;
+    QHBoxLayout *hbox_layout = NULL;
+    QWidget *cols_container = NULL;
+    
     QLineEdit *lastEntry = NULL;
+    
     QLineEdit *lastPassword = NULL;
+    
     QLabel *lastText = NULL;
+    
     QTreeWidget *lastList = NULL;
     QStringList lastListValues, lastListColumns, lastComboValues;
     bool lastListHeader(false);
     Qt::ItemFlags lastListFlags;
+    
     QComboBox *lastCombo = NULL;
+    
     QSpinBox *lastSpinBox = NULL;
     QDoubleSpinBox *lastDoubleSpinBox = NULL;
+    
+    QString lastColumn = NULL;
     QString lastWidget = NULL;
+    
     for (int i = 0; i < args.count(); ++i) {
+        /********************************************************************************
+         * WIDGET CONTAINERS
+         ********************************************************************************/
+        
+        // --col1
+        if (args.at(i) == "--col1") {
+            lastColumn = "col1";
+            hbox_layout = new QHBoxLayout;
+        }
+        
+        // --col2
+        else if (args.at(i) == "--col2") {
+            lastColumn = "col2";
+        }
+        
         /********************************************************************************
          * WIDGETS
          ********************************************************************************/
         
         // QCalendarWidget: --add-calendar
-        if (args.at(i) == "--add-calendar") {
+        else if (args.at(i) == "--add-calendar") {
             lastWidget = "calendar";
-            fl->addRow(NEXT_ARG, new QCalendarWidget(dlg));
+            QLabel *labelCal = new QLabel(NEXT_ARG);
+            QCalendarWidget *cal = new QCalendarWidget(dlg);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelCal, cal)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelCal, cal)
+            } else {
+                fl->addRow(labelCal, cal);
+            }
         }
         
         // QCheckBox: --add-checkbox
         else if (args.at(i) == "--add-checkbox") {
             lastWidget = "checkbox";
-            fl->addRow(new QCheckBox(NEXT_ARG, dlg));
+            QCheckBox *cb = new QCheckBox(NEXT_ARG, dlg);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), cb)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), cb)
+            } else {
+                fl->addRow(cb);
+            }
         }
         
         // QLineEdit: --add-entry
         else if (args.at(i) == "--add-entry") {
             lastWidget = "entry";
+            QLabel *labelEntry = new QLabel(NEXT_ARG);
             lastEntry = new QLineEdit(dlg);
-            fl->addRow(NEXT_ARG, lastEntry);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelEntry, lastEntry)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelEntry, lastEntry)
+            } else {
+                fl->addRow(labelEntry, lastEntry);
+            }
         }
         
         // QLineEdit: --add-password
         else if (args.at(i) == "--add-password") {
             lastWidget = "password";
+            QLabel *labelPassword = new QLabel(NEXT_ARG);
             lastPassword = new QLineEdit(dlg);
             lastPassword->setEchoMode(QLineEdit::Password);
-            fl->addRow(NEXT_ARG, lastPassword);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelPassword, lastPassword)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelPassword, lastPassword)
+            } else {
+                fl->addRow(labelPassword, lastPassword);
+            }
         }
         
         // QSpinBox: --add-spin-box
         else if (args.at(i) == "--add-spin-box") {
             lastWidget = "spin-box";
+            QLabel *labelSpinBox = new QLabel(NEXT_ARG);
             lastSpinBox = new QSpinBox();
-            fl->addRow(NEXT_ARG, lastSpinBox);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelSpinBox, lastSpinBox)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelSpinBox, lastSpinBox)
+            } else {
+                fl->addRow(labelSpinBox, lastSpinBox);
+            }
         }
         
         // QDoubleSpinBox: --add-double-spin-box
         else if (args.at(i) == "--add-double-spin-box") {
             lastWidget = "double-spin-box";
+            QLabel *labelDoubleSpinBox = new QLabel(NEXT_ARG);
             lastDoubleSpinBox = new QDoubleSpinBox();
-            fl->addRow(NEXT_ARG, lastDoubleSpinBox);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelDoubleSpinBox, lastDoubleSpinBox)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelDoubleSpinBox, lastDoubleSpinBox)
+            } else {
+                fl->addRow(labelDoubleSpinBox, lastDoubleSpinBox);
+            }
         }
         
         // QLabel: --add-text
         else if (args.at(i) == "--add-text") {
             lastWidget = "text";
             lastText = new QLabel(NEXT_ARG);
-            fl->addRow(lastText);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), lastText)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), lastText)
+            } else {
+                fl->addRow(lastText);
+            }
         }
         
         // QComboBox: --add-combo
         else if (args.at(i) == "--add-combo") {
             lastWidget = "combo";
-            fl->addRow(NEXT_ARG, lastCombo = new QComboBox(dlg));
+            QLabel *labelCombo = new QLabel(NEXT_ARG);
+            lastCombo = new QComboBox(dlg);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelCombo, lastCombo)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelCombo, lastCombo)
+            } else {
+                fl->addRow(labelCombo, lastCombo);
+            }
+            
             lastCombo->addItems(lastComboValues);
-            lastComboValues.clear();
         }
         
         // QTreeWidget: --add-list
         else if (args.at(i) == "--add-list") {
             lastWidget = "list";
+            QLabel *labelList = new QLabel(NEXT_ARG);
             buildList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
-            fl->addRow(NEXT_ARG, lastList = new QTreeWidget(dlg));
+            lastList = new QTreeWidget(dlg);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(labelList, lastList)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(labelList, lastList)
+            } else {
+                fl->addRow(labelList, lastList);
+            }
         }
         
         // labelText: --text
@@ -1763,24 +1908,19 @@ char Guid::showForms(const QStringList &args)
         
         // --align
         else if (args.at(i) == "--align") {
-            if (lastWidget == "label") {
+            QLabel *labelToSet = NULL;
+            if (lastWidget == "label")
+                labelToSet = label;
+            else if (lastWidget == "text")
+                labelToSet = lastText;
+            if (labelToSet) {
                 QString alignment = NEXT_ARG;
                 if (alignment == "left")
-                    label->setAlignment(Qt::AlignLeft);
+                    labelToSet->setAlignment(Qt::AlignLeft);
                 else if (alignment == "center")
-                    label->setAlignment(Qt::AlignCenter);
+                    labelToSet->setAlignment(Qt::AlignCenter);
                 else if (alignment == "right")
-                    label->setAlignment(Qt::AlignRight);
-                else
-                    qDebug() << "argument --align: unknown value" << args.at(i);
-            } else if (lastWidget == "text") {
-                QString alignment = NEXT_ARG;
-                if (alignment == "left")
-                    lastText->setAlignment(Qt::AlignLeft);
-                else if (alignment == "center")
-                    lastText->setAlignment(Qt::AlignCenter);
-                else if (alignment == "right")
-                    lastText->setAlignment(Qt::AlignRight);
+                    labelToSet->setAlignment(Qt::AlignRight);
                 else
                     qDebug() << "argument --align: unknown value" << args.at(i);
             } else
@@ -1809,6 +1949,13 @@ char Guid::showForms(const QStringList &args)
         // else
         else {
             WARN_UNKNOWN_ARG("--forms");
+        }
+        
+        lastComboValues.clear();
+        if (columns_are_set) {
+            labelCol1 = new QLabel();
+            lastColumn = "";
+            columns_are_set = false;
         }
     }
     
@@ -1978,6 +2125,9 @@ void Guid::printHelp(const QString &category)
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
                             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+                            Help("", tr("")) <<
+                            Help("--col1", "GUID ONLY! " + tr("Start a two-field row. The next form field specified will be added in the first column. See --col2 for details.")) <<
+                            Help("--col2", "GUID ONLY! " + tr("Finish a two-field row. The next form field specified will be added in the second column. Example: guid --forms --width=500 --text=\"The next row has two columns:\" --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\" --field-width=100 --add-entry=\"Full-width row\"")) <<
                             Help("", tr("")) <<
                             Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
                             Help("", tr("")) <<
@@ -2175,6 +2325,13 @@ int main (int argc, char **argv)
 
     if (helpMission) {
         return 0;
+    }
+
+    QFont appFont("Sans-serif", 9);
+    QApplication::setFont(appFont);
+    foreach (QWidget *widget, QApplication::allWidgets()) {
+        widget->setFont(appFont);
+        widget->update();
     }
 
     Guid d(argc, argv);
