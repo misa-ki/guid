@@ -2369,310 +2369,350 @@ void Guid::printHelp(const QString &category)
     QString main_separator = "================================================================================";
     if (helpDict.isEmpty()) {
         helpDict["help"] = CategoryHelp(tr("Help options"), HelpList() <<
-                            Help("-h, --help", tr("Show help options")) <<
-                            Help("--help-all", tr("Show all help options")) <<
-                            Help("--help-general", tr("Show general options")) <<
-                            Help("--help-misc", tr("Show miscellaneous options")) <<
-                            Help("--help-qt", tr("Show Qt Options")) <<
-                            Help("", tr("")) <<
-                            Help("--help-calendar", tr("Show calendar options")) <<
-                            Help("--help-color-selection", tr("Show color selection options")) <<
-                            Help("--help-entry", tr("Show text entry options")) <<
-                            Help("--help-error", tr("Show error options")) <<
-                            Help("--help-file-selection", tr("Show file selection options")) <<
-                            Help("--help-forms", tr("Show forms dialog options")) <<
-                            Help("--help-info", tr("Show info options")) <<
-                            Help("--help-list", tr("Show list options")) <<
-                            Help("--help-notification", tr("Show notification icon options")) <<
-                            Help("--help-password", tr("Show password dialog options")) <<
-                            Help("--help-progress", tr("Show progress options")) <<
-                            Help("--help-question", tr("Show question options")) <<
-                            Help("--help-scale", tr("Show scale options")) <<
-                            Help("--help-text-info", tr("Show text information options")) <<
-                            Help("--help-warning", tr("Show warning options")));
-                            
+            Help("-h, --help", tr("Show help options")) <<
+            Help("--help-all", tr("Show all help options")) <<
+            Help("--help-general", tr("Show general options")) <<
+            Help("--help-misc", tr("Show miscellaneous options")) <<
+            Help("--help-qt", tr("Show Qt Options")) <<
+            Help("", tr("")) <<
+            Help("--help-calendar", tr("Show calendar options")) <<
+            Help("--help-color-selection", tr("Show color selection options")) <<
+            Help("--help-entry", tr("Show text entry options")) <<
+            Help("--help-error", tr("Show error options")) <<
+            Help("--help-file-selection", tr("Show file selection options")) <<
+            Help("--help-forms", tr("Show forms dialog options")) <<
+            Help("--help-info", tr("Show info options")) <<
+            Help("--help-list", tr("Show list options")) <<
+            Help("--help-notification", tr("Show notification icon options")) <<
+            Help("--help-password", tr("Show password dialog options")) <<
+            Help("--help-progress", tr("Show progress options")) <<
+            Help("--help-question", tr("Show question options")) <<
+            Help("--help-scale", tr("Show scale options")) <<
+            Help("--help-text-info", tr("Show text information options")) <<
+            Help("--help-warning", tr("Show warning options")));
+            
         helpDict["misc"] = CategoryHelp(tr("Miscellaneous options"), HelpList() <<
-                            Help("--about", tr("About guid")) <<
-                            Help("--version", tr("Print version")));
-                            
+            Help("--about", tr("About guid")) <<
+            Help("--version", tr("Print version")));
+            
         helpDict["qt"] = CategoryHelp(tr("Qt options"), HelpList() <<
-                            Help("--foo", tr("Foo")) <<
-                            Help("--bar", tr("Bar")));
-                            
+            Help("--foo", tr("Foo")) <<
+            Help("--bar", tr("Bar")));
+            
         helpDict["general"] = CategoryHelp(tr("General options"), HelpList() <<
-                            Help("--title=TITLE", tr("Set the dialog title")) <<
-                            Help("--window-icon=ICONPATH", tr("Set the window icon")) <<
-                            Help("--width=WIDTH", tr("Set the width")) <<
-                            Help("--height=HEIGHT", tr("Set the height")) <<
-                            Help("", tr("")) <<
-                            Help("--ok-label=TEXT", tr("Sets the label of the Ok button")) <<
-                            Help("--cancel-label=TEXT", tr("Sets the label of the Cancel button")) <<
-                            Help("", tr("")) <<
-                            Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
-                            Help("--modal", tr("Set the modal hint")) <<
-                            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
-                            
+            Help("--title=TITLE", tr("Set the dialog title")) <<
+            Help("--window-icon=ICONPATH", tr("Set the window icon")) <<
+            Help("--width=WIDTH", tr("Set the width")) <<
+            Help("--height=HEIGHT", tr("Set the height")) <<
+            Help("", tr("")) <<
+            Help("--ok-label=TEXT", tr("Sets the label of the Ok button")) <<
+            Help("--cancel-label=TEXT", tr("Sets the label of the Cancel button")) <<
+            Help("", tr("")) <<
+            Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
+            Help("--modal", tr("Set the modal hint")) <<
+            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
+            
         helpDict["application"] = CategoryHelp(tr("Application Options"), HelpList() <<
-                            Help("--display=DISPLAY", tr("X display to use")) <<
-                            Help("", tr("")) <<
-                            Help("--calendar", tr("Display calendar dialog")) <<
-                            Help("--color-selection", tr("Display color selection dialog")) <<
-                            Help("--entry", tr("Display text entry dialog")) <<
-                            Help("--error", tr("Display error dialog")) <<
-                            Help("--file-selection", tr("Display file selection dialog")) <<
-                            Help("--font-selection", "GUID ONLY! " + tr("Display font selection dialog")) <<
-                            Help("--forms", tr("Display forms dialog")) <<
-                            Help("--info", tr("Display info dialog")) <<
-                            Help("--list", tr("Display list dialog")) <<
-                            Help("--notification", tr("Display notification")) <<
-                            Help("--password", tr("Display password dialog")) <<
-                            Help("--progress", tr("Display progress indication dialog")) <<
-                            Help("--question", tr("Display question dialog")) <<
-                            Help("--scale", tr("Display scale dialog")) <<
-                            Help("--text-info", tr("Display text information dialog")) <<
-                            Help("--warning", tr("Display warning dialog")));
-                            
+            Help("--display=DISPLAY", tr("X display to use")) <<
+            Help("", tr("")) <<
+            Help("--calendar", tr("Display calendar dialog")) <<
+            Help("--color-selection", tr("Display color selection dialog")) <<
+            Help("--entry", tr("Display text entry dialog")) <<
+            Help("--error", tr("Display error dialog")) <<
+            Help("--file-selection", tr("Display file selection dialog")) <<
+            Help("--font-selection", "GUID ONLY! " + tr("Display font selection dialog")) <<
+            Help("--forms", tr("Display forms dialog")) <<
+            Help("--info", tr("Display info dialog")) <<
+            Help("--list", tr("Display list dialog")) <<
+            Help("--notification", tr("Display notification")) <<
+            Help("--password", tr("Display password dialog")) <<
+            Help("--progress", tr("Display progress indication dialog")) <<
+            Help("--question", tr("Display question dialog")) <<
+            Help("--scale", tr("Display scale dialog")) <<
+            Help("--text-info", tr("Display text information dialog")) <<
+            Help("--warning", tr("Display warning dialog")));
+            
         helpDict["calendar"] = CategoryHelp(tr("Calendar options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-                            Help("", tr("")) <<
-                            Help("--day=DAY", tr("Set the calendar day")) <<
-                            Help("--month=MONTH", tr("Set the calendar month")) <<
-                            Help("--year=YEAR", tr("Set the calendar year")) <<
-                            Help("--date-format=PATTERN", tr("Set the format for the returned date")) <<
-                            Help("", tr("")) <<
-                            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
-                            
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("", tr("")) <<
+            Help("--day=DAY", tr("Set the calendar day")) <<
+            Help("--month=MONTH", tr("Set the calendar month")) <<
+            Help("--year=YEAR", tr("Set the calendar year")) <<
+            Help("--date-format=PATTERN", tr("Set the format for the returned date")) <<
+            Help("", tr("")) <<
+            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
+            
         helpDict["color-selection"] = CategoryHelp(tr("Color selection options"), HelpList() <<
-                            Help("--color=VALUE", tr("Set the color")) <<
-                            Help("--custom-palette=path/to/some.gpl",  "GUID ONLY! " + tr("Load a custom GPL for standard colors")) <<
-                            Help("--show-palette", tr("Show the palette")));
-                            
+            Help("--color=VALUE", tr("Set the color")) <<
+            Help("--custom-palette=path/to/some.gpl",  "GUID ONLY! " + tr("Load a custom GPL for standard colors")) <<
+            Help("--show-palette", tr("Show the palette")));
+            
         helpDict["entry"] = CategoryHelp(tr("Text entry options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("", tr("")) <<
-                            Help("--entry-text=TEXT", tr("Set the entry text")) <<
-                            Help("--hide-text", tr("Hide the entry text")) <<
-                            Help("", tr("")) <<
-                            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-                            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-                            Help("--values=v1|v2|v3|...", "GUID ONLY! " + tr("Offer preset values to pick from")));
-                            
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("", tr("")) <<
+            Help("--entry-text=TEXT", tr("Set the entry text")) <<
+            Help("--hide-text", tr("Hide the entry text")) <<
+            Help("", tr("")) <<
+            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+            Help("--values=v1|v2|v3|...", "GUID ONLY! " + tr("Offer preset values to pick from")));
+            
         helpDict["error"] = CategoryHelp(tr("Error options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-                            Help("--no-markup", tr("Do not enable html markup")) <<
-                            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-                            Help("", tr("")) <<
-                            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-                            Help("", tr("")) <<
-                            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-                            
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+            Help("--no-markup", tr("Do not enable html markup")) <<
+            Help("--no-wrap", tr("Do not enable text wrapping")) <<
+            Help("", tr("")) <<
+            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+            Help("", tr("")) <<
+            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+            
         helpDict["file-selection"] = CategoryHelp(tr("File selection options"), HelpList() <<
-                            Help("--filename=FILENAME", tr("Set the filename")) <<
-                            Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
-                            Help("--directory", tr("Activate directory-only selection")) <<
-                            Help("--multiple", tr("Allow multiple files to be selected")) <<
-                            Help("", tr("")) <<
-                            Help("--confirm-overwrite", tr("Confirm file selection if filename already exists")) <<
-                            Help("--save", tr("Activate save mode")) <<
-                            Help("", tr("")) <<
-                            Help("--separator=SEPARATOR", tr("Set output separator character")));
-                            
+            Help("--filename=FILENAME", tr("Set the filename")) <<
+            Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
+            Help("--directory", tr("Activate directory-only selection")) <<
+            Help("--multiple", tr("Allow multiple files to be selected")) <<
+            Help("", tr("")) <<
+            Help("--confirm-overwrite", tr("Confirm file selection if filename already exists")) <<
+            Help("--save", tr("Activate save mode")) <<
+            Help("", tr("")) <<
+            Help("--separator=SEPARATOR", tr("Set output separator character")));
+            
         helpDict["font-selection"] = CategoryHelp(tr("Font selection options"), HelpList() <<
-                            Help("--sample=TEXT", tr("Sample text, defaults to the foxdogthing")) <<
-                            Help("--pattern=%1-%2:%3:%4", tr("Output pattern, %1: Name, %2: Size, %3: weight, %4: slant")) <<
-                            Help("--type=[vector][,bitmap][,fixed][,variable]", tr("Filter fonts (default: all)")));
-                            
+            Help("--sample=TEXT", tr("Sample text, defaults to the foxdogthing")) <<
+            Help("--pattern=%1-%2:%3:%4", tr("Output pattern, %1: Name, %2: Size, %3: weight, %4: slant")) <<
+            Help("--type=[vector][,bitmap][,fixed][,variable]", tr("Filter fonts (default: all)")));
+            
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-                            Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
-                            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-                            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-                            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example: guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-                            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example: guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-                            Help("", tr("")) <<
-                            Help("--col1", "GUID ONLY! " + tr("Start a two-field row. The next form field specified will be added in the first column. See --col2 for details.")) <<
-                            Help("--col2", "GUID ONLY! " + tr("Finish a two-field row. The next form field specified will be added in the second column. Example: guid --forms --width=500 --text=\"The next row has two columns:\" --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\" --field-width=100 --add-entry=\"Full-width row\"")) <<
-                            Help("", tr("")) <<
-                            Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
-                            Help("", tr("")) <<
-                            Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
-                            Help("", tr("")) <<
-                            Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
-                            Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
-                            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-                            Help("", tr("")) <<
-                            Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
-                            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-                            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-                            Help("", tr("")) <<
-                            Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
-                            Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
-                            Help("--list-values=List of values separated by |", tr("List of values for List")) <<
-                            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\"/path/to/file\"")) <<
-                            Help("", tr("By default, the symbol \"|\" is used as separator between values. To use another separator, specify it followed by \"//\". Example with \",\" as separator: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\",///path/to/file\"")) <<
-                            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-                            Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
-                            Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-                            Help("--show-header", tr("Show the columns header")) <<
-                            Help("", tr("")) <<
-                            Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
-                            Help("", tr("First level menu items must be separated with the symbol \"|\".")) <<
-                            Help("", tr("Second level menu items must be separated with the symbol \"#\".")) <<
-                            Help("", tr("Each menu item without children must have an output code specified as follows: \"MenuItemName:OutputCode\".")) <<
-                            Help("", tr("By default, the output code is printed on the console after a click on the menu item, and the dialog stays open.")) <<
-                            Help("", tr("We can specify to close the dialog by adding the symbol \"$\" at the beginning of menu settings. Example: guid --forms --add-menu=\"$First Item#First Subitem:10|Second Item:11|Third Item:12\"")) <<
-                            Help("", tr("To add separators between first level menu items, add the symbol \"|\" at the beginning of menu settings. Example: guid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second Item:12|Third Item:13\"")) <<
-                            Help("", tr("Example of form menu with separators and with the dialog closing after a click on a menu item: guid --forms --add-menu=\"|$First Item#First Subitem:10#Second Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\" --add-entry=\"Text field\"")) <<
-                            Help("", tr("Note that if a main label is set for the form with the argument \"--text=TEXT\", it'll be displayed on top of the dialog. Example: guid --forms --text=\"Form description\" --add-menu=\"First Item:10|Second Item:11\" --add-entry=\"Text field\"")) <<
-                            Help("", tr("If we want to have a menu on top of the dialog but still have a main label for the form, we must add the label as new text with \"--add-text=TEXT\" after the menu. Example: guid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form description\" --bold --add-entry=\"Text field\"")) <<
-                            Help("", tr("")) <<
-                            Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
-                            Help("", tr("")) <<
-                            Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
-                            Help("--value=VALUE", tr("Set initial value")) <<
-                            Help("--min-value=VALUE", tr("Set minimum value")) <<
-                            Help("--max-value=VALUE", tr("Set maximum value")) <<
-                            Help("--step=VALUE", tr("Set step size")) <<
-                            Help("--hide-value", tr("Hide value")) <<
-                            Help("--print-partial", tr("Print partial values")) <<
-                            Help("", tr("")) <<
-                            Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
-                            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-                            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-                            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-                            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-                            Help("", tr("")) <<
-                            Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
-                            Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
-                            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-                            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-                            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-                            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-                            Help("", tr("")) <<
-                            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
-                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-                            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-                            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-                            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-                            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example: guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-                            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example: guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-                            Help("", tr("")) <<
-                            Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
-                            Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
-                            Help("--separator=SEPARATOR", tr("Set output separator character")));
-                            
-        helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-                            Help("--no-markup", tr("Do not enable html markup")) <<
-                            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-                            Help("", tr("")) <<
-                            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-                            Help("", tr("")) <<
-                            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-                            
-        helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-                            Help("", tr("")) <<
-                            Help("--checklist", tr("Use check boxes for first column")) <<
-                            Help("--imagelist", tr("Use an image for first column")) <<
-                            Help("--radiolist", tr("Use radio buttons for first column")) <<
-                            Help("", tr("")) <<
-                            Help("--column=COLUMN", tr("Set the column header")) <<
-                            Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
-                            Help("--print-column=NUMBER", tr("Print a specific column (Default is 1. 'ALL' can be used to print all columns)")) <<
-                            Help("--hide-header", tr("Hides the column headers")) <<
-                            Help("", tr("")) <<
-                            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\"/path/to/file\"")) <<
-                            Help("", tr("By default, the symbol \"|\" is used as separator between values. To use another separator, specify it followed by \"//\". Example with \",\" as separator: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\",///path/to/file\"")) <<
-                            Help("", tr("")) <<
-                            Help("--editable", tr("Allow changes to text")) <<
-                            Help("--multiple", tr("Allow multiple rows to be selected")) <<
-                            Help("", tr("")) <<
-                            Help("--mid-search", tr("Change list default search function searching for text in the middle, not on the beginning")) <<
-                            Help("--separator=SEPARATOR", tr("Set output separator character")));
-                            
-        helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("", tr("")) <<
-                            Help("--hint=TEXT", tr("Set the notification hints")) <<
-                            Help("", tr("")) <<
-                            Help("--listen", tr("Listen for commands on stdin")) <<
-                            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-                            
-        helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
-                            Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
-                            Help("--username", tr("Display the username option")) <<
-                            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
-                            
-        helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("", tr("")) <<
-                            Help("--percentage=PERCENTAGE", tr("Set initial percentage")) <<
-                            Help("--pulsate", tr("Pulsate progress bar")) <<
-                            Help("", tr("")) <<
-                            Help("--auto-close", tr("Dismiss the dialog when 100% has been reached")) <<
-                            Help("--auto-kill", tr("Kill parent process if Cancel button is pressed")) <<
-                            Help("--no-cancel", tr("Hide Cancel button")));
-        helpDict["question"] = CategoryHelp(tr("Question options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-                            Help("--no-markup", tr("Do not enable html markup")) <<
-                            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-                            Help("", tr("")) <<
-                            Help("--default-cancel", tr("Give cancel button focus by default")) <<
-                            Help("", tr("")) <<
-                            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-                            Help("", tr("")) <<
-                            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-                            
-        helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-                            Help("", tr("")) <<
-                            Help("--value=VALUE", tr("Set initial value")) <<
-                            Help("--min-value=VALUE", tr("Set minimum value")) <<
-                            Help("--max-value=VALUE", tr("Set maximum value")) <<
-                            Help("--step=VALUE", tr("Set step size")) <<
-                            Help("", tr("")) <<
-                            Help("--hide-value", tr("Hide value")) <<
-                            Help("--print-partial", tr("Print partial values")));
-                            
-        helpDict["text-info"] = CategoryHelp(tr("Text information options"), HelpList() <<
-                            Help("--filename=FILENAME", tr("Open file")) <<
-                            Help("", tr("")) <<
-                            Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file. Only works if you use --html option")) <<
-                            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-                            Help("", tr("")) <<
-                            Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
-                            Help("", tr("")) <<
-                            Help("--editable", tr("Allow changes to text")) <<
-                            Help("--font=TEXT", tr("Set the text font")) <<
-                            Help("--plain", "GUID ONLY! " + tr("Force plain text, zenity default limitation")) <<
-                            Help("--html", tr("Enable HTML support")) <<
-                            Help("", tr("")) <<
-                            Help("--auto-scroll", tr("Auto scroll the text to the end. Only when text is captured from stdin")) <<
-                            Help("--no-interaction", tr("Do not enable user interaction with the WebView. Only works if you use --html option")));
-                            
-        helpDict["warning"] = CategoryHelp(tr("Warning options"), HelpList() <<
-                            Help("--text=TEXT", tr("Set the dialog text")) <<
-                            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-                            Help("--no-markup", tr("Do not enable html markup")) <<
-                            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-                            Help("", tr("")) <<
-                            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-                            Help("", tr("")) <<
-                            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-                            
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
+            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("", tr("")) <<
+            Help("--col1", "GUID ONLY! " + tr("Start a two-field row.")) <<
+            Help("...", tr("The next form field specified will be added in the first column.")) <<
+            Help("...", tr("See --col2 for details.")) <<
+            Help("--col2", "GUID ONLY! " + tr("Finish a two-field row.")) <<
+            Help("...", tr("The next form field specified will be added in the second column. Example:")) <<
+            Help("...", tr("guid --forms --width=500 --text=\"The next row has two columns:\"")) <<
+            Help("...", tr("--col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\"")) <<
+            Help("...", tr("--field-width=100 --add-entry=\"Full-width row\"")) <<
+            Help("", tr("")) <<
+            Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
+            Help("", tr("")) <<
+            Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
+            Help("", tr("")) <<
+            Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
+            Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
+            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("", tr("")) <<
+            Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
+            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("", tr("")) <<
+            Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
+            Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
+            Help("--list-values=List of values separated by |", tr("List of values for List")) <<
+            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
+            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
+            Help("...", tr("To use another separator, specify it followed by \"//\". Example with \",\" as separator:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\",///path/to/file\"")) <<
+            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+            Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+            Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--show-header", tr("Show the columns header")) <<
+            Help("", tr("")) <<
+            Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
+            Help("...", tr("First level menu items must be separated with the symbol \"|\".")) <<
+            Help("...", tr("Second level menu items must be separated with the symbol \"#\".")) <<
+            Help("...", tr("Each menu item without children must have an output code specified as follows:")) <<
+            Help("...", tr("\"MenuItemName:OutputCode\"")) <<
+            Help("...", tr("By default, the output code is printed on the console after a click on the menu item,")) <<
+            Help("...", tr("and the dialog stays open. We can specify to close the dialog by adding the symbol \"$\"")) <<
+            Help("...", tr("at the beginning of menu settings. Example:")) <<
+            Help("...", tr("guid --forms --add-menu=\"$First Item#First Subitem:10|Second Item:11|Third Item:12\"")) <<
+            Help("...", tr("To add separators between first level menu items, add the symbol \"|\" at the beginning")) <<
+            Help("...", tr("of menu settings. Example:")) <<
+            Help("...", tr("guid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second")) <<
+            Help("...", tr("Item:12|Third Item:13\"")) <<
+            Help("...", tr("Example of form menu with separators and with the dialog closing after a click on a menu item:")) <<
+            Help("...", tr("guid --forms --add-menu=\"|$First Item#First Subitem:10#Second")) <<
+            Help("...", tr("Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"")) <<
+            Help("...", tr("--add-entry=\"Text field\"")) <<
+            Help("...", tr("Note that if a main label is set for the form with the argument \"--text=TEXT\",")) <<
+            Help("...", tr("it'll be displayed on top of the dialog. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --add-menu=\"First Item:10|Second Item:11\"")) <<
+            Help("...", tr("--add-entry=\"Text field\"")) <<
+            Help("...", tr("If we want to have a menu on top of the dialog but still have a main label for the form,")) <<
+            Help("...", tr("we must add the label as new text with \"--add-text=TEXT\" after the menu. Example:")) <<
+            Help("...", tr("guid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form description\"")) <<
+            Help("...", tr("--bold --add-entry=\"Text field\"")) <<
+            Help("", tr("")) <<
+            Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+            Help("", tr("")) <<
+            Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
+            Help("--value=VALUE", tr("Set initial value")) <<
+            Help("--min-value=VALUE", tr("Set minimum value")) <<
+            Help("--max-value=VALUE", tr("Set maximum value")) <<
+            Help("--step=VALUE", tr("Set step size")) <<
+            Help("--hide-value", tr("Hide value")) <<
+            Help("--print-partial", tr("Print partial values")) <<
+            Help("", tr("")) <<
+            Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
+            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("", tr("")) <<
+            Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
+            Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
+            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("", tr("")) <<
+            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("", tr("")) <<
+            Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
+            Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
+            Help("--separator=SEPARATOR", tr("Set output separator character")));
+            
+helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+            Help("--no-markup", tr("Do not enable html markup")) <<
+            Help("--no-wrap", tr("Do not enable text wrapping")) <<
+            Help("", tr("")) <<
+            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+            Help("", tr("")) <<
+            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+            
+helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("", tr("")) <<
+            Help("--checklist", tr("Use check boxes for first column")) <<
+            Help("--imagelist", tr("Use an image for first column")) <<
+            Help("--radiolist", tr("Use radio buttons for first column")) <<
+            Help("", tr("")) <<
+            Help("--column=COLUMN", tr("Set the column header")) <<
+            Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
+            Help("--print-column=NUMBER", tr("Print a specific column.")) <<
+            Help("...", tr("Default is 1. 'ALL' can be used to print all columns.")) <<
+            Help("--hide-header", tr("Hides the column headers")) <<
+            Help("", tr("")) <<
+            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
+            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
+            Help("...", tr("To use another separator, specify it followed by \"//\".")) <<
+            Help("...", tr("Example with \",\" as separator:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\",///path/to/file\"")) <<
+            Help("", tr("")) <<
+            Help("--editable", tr("Allow changes to text")) <<
+            Help("--multiple", tr("Allow multiple rows to be selected")) <<
+            Help("", tr("")) <<
+            Help("--mid-search", tr("Change list default search function searching for text in the middle,")) <<
+            Help("...", tr("not on the beginning")) <<
+            Help("--separator=SEPARATOR", tr("Set output separator character")));
+            
+helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("", tr("")) <<
+            Help("--hint=TEXT", tr("Set the notification hints")) <<
+            Help("", tr("")) <<
+            Help("--listen", tr("Listen for commands on stdin")) <<
+            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+            
+helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
+            Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
+            Help("--username", tr("Display the username option")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
+            
+helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("", tr("")) <<
+            Help("--percentage=PERCENTAGE", tr("Set initial percentage")) <<
+            Help("--pulsate", tr("Pulsate progress bar")) <<
+            Help("", tr("")) <<
+            Help("--auto-close", tr("Dismiss the dialog when 100% has been reached")) <<
+            Help("--auto-kill", tr("Kill parent process if Cancel button is pressed")) <<
+            Help("--no-cancel", tr("Hide Cancel button")));
+helpDict["question"] = CategoryHelp(tr("Question options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+            Help("--no-markup", tr("Do not enable html markup")) <<
+            Help("--no-wrap", tr("Do not enable text wrapping")) <<
+            Help("", tr("")) <<
+            Help("--default-cancel", tr("Give cancel button focus by default")) <<
+            Help("", tr("")) <<
+            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+            Help("", tr("")) <<
+            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+            
+helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("", tr("")) <<
+            Help("--value=VALUE", tr("Set initial value")) <<
+            Help("--min-value=VALUE", tr("Set minimum value")) <<
+            Help("--max-value=VALUE", tr("Set maximum value")) <<
+            Help("--step=VALUE", tr("Set step size")) <<
+            Help("", tr("")) <<
+            Help("--hide-value", tr("Hide value")) <<
+            Help("--print-partial", tr("Print partial values")));
+            
+helpDict["text-info"] = CategoryHelp(tr("Text information options"), HelpList() <<
+            Help("--filename=FILENAME", tr("Open file")) <<
+            Help("", tr("")) <<
+            Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
+            Help("...", tr("Only works if you use --html option.")) <<
+            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
+            Help("", tr("")) <<
+            Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
+            Help("", tr("")) <<
+            Help("--editable", tr("Allow changes to text")) <<
+            Help("--font=TEXT", tr("Set the text font")) <<
+            Help("--plain", "GUID ONLY! " + tr("Force plain text, zenity default limitation")) <<
+            Help("--html", tr("Enable HTML support")) <<
+            Help("", tr("")) <<
+            Help("--auto-scroll", tr("Auto scroll the text to the end. Only when text is captured from stdin")) <<
+            Help("--no-interaction", tr("Do not enable user interaction with the WebView.")) <<
+            Help("...", tr("Only works if you use --html option.")));
+            
+helpDict["warning"] = CategoryHelp(tr("Warning options"), HelpList() <<
+            Help("--text=TEXT", tr("Set the dialog text")) <<
+            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+            Help("--no-markup", tr("Do not enable html markup")) <<
+            Help("--no-wrap", tr("Do not enable text wrapping")) <<
+            Help("", tr("")) <<
+            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+            Help("", tr("")) <<
+            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+            
     }
 
     if (category == "all") {
