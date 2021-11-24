@@ -1330,6 +1330,7 @@ char Guid::showText(const QStringList &args)
     QCheckBox *cb(NULL);
 
     QString filename;
+    QString curlPath;
     bool html(false), plain(false), onlyMarkup(false), url(false);
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--filename") {
@@ -1337,10 +1338,11 @@ char Guid::showText(const QStringList &args)
         } else if (args.at(i) == "--url") {
             filename = NEXT_ARG;
             url = true;
-        }
-        else if (args.at(i) == "--editable")
+        } else if (args.at(i) == "--curl-path") {
+            curlPath = NEXT_ARG;
+        } else if (args.at(i) == "--editable") {
             te->setReadOnly(false);
-        else if (args.at(i) == "--font") {
+        } else if (args.at(i) == "--font") {
             te->setFont(QFont(NEXT_ARG));
         } else if (args.at(i) == "--checkbox") {
             vl->addWidget(cb = new QCheckBox(NEXT_ARG, dlg));
@@ -1353,9 +1355,14 @@ char Guid::showText(const QStringList &args)
             plain = true;
         } else if (args.at(i) == "--no-interaction") {
             onlyMarkup = true;
-        } else { WARN_UNKNOWN_ARG("--text-info") }
+        } else {
+            WARN_UNKNOWN_ARG("--text-info");
+        }
     }
-
+    
+    if (curlPath.isEmpty())
+        curlPath = "curl";
+    
     if (html) {
         te->setReadOnly(true);
         te->setTextInteractionFlags(onlyMarkup ? Qt::TextSelectableByMouse : Qt::TextBrowserInteraction);
@@ -1380,7 +1387,7 @@ char Guid::showText(const QStringList &args)
             te->setText(QString::fromLocal8Bit(curl->readAllStandardOutput()));
             delete curl;
         });
-        curl->start("curl", QStringList() << "-L" << "-s" << filename);
+        curl->start(curlPath, QStringList() << "-L" << "-s" << filename);
     } else {
         QFile file(filename);
         QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
@@ -2607,6 +2614,7 @@ void Guid::printHelp(const QString &category)
                             Help("--filename=FILENAME", tr("Open file")) <<
                             Help("", tr("")) <<
                             Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file. Only works if you use --html option")) <<
+                            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
                             Help("", tr("")) <<
                             Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
                             Help("", tr("")) <<
