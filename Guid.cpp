@@ -2063,6 +2063,19 @@ char Guid::showForms(const QStringList &args)
          * spin-box || double-spin-box || scale
          ******************************/
         
+        // --value
+        else if (args.at(i) == "--value") {
+            if (lastWidget == "spin-box") {
+                lastSpinBox->setValue(NEXT_ARG.toInt());
+            } else if (lastWidget == "double-spin-box") {
+                lastDoubleSpinBox->setValue(NEXT_ARG.toDouble());
+            } else if (lastWidget == "scale") {
+                lastScale->setValue(NEXT_ARG.toInt());
+            } else {
+                WARN_UNKNOWN_ARG("--add-spin-box");
+            }
+        }
+        
         // --min-value
         else if (args.at(i) == "--min-value") {
             if (lastWidget == "spin-box") {
@@ -2158,14 +2171,6 @@ char Guid::showForms(const QStringList &args)
         /******************************
          * scale
          ******************************/
-        
-        // --value
-        else if (args.at(i) == "--value") {
-            if (lastWidget == "scale")
-                lastScale->setValue(NEXT_ARG.toInt());
-            else
-                WARN_UNKNOWN_ARG("--add-scale");
-        }
         
         // --step
         else if (args.at(i) == "--step") {
@@ -2580,6 +2585,7 @@ void Guid::printHelp(const QString &category)
             Help("--print-partial", tr("Print partial values")) <<
             Help("", tr("")) <<
             Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
+            Help("--value=VALUE", tr("Set initial value")) <<
             Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
             Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
             Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
@@ -2587,6 +2593,7 @@ void Guid::printHelp(const QString &category)
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
             Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
+            Help("--value=VALUE", tr("Set initial value")) <<
             Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
             Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
             Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
