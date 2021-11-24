@@ -369,6 +369,8 @@ static QString value(const QWidget *w, const QString &pattern)
         return QString::number(t->value());
     } else IF_IS(QSpinBox) {
         return QString::number(t->value());
+    } else IF_IS(QDoubleSpinBox) {
+        return QString::number(t->value());
     } else IF_IS(QWidget) {
         QString widgets_value;
         QString widget_value;
@@ -1868,6 +1870,10 @@ char Guid::showForms(const QStringList &args)
             lastWidget = "double-spin-box";
             QLabel *labelDoubleSpinBox = new QLabel(NEXT_ARG);
             lastDoubleSpinBox = new QDoubleSpinBox();
+            
+            QLocale dv_locale(QLocale::C);
+            dv_locale.setNumberOptions(QLocale::RejectGroupSeparator);
+            lastDoubleSpinBox->setLocale(dv_locale);
             
             if (lastColumn == "col1") {
                 SET_FORMS_COL1(labelDoubleSpinBox, lastDoubleSpinBox)
