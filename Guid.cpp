@@ -2223,6 +2223,20 @@ char Guid::showForms(const QStringList &args)
             dlg->setProperty("guid_date_format", NEXT_ARG);
         }
         
+        // --forms-align
+        else if (args.at(i) == "--forms-align") {
+            QString alignment = NEXT_ARG;
+            if (alignment == "left") {
+                fl->setLabelAlignment(Qt::AlignLeft);
+            } else if (alignment == "center") {
+                fl->setLabelAlignment(Qt::AlignCenter);
+            } else if (alignment == "right") {
+                fl->setLabelAlignment(Qt::AlignRight);
+            } else {
+                qDebug() << "argument --forms-align: unknown value" << args.at(i);
+            }
+        }
+        
         // --separator
         else if (args.at(i) == "--separator") {
             dlg->setProperty("guid_separator", NEXT_ARG);
@@ -2503,6 +2517,7 @@ void Guid::printHelp(const QString &category)
                             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example: guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
                             Help("", tr("")) <<
                             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
+                            Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
                             Help("--separator=SEPARATOR", tr("Set output separator character")));
                             
         helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
