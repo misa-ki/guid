@@ -64,6 +64,8 @@ private slots:
     void readStdIn();
     void toggleItems(QTreeWidgetItem *item, int column);
     void finishProgress();
+    void exitAfterMenuClick(int i);
+    void showMenuClick(int i);
 private:
     bool m_helpMission, m_modal, m_zenity, m_selectableLabel;
     QString m_caption, m_icon, m_ok, m_cancel, m_notificationHints;

@@ -41,6 +41,7 @@
 #include <QLabel>
 #include <QLocale>
 #include <QLineEdit>
+#include <QMenuBar>
 #include <QMessageBox>
 #include <QProcess>
 #include <QProgressDialog>
@@ -49,6 +50,7 @@
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
+#include <QSignalMapper>
 #include <QSlider>
 #include <QSocketNotifier>
 #include <QSpinBox>
@@ -534,7 +536,9 @@ void Guid::dialogFinished(int status)
             break;
         }
         case Forms: {
-            QFormLayout *fl = sender()->findChild<QFormLayout*>();
+            QList<QFormLayout*> layouts = sender()->findChildren<QFormLayout*>();
+            // We skip the first layout used for the top menu
+            QFormLayout *fl = layouts.at(1);
             QStringList result;
             QString format = sender()->property("guid_date_format").toString();
             for (int i = 0; i < fl->count(); ++i) {
@@ -551,6 +555,18 @@ void Guid::dialogFinished(int status)
             break;
     }
     exit (0);
+}
+
+void Guid::exitAfterMenuClick(int i)
+{
+    showMenuClick(i);
+    
+    exit(i);
+}
+
+void Guid::showMenuClick(int i)
+{
+    qInfo() << "MENU CLICKED:" << i;
 }
 
 void Guid::quitOnError()
@@ -1513,6 +1529,7 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
 #define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
     set_col2_label(colsHBoxLayout, LABEL_COL2); \
     colsHBoxLayout->addWidget(WIDGET_COL2); \
+    colsHBoxLayout->addStretch(); \
     colsHBoxLayout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
     set_forms_columns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
     fl->addRow(labelCol1, colsContainer);
@@ -1529,7 +1546,7 @@ static void set_forms_columns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLay
 
 static void set_col2_label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
 {
-    label->setContentsMargins(0, 2, 0, 0);
+    label->setContentsMargins(0, 3, 0, 0);
     colsHBoxLayout->addWidget(label);
     colsHBoxLayout->setAlignment(label, Qt::AlignTop);
 }
@@ -1540,15 +1557,25 @@ char Guid::showForms(const QStringList &args)
     dlg->setProperty("guid_separator", "|");
     dlg->setProperty("guid_list_row_separator", "~");
 
+    Qt::WindowFlags dlgFlags;
+    dlgFlags |= Qt::WindowMinimizeButtonHint;
+    dlgFlags |= Qt::WindowMaximizeButtonHint;
+    dlgFlags |= Qt::WindowCloseButtonHint;
+    dlg->setWindowFlags(dlgFlags);
+
     QLabel *label;
     vl->addWidget(label = new QLabel(dlg));
-    QFont fnt = label->font();
-    fnt.setBold(true);
-    label->setFont(fnt);
+    label->setVisible(false);
+    bool labelInBold = true;
 
-    QFormLayout *fl;
-    vl->addLayout(fl = new QFormLayout);
+    QFormLayout *flTopMenu = new QFormLayout();
+    vl->addLayout(flTopMenu);
+
+    QFormLayout *fl = new QFormLayout();
+    vl->addLayout(fl);
+    
     vl->layout()->setSpacing(15);
+    vl->addStretch();
 
     bool columnsAreSet = false;
     QLabel *labelCol1 = NULL;
@@ -1579,6 +1606,12 @@ char Guid::showForms(const QStringList &args)
     
     QString lastColumn = NULL;
     QString lastWidget = NULL;
+    
+    QMenuBar *lastMenu = NULL;
+    QSignalMapper *menuSignalMapper = new QSignalMapper(this);
+    bool topMenu = false;
+    
+    bool ok;
     
     for (int i = 0; i < args.count(); ++i) {
         /********************************************************************************
@@ -1644,6 +1677,119 @@ char Guid::showForms(const QStringList &args)
             }
         }
         
+        // QMenuBar: --add-menu
+        else if (args.at(i) == "--add-menu") {
+            if (lastWidget.isEmpty() && lastColumn.isEmpty()) {
+                topMenu = true;
+            }
+            lastWidget = "menu";
+            lastMenu = new QMenuBar();
+            
+            QString next_arg = NEXT_ARG;
+            
+            bool menuWithSeparators = false;
+            if (next_arg.left(1) == "|") {
+                menuWithSeparators = true;
+                next_arg.remove(0, 1);
+            }
+            
+            bool closeDlgAfterMenuClick = false;
+            if (next_arg.left(1) == "$") {
+                closeDlgAfterMenuClick = true;
+                next_arg.remove(0, 1);
+            }
+            
+            QStringList menuItemsMainLevel = next_arg.split('|');
+            QStringList menuItemChildren;
+            
+            QString menuItemData;
+            QString menuItemName;
+            int menuItemOutputCode;
+            QIcon menuActionIcon = QApplication::style()->standardIcon(QStyle::SP_TitleBarMaxButton);
+            
+            for (int i = 0; i < menuItemsMainLevel.size(); ++i) {
+                if (menuItemsMainLevel.at(i).contains('#')) {
+                    menuItemData = menuItemsMainLevel.at(i).section('#', 0, 0);
+                    menuItemChildren << menuItemsMainLevel.at(i).section('#', 1, -1).split('#');
+                } else {
+                    menuItemData = menuItemsMainLevel.at(i);
+                }
+                
+                menuItemName = menuItemData.section(':', 0, -2);
+                menuItemOutputCode = menuItemData.section(':', -1, -1).toInt(&ok);
+                
+                if (menuItemName.isEmpty()) {
+                    menuItemName = menuItemData;
+                    menuItemOutputCode = 0;
+                    ok = true;
+                }
+                
+                if (menuItemName.isEmpty() || !ok || menuItemOutputCode < 0 || menuItemOutputCode > 255) {
+                    continue;
+                }
+                
+                if (menuWithSeparators && i > 0) {
+                    auto* menuSep = new QAction(QStringLiteral("|"), this);
+                    menuSep->setDisabled(true);
+                    lastMenu->addAction(menuSep);
+                }
+                
+                // Menu with submenu items (first level elements are added as QMenu)
+                if (!menuItemChildren.isEmpty()) {
+                    QMenu *menuItem = new QMenu(menuItemName);
+                    lastMenu->addMenu(menuItem);
+                    
+                    for (int j = 0; j < menuItemChildren.size(); ++j) {
+                        menuItemName = menuItemChildren.at(j).section(':', 0, -2);
+                        menuItemOutputCode = menuItemChildren.at(j).section(':', -1, -1).toInt(&ok);
+                        
+                        if (menuItemName.isEmpty() || !ok || menuItemOutputCode < 0 || menuItemOutputCode > 255) {
+                            continue;
+                        }
+                        
+                        QAction *menuAction = new QAction(menuItemName, this);
+                        menuAction->setIcon(menuActionIcon);
+                        menuItem->addAction(menuAction);
+                        
+                        connect(menuAction, SIGNAL(triggered()), menuSignalMapper, SLOT(map()), Qt::UniqueConnection);
+                        menuSignalMapper->setMapping(menuAction, menuItemOutputCode);
+                        if (closeDlgAfterMenuClick) {
+                            connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(exitAfterMenuClick(int)), Qt::UniqueConnection);
+                        } else {
+                            connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(showMenuClick(int)), Qt::UniqueConnection);
+                        }
+                    }
+                    
+                    menuItemChildren.clear();
+                }
+                
+                // Menu without submenu items (first level elements are added as QAction)
+                else {
+                    QAction *menuAction = new QAction(menuItemName, this);
+                    lastMenu->addAction(menuAction);
+                    
+                    connect(menuAction, SIGNAL(triggered()), menuSignalMapper, SLOT(map()), Qt::UniqueConnection);
+                    menuSignalMapper->setMapping(menuAction, menuItemOutputCode);
+                    if (closeDlgAfterMenuClick) {
+                        connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(exitAfterMenuClick(int)), Qt::UniqueConnection);
+                    } else {
+                        connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(showMenuClick(int)), Qt::UniqueConnection);
+                    }
+                }
+            }
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), lastMenu)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), lastMenu)
+            } else if (topMenu) {
+                lastMenu->setStyleSheet("background: white; border-top: 1px solid #F0F0F0;");
+                flTopMenu->addRow(lastMenu);
+            } else {
+                fl->addRow(lastMenu);
+            }
+        }
+        
         // QLineEdit: --add-password
         else if (args.at(i) == "--add-password") {
             lastWidget = "password";
@@ -1694,11 +1840,13 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--add-text") {
             lastWidget = "text";
             lastText = new QLabel(NEXT_ARG);
+            lastText->setContentsMargins(3, 3, 0, 0);
             
             if (lastColumn == "col1") {
                 SET_FORMS_COL1(new QLabel(), lastText)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(new QLabel(), lastText)
+                colsHBoxLayout->setSpacing(0);
             } else {
                 fl->addRow(lastText);
             }
@@ -1769,7 +1917,10 @@ char Guid::showForms(const QStringList &args)
         // labelText: --text
         else if (args.at(i) == "--text") {
             lastWidget = "label";
+            topMenu = false;
+            
             label->setText(labelText(NEXT_ARG));
+            label->setVisible(true);
         }
         
         /********************************************************************************
@@ -1989,25 +2140,78 @@ char Guid::showForms(const QStringList &args)
          * label
          ******************************/
         
-        // --align
-        else if (args.at(i) == "--align") {
+        // --align || --bold || --italics || --font-size || --foreground-color || --background-color
+        else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" ||
+                 args.at(i) == "--font-size" || args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
             QLabel *labelToSet = NULL;
-            if (lastWidget == "label")
+            if (lastWidget == "label") {
                 labelToSet = label;
-            else if (lastWidget == "text")
+            } else if (lastWidget == "text") {
                 labelToSet = lastText;
+            }
+            
+            QFont labelToSetFont = labelToSet->font();
+            
             if (labelToSet) {
-                QString alignment = NEXT_ARG;
-                if (alignment == "left")
-                    labelToSet->setAlignment(Qt::AlignLeft);
-                else if (alignment == "center")
-                    labelToSet->setAlignment(Qt::AlignCenter);
-                else if (alignment == "right")
-                    labelToSet->setAlignment(Qt::AlignRight);
-                else
-                    qDebug() << "argument --align: unknown value" << args.at(i);
-            } else
+                if (args.at(i) == "--align") {
+                    QString alignment = NEXT_ARG;
+                    if (alignment == "left") {
+                        labelToSet->setAlignment(Qt::AlignLeft);
+                    } else if (alignment == "center") {
+                        labelToSet->setAlignment(Qt::AlignCenter);
+                    } else if (alignment == "right") {
+                        labelToSet->setAlignment(Qt::AlignRight);
+                    } else {
+                        qDebug() << "argument --align: unknown value" << args.at(i);
+                    }
+                } else if (args.at(i) == "--bold") {
+                    labelToSetFont.setBold(true);
+                    labelToSet->setFont(labelToSetFont);
+                } else if (args.at(i) == "--italics") {
+                    labelToSetFont.setItalic(true);
+                    labelToSet->setFont(labelToSetFont);
+                } else if (args.at(i) == "--font-size") {
+                    int fontSize = NEXT_ARG.toInt(&ok);
+                    if (ok) {
+                        labelToSetFont.setPointSize(fontSize);
+                        labelToSet->setFont(labelToSetFont);
+                    }
+                } else if (args.at(i) == "--foreground-color") {
+                    QString foregroundColor = NEXT_ARG;
+                    if (foregroundColor.left(1) != "#") {
+                        foregroundColor = "#" + foregroundColor;
+                    }
+                    
+                    QColor *color = new QColor(0, 0, 0);
+                    color->setNamedColor(foregroundColor);
+                    
+                    QPalette labelPalette = labelToSet->palette();
+                    labelPalette.setColor(QPalette::WindowText, *color);
+                    
+                    labelToSet->setPalette(labelPalette);
+                } else if (args.at(i) == "--background-color") {
+                    QString backgroundColor = NEXT_ARG;
+                    if (backgroundColor.left(1) != "#") {
+                        backgroundColor = "#" + backgroundColor;
+                    }
+                    
+                    QColor *color = new QColor(0, 0, 0);
+                    color->setNamedColor(backgroundColor);
+                    
+                    QPalette labelPalette = labelToSet->palette();
+                    labelPalette.setColor(QPalette::Window, *color);
+                    
+                    labelToSet->setAutoFillBackground(true);
+                    labelToSet->setPalette(labelPalette);
+                }
+            } else {
                 WARN_UNKNOWN_ARG("--add-text");
+            }
+        }
+        
+        // --no-bold
+        else if (args.at(i) == "--no-bold") {
+            labelInBold = false;
         }
         
         /********************************************************************************
@@ -2044,8 +2248,22 @@ char Guid::showForms(const QStringList &args)
     
     buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
     
+    if (labelInBold) {
+        QFont mainLabelFont = label->font();
+        mainLabelFont.setBold(true);
+        label->setFont(mainLabelFont);
+    }
+    
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
+    
+    if (topMenu) {
+        fl->setContentsMargins(10, 0, 10, 10);
+        vl->setContentsMargins(0, 0, 0, 10);
+        btns->setContentsMargins(10, 0, 10, 0);
+    }
+    
     SHOW_DIALOG
+    
     return 0;
 }
 
@@ -2208,6 +2426,11 @@ void Guid::printHelp(const QString &category)
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
                             Help("--text=TEXT", tr("Set the dialog text")) <<
                             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+                            Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
+                            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+                            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+                            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example: guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+                            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example: guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
                             Help("", tr("")) <<
                             Help("--col1", "GUID ONLY! " + tr("Start a two-field row. The next form field specified will be added in the first column. See --col2 for details.")) <<
                             Help("--col2", "GUID ONLY! " + tr("Finish a two-field row. The next form field specified will be added in the second column. Example: guid --forms --width=500 --text=\"The next row has two columns:\" --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\" --field-width=100 --add-entry=\"Full-width row\"")) <<
@@ -2234,6 +2457,17 @@ void Guid::printHelp(const QString &category)
                             Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
                             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
                             Help("--show-header", tr("Show the columns header")) <<
+                            Help("", tr("")) <<
+                            Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
+                            Help("", tr("First level menu items must be separated with the symbol \"|\".")) <<
+                            Help("", tr("Second level menu items must be separated with the symbol \"#\".")) <<
+                            Help("", tr("Each menu item without children must have an output code specified as follows: \"MenuItemName:OutputCode\".")) <<
+                            Help("", tr("By default, the output code is printed on the console after a click on the menu item, and the dialog stays open.")) <<
+                            Help("", tr("We can specify to close the dialog by adding the symbol \"$\" at the beginning of menu settings. Example: guid --forms --add-menu=\"$First Item#First Subitem:10|Second Item:11|Third Item:12\"")) <<
+                            Help("", tr("To add separators between first level menu items, add the symbol \"|\" at the beginning of menu settings. Example: guid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second Item:12|Third Item:13\"")) <<
+                            Help("", tr("Example of form menu with separators and with the dialog closing after a click on a menu item: guid --forms --add-menu=\"|$First Item#First Subitem:10#Second Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\" --add-entry=\"Text field\"")) <<
+                            Help("", tr("Note that if a main label is set for the form with the argument \"--text=TEXT\", it'll be displayed on top of the dialog. Example: guid --forms --text=\"Form description\" --add-menu=\"First Item:10|Second Item:11\" --add-entry=\"Text field\"")) <<
+                            Help("", tr("If we want to have a menu on top of the dialog but still have a main label for the form, we must add the label as new text with \"--add-text=TEXT\" after the menu. Example: guid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form description\" --bold --add-entry=\"Text field\"")) <<
                             Help("", tr("")) <<
                             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
                             Help("", tr("")) <<
@@ -2262,6 +2496,11 @@ void Guid::printHelp(const QString &category)
                             Help("", tr("")) <<
                             Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
                             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+                            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+                            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+                            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+                            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example: guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+                            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example: guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
                             Help("", tr("")) <<
                             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
                             Help("--separator=SEPARATOR", tr("Set output separator character")));
