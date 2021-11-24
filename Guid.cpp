@@ -891,6 +891,31 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
 
 #define QTREEWIDGET_STYLE "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 3px; font-weight: bold;}"
 
+static QStringList listValuesFromFile(QString data)
+{
+    QStringList values;
+    QString separator;
+    QString filename;
+    
+    if (data.contains(QRegExp("^.//"))) {
+        separator = data.left(1);
+        filename = data.remove(0, 3);
+    } else {
+        separator = "|";
+        filename = data;
+    }
+    
+    QFile file(filename);
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+    
+    if (file.open(QIODevice::ReadOnly)) {
+        values = QString::fromLocal8Bit(file.readAll()).replace(QRegExp("[\r\n]+"), separator).split(separator);
+        file.close();
+    }
+    
+    return values;
+}
+
 char Guid::showList(const QStringList &args)
 {
     NEW_DIALOG
@@ -965,6 +990,8 @@ char Guid::showList(const QStringList &args)
                         tw->topLevelItem(i)->setHidden(!tw->topLevelItem(i)->text(0).contains(match, Qt::CaseInsensitive));
                 });
             }
+        } else if (args.at(i) == "--list-values-from-file") {
+            values = listValuesFromFile(NEXT_ARG);
         } else if (args.at(i) != "--list") {
             values << args.at(i);
         }
@@ -1542,14 +1569,14 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
     colsHBoxLayout->setAlignment(WIDGET_COL1, Qt::AlignTop);
 
 #define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
-    set_col2_label(colsHBoxLayout, LABEL_COL2); \
+    setCol2Label(colsHBoxLayout, LABEL_COL2); \
     colsHBoxLayout->addWidget(WIDGET_COL2); \
     colsHBoxLayout->addStretch(); \
     colsHBoxLayout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
-    set_forms_columns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
+    setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
     fl->addRow(labelCol1, colsContainer);
 
-static void set_forms_columns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLayout, QString prop_separator, bool &columnsAreSet)
+static void setFormsColumns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLayout, QString prop_separator, bool &columnsAreSet)
 {
     colsContainer = new QWidget();
     colsContainer->setProperty("guid_cols_container", true);
@@ -1559,7 +1586,7 @@ static void set_forms_columns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLay
     columnsAreSet = true;
 }
 
-static void set_col2_label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
+static void setCol2Label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
 {
     label->setContentsMargins(0, 3, 0, 0);
     colsHBoxLayout->addWidget(label);
@@ -2092,14 +2119,19 @@ char Guid::showForms(const QStringList &args)
          * list
          ******************************/
         
+        // --column-values
+        else if (args.at(i) == "--column-values") {
+            lastListColumns = NEXT_ARG.split('|');
+        }
+        
         // --list-values
         else if (args.at(i) == "--list-values") {
             lastListValues = NEXT_ARG.split('|');
         }
         
-        // --column-values
-        else if (args.at(i) == "--column-values") {
-            lastListColumns = NEXT_ARG.split('|');
+        // --list-values-from-file
+        else if (args.at(i) == "--list-values-from-file") {
+            lastListValues = listValuesFromFile(NEXT_ARG);
         }
         
         // --multiple
@@ -2481,6 +2513,8 @@ void Guid::printHelp(const QString &category)
                             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
                             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
                             Help("--list-values=List of values separated by |", tr("List of values for List")) <<
+                            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\"/path/to/file\"")) <<
+                            Help("", tr("By default, the symbol \"|\" is used as separator between values. To use another separator, specify it followed by \"//\". Example with \",\" as separator: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\",///path/to/file\"")) <<
                             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
                             Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
                             Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
@@ -2557,6 +2591,9 @@ void Guid::printHelp(const QString &category)
                             Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
                             Help("--print-column=NUMBER", tr("Print a specific column (Default is 1. 'ALL' can be used to print all columns)")) <<
                             Help("--hide-header", tr("Hides the column headers")) <<
+                            Help("", tr("")) <<
+                            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\"/path/to/file\"")) <<
+                            Help("", tr("By default, the symbol \"|\" is used as separator between values. To use another separator, specify it followed by \"//\". Example with \",\" as separator: guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\" --show-header --list-values-from-file=\",///path/to/file\"")) <<
                             Help("", tr("")) <<
                             Help("--editable", tr("Allow changes to text")) <<
                             Help("--multiple", tr("Allow multiple rows to be selected")) <<
