@@ -57,6 +57,7 @@
 #include <QStringBuilder>
 #include <QStringList>
 #include <QTextBrowser>
+#include <QTextCodec>
 #include <QTimer>
 #include <QTimerEvent>
 #include <QTreeWidget>
@@ -1382,6 +1383,8 @@ char Guid::showText(const QStringList &args)
         curl->start("curl", QStringList() << "-L" << "-s" << filename);
     } else {
         QFile file(filename);
+        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+
         if (file.open(QIODevice::ReadOnly)) {
             if (html)
                 te->setHtml(QString::fromLocal8Bit(file.readAll()));
