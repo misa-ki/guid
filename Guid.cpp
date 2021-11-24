@@ -170,7 +170,6 @@ typedef QList<Help> HelpList;
 typedef QPair<QString, HelpList> CategoryHelp;
 typedef QMap<QString, CategoryHelp> HelpDict;
 
-
 Guid::Guid(int &argc, char **argv) : QApplication(argc, argv)
 , m_modal(false)
 , m_selectableLabel(false)
@@ -325,7 +324,10 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv)
 
 bool Guid::error(const QString message)
 {
-    printf("Error: %s", qPrintable(message));
+    QTextStream qOut(stdout);
+    qOut.setCodec("UTF-8");
+    
+    qOut << "Error:" << message;
     QMetaObject::invokeMethod(this, "quitOnError", Qt::QueuedConnection);
     return true;
 }
@@ -387,6 +389,9 @@ static QString value(const QWidget *w, const QString &pattern)
 
 void Guid::dialogFinished(int status)
 {
+    QTextStream qOut(stdout);
+    qOut.setCodec("UTF-8");
+    
     if (m_type == FileSelection) {
         QFileDialog *dlg = static_cast<QFileDialog*>(sender());
         QVariantList l;
@@ -419,19 +424,19 @@ void Guid::dialogFinished(int status)
             QString format = sender()->property("guid_date_format").toString();
             QDate date = sender()->findChild<QCalendarWidget*>()->selectedDate();
             if (format.isEmpty())
-                printf("%s\n", qPrintable(QLocale::system().toString(date, QLocale::ShortFormat)));
+                qOut << QLocale::system().toString(date, QLocale::ShortFormat);
             else
-                printf("%s\n", qPrintable(date.toString(format)));
+                qOut << date.toString(format);
             break;
         }
         case Entry: {
             QInputDialog *dlg = static_cast<QInputDialog*>(sender());
             if (dlg->inputMode() == QInputDialog::DoubleInput) {
-                printf("%s\n", qPrintable(QLocale::c().toString(dlg->doubleValue(), 'f', 2)));
+                qOut << QLocale::c().toString(dlg->doubleValue(), 'f', 2);
             } else if (dlg->inputMode() == QInputDialog::IntInput) {
-                printf("%d\n", dlg->intValue());
+                qOut << dlg->intValue();
             } else {
-                printf("%s\n", qPrintable(dlg->textValue()));
+                qOut << dlg->textValue();
             }
             break;
         }
@@ -443,17 +448,17 @@ void Guid::dialogFinished(int status)
                 result = username->text() + '|';
             if (password)
                 result += password->text();
-            printf("%s\n", qPrintable(result));
+            qOut << result;
             break;
         }
         case FileSelection: {
             QStringList files = static_cast<QFileDialog*>(sender())->selectedFiles();
-            printf("%s\n", qPrintable(files.join(sender()->property("guid_separator").toString())));
+            qOut << files.join(sender()->property("guid_separator").toString());
             break;
         }
         case ColorSelection: {
             QColorDialog *dlg = static_cast<QColorDialog*>(sender());
-            printf("%s\n", qPrintable(dlg->selectedColor().name()));
+            qOut << dlg->selectedColor().name();
             QVariantList l;
             for (int i = 0; i < dlg->customCount(); ++i)
                 l << dlg->customColor(i).rgba();
@@ -480,20 +485,20 @@ void Guid::dialogFinished(int status)
 
             QString font = sender()->property("guid_fontpattern").toString();
             font = font.arg(fnt.family()).arg(size).arg(weight).arg(slant);
-            printf("%s\n", qPrintable(font));
+            qOut << font;
             break;
         }
         case TextInfo: {
             QTextEdit *te = sender()->findChild<QTextEdit*>();
             if (te && !te->isReadOnly()) {
-                printf("%s\n", qPrintable(te->toPlainText()));
+                qOut << te->toPlainText();
             }
             break;
         }
         case Scale: {
             QSlider *sld = sender()->findChild<QSlider*>();
             if (sld) {
-                printf("%s\n", qPrintable(QString::number(sld->value())));
+                qOut << QString::number(sld->value());
             }
             break;
         }
@@ -532,7 +537,7 @@ void Guid::dialogFinished(int status)
                     }
                 }
             }
-            printf("%s\n", qPrintable(result.join(sender()->property("guid_separator").toString())));
+            qOut << result.join(sender()->property("guid_separator").toString());
             break;
         }
         case Forms: {
@@ -547,7 +552,7 @@ void Guid::dialogFinished(int status)
                     result << value(li->widget(), format);
                 }
             }
-            printf("%s\n", qPrintable(result.join(sender()->property("guid_separator").toString())));
+            qOut << result.join(sender()->property("guid_separator").toString());
             break;
         }
         default:
