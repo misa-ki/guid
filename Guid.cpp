@@ -909,7 +909,7 @@ static QStringList listValuesFromFile(QString data)
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     
     if (file.open(QIODevice::ReadOnly)) {
-        values = QString::fromLocal8Bit(file.readAll()).replace(QRegExp("[\r\n]+"), separator).split(separator);
+        values = QString::fromLocal8Bit(file.readAll()).trimmed().replace(QRegExp("[\r\n]+"), separator).split(separator);
         file.close();
     }
     
@@ -2101,6 +2101,14 @@ char Guid::showForms(const QStringList &args)
             }
         }
         
+        // --combo-values-from-file
+        else if (args.at(i) == "--combo-values-from-file") {
+            lastComboValues = listValuesFromFile(NEXT_ARG);
+            if (lastWidget == "combo") {
+                lastCombo->addItems(lastComboValues);
+            }
+        }
+        
         /******************************
          * combo || list
          ******************************/
@@ -2510,6 +2518,7 @@ void Guid::printHelp(const QString &category)
             Help("", tr("")) <<
             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
+            Help("--combo-values-from-file=FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values")) <<
             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
