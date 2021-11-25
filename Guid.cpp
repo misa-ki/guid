@@ -1941,7 +1941,7 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--add-text") {
             lastWidget = "text";
             lastText = new QLabel(NEXT_ARG);
-            lastText->setContentsMargins(3, 3, 0, 0);
+            lastText->setContentsMargins(0, 3, 0, 0);
             
             if (lastColumn == "col1") {
                 SET_FORMS_COL1(new QLabel(), lastText)
@@ -2272,9 +2272,9 @@ char Guid::showForms(const QStringList &args)
          * label
          ******************************/
         
-        // --align || --bold || --italics || --small-caps || --font-family || --font-size ||
+        // --align || --bold || --italics || --underline || --small-caps || --font-family || --font-size ||
         // --foreground-color || --background-color
-        else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" ||
+        else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" || args.at(i) == "--underline" ||
                  args.at(i) == "--small-caps" || args.at(i) == "--font-family" || args.at(i) == "--font-size" ||
                  args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
             QLabel *labelToSet = NULL;
@@ -2303,6 +2303,9 @@ char Guid::showForms(const QStringList &args)
                     labelToSet->setFont(labelToSetFont);
                 } else if (args.at(i) == "--italics") {
                     labelToSetFont.setItalic(true);
+                    labelToSet->setFont(labelToSetFont);
+                } else if (args.at(i) == "--underline") {
+                    labelToSetFont.setUnderline(true);
                     labelToSet->setFont(labelToSetFont);
                 } else if (args.at(i) == "--small-caps") {
                     labelToSetFont.setCapitalization(QFont::SmallCaps);
@@ -2584,6 +2587,7 @@ void Guid::printHelp(const QString &category)
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
             Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
             Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
             Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
             Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
             Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
@@ -2690,6 +2694,7 @@ void Guid::printHelp(const QString &category)
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
             Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
             Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
             Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
             Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
             Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
