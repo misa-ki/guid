@@ -74,6 +74,8 @@ private:
     uint m_notificationId;
     QDialog *m_dialog;
     Type m_type;
+    QString m_prefix_ok;
+    QString m_prefix_err;
 };
 
 #endif //GUID_H

@@ -180,6 +180,8 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv)
 , m_notificationId(0)
 , m_dialog(NULL)
 , m_type(Invalid)
+, m_prefix_ok("")
+, m_prefix_err("")
 {
     QStringList argList = QCoreApplication::arguments(); // arguments() is slow
     m_zenity = argList.at(0).endsWith("zenity");
@@ -324,12 +326,13 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv)
     }
 }
 
+#define QOUT QTextStream qOut(stdout); qOut.setCodec("UTF-8");
+#define QOUT_ERR QTextStream qOutErr(stderr); qOutErr.setCodec("UTF-8");
+
 bool Guid::error(const QString message)
 {
-    QTextStream qOut(stdout);
-    qOut.setCodec("UTF-8");
-    
-    qOut << "Error:" << message;
+    QOUT_ERR
+    qOutErr << m_prefix_err + message;
     QMetaObject::invokeMethod(this, "quitOnError", Qt::QueuedConnection);
     return true;
 }
@@ -393,8 +396,8 @@ static QString value(const QWidget *w, const QString &pattern)
 
 void Guid::dialogFinished(int status)
 {
-    QTextStream qOut(stdout);
-    qOut.setCodec("UTF-8");
+    QOUT
+    QOUT_ERR
     
     if (m_type == FileSelection) {
         QFileDialog *dlg = static_cast<QFileDialog*>(sender());
@@ -428,19 +431,19 @@ void Guid::dialogFinished(int status)
             QString format = sender()->property("guid_date_format").toString();
             QDate date = sender()->findChild<QCalendarWidget*>()->selectedDate();
             if (format.isEmpty())
-                qOut << QLocale::system().toString(date, QLocale::ShortFormat);
+                qOut << m_prefix_ok + QLocale::system().toString(date, QLocale::ShortFormat);
             else
-                qOut << date.toString(format);
+                qOut << m_prefix_ok + date.toString(format);
             break;
         }
         case Entry: {
             QInputDialog *dlg = static_cast<QInputDialog*>(sender());
             if (dlg->inputMode() == QInputDialog::DoubleInput) {
-                qOut << QLocale::c().toString(dlg->doubleValue(), 'f', 2);
+                qOut << m_prefix_ok + QLocale::c().toString(dlg->doubleValue(), 'f', 2);
             } else if (dlg->inputMode() == QInputDialog::IntInput) {
-                qOut << dlg->intValue();
+                qOut << m_prefix_ok + dlg->intValue();
             } else {
-                qOut << dlg->textValue();
+                qOut << m_prefix_ok + dlg->textValue();
             }
             break;
         }
@@ -452,17 +455,17 @@ void Guid::dialogFinished(int status)
                 result = username->text() + '|';
             if (password)
                 result += password->text();
-            qOut << result;
+            qOut << m_prefix_ok + result;
             break;
         }
         case FileSelection: {
             QStringList files = static_cast<QFileDialog*>(sender())->selectedFiles();
-            qOut << files.join(sender()->property("guid_separator").toString());
+            qOut << m_prefix_ok + files.join(sender()->property("guid_separator").toString());
             break;
         }
         case ColorSelection: {
             QColorDialog *dlg = static_cast<QColorDialog*>(sender());
-            qOut << dlg->selectedColor().name();
+            qOut << m_prefix_ok + dlg->selectedColor().name();
             QVariantList l;
             for (int i = 0; i < dlg->customCount(); ++i)
                 l << dlg->customColor(i).rgba();
@@ -489,20 +492,20 @@ void Guid::dialogFinished(int status)
 
             QString font = sender()->property("guid_fontpattern").toString();
             font = font.arg(fnt.family()).arg(size).arg(weight).arg(slant);
-            qOut << font;
+            qOut << m_prefix_ok + font;
             break;
         }
         case TextInfo: {
             QTextEdit *te = sender()->findChild<QTextEdit*>();
             if (te && !te->isReadOnly()) {
-                qOut << te->toPlainText();
+                qOut << m_prefix_ok + te->toPlainText();
             }
             break;
         }
         case Scale: {
             QSlider *sld = sender()->findChild<QSlider*>();
             if (sld) {
-                qOut << QString::number(sld->value());
+                qOut << m_prefix_ok + QString::number(sld->value());
             }
             break;
         }
@@ -541,7 +544,7 @@ void Guid::dialogFinished(int status)
                     }
                 }
             }
-            qOut << result.join(sender()->property("guid_separator").toString());
+            qOut << m_prefix_ok + result.join(sender()->property("guid_separator").toString());
             break;
         }
         case Forms: {
@@ -556,11 +559,11 @@ void Guid::dialogFinished(int status)
                     result << value(li->widget(), format);
                 }
             }
-            qOut << result.join(sender()->property("guid_separator").toString());
+            qOut << m_prefix_ok + result.join(sender()->property("guid_separator").toString());
             break;
         }
         default:
-            qDebug() << "unhandled output" << m_type;
+            qOutErr << m_prefix_err + "unhandled output" << m_type;
             break;
     }
     exit (0);
@@ -575,7 +578,8 @@ void Guid::exitAfterMenuClick(int i)
 
 void Guid::showMenuClick(int i)
 {
-    qInfo() << "MENU CLICKED:" << i;
+    QOUT
+    qOut << m_prefix_ok + "MENU CLICKED:" + QString::number(i);
 }
 
 void Guid::quitOnError()
@@ -584,7 +588,7 @@ void Guid::quitOnError()
 }
 
 #define NEXT_ARG QString((++i < args.count()) ? args.at(i) : QString())
-#define WARN_UNKNOWN_ARG(_KNOWN_) if (args.at(i).startsWith("--") && args.at(i) != _KNOWN_) qDebug() << "unspecific argument" << args.at(i);
+#define WARN_UNKNOWN_ARG(_KNOWN_) if (args.at(i).startsWith("--") && args.at(i) != _KNOWN_) qDebug().noquote() << m_prefix_err + "unspecific argument" << args.at(i);
 #define SHOW_DIALOG m_dialog = dlg; Qt::WindowFlags dFlags = dlg->windowFlags(); dFlags |= Qt::WindowStaysOnTopHint; dlg->setWindowFlags(dFlags); connect(dlg, SIGNAL(finished(int)), SLOT(dialogFinished(int))); dlg->show();
 
 bool Guid::readGeneral(QStringList &args) {
@@ -624,6 +628,10 @@ bool Guid::readGeneral(QStringList &args) {
             if (!ok)
                 return !error("--attach must be followed by a positive number");
             m_parentWindow = w;
+        } else if (args.at(i) == "--output-prefix-ok") {
+            m_prefix_ok = NEXT_ARG;
+        } else if (args.at(i) == "--output-prefix-err") {
+            m_prefix_err = NEXT_ARG;
         } else {
             remains << args.at(i);
         }
@@ -640,6 +648,7 @@ bool Guid::readGeneral(QStringList &args) {
 
 char Guid::showCalendar(const QStringList &args)
 {
+    QOUT_ERR
     NEW_DIALOG
 
     QDate date = QDate::currentDate();
@@ -661,7 +670,7 @@ char Guid::showCalendar(const QStringList &args)
                 else if (alignment == "right")
                     label->setAlignment(Qt::AlignRight);
                 else
-                    qDebug() << "argument --align: unknown value" << args.at(i);
+                    qOutErr << m_prefix_err + "argument --align: unknown value" << args.at(i);
             } else
                 WARN_UNKNOWN_ARG("--text");
         } else if (args.at(i) == "--day") {
@@ -757,6 +766,8 @@ char Guid::showPassword(const QStringList &args)
 
 char Guid::showMessage(const QStringList &args, char type)
 {
+    QOUT_ERR
+    
     QMessageBox *dlg = new QMessageBox;
     dlg->setStandardButtons((type == 'q') ? QMessageBox::Yes|QMessageBox::No : QMessageBox::Ok);
     dlg->setDefaultButton(QMessageBox::Ok);
@@ -779,7 +790,7 @@ char Guid::showMessage(const QStringList &args, char type)
             m_selectableLabel = true;
         else if (args.at(i).startsWith("--") && args.at(i) != "--info" && args.at(i) != "--question" &&
                                                 args.at(i) != "--warning" && args.at(i) != "--error")
-            qDebug() << "unspecific argument" << args.at(i);
+            qOutErr << m_prefix_err + "unspecific argument" << args.at(i);
     }
     if (QLabel *l = dlg->findChild<QLabel*>("qt_msgbox_label")) {
         l->setWordWrap(wrap);
@@ -939,6 +950,7 @@ static QSize getQTreeWidgetSize(QTreeWidget **qtw)
 
 char Guid::showList(const QStringList &args)
 {
+    QOUT_ERR
     NEW_DIALOG
 
     QLabel *lbl;
@@ -973,7 +985,7 @@ char Guid::showList(const QStringList &args)
                 else if (alignment == "right")
                     lbl->setAlignment(Qt::AlignRight);
                 else
-                    qDebug() << "argument --align: unknown value" << args.at(i);
+                    qOutErr << m_prefix_err + "argument --align: unknown value" << args.at(i);
             } else
                 WARN_UNKNOWN_ARG("--text");
         } else if (args.at(i) == "--multiple")
@@ -1134,6 +1146,7 @@ void Guid::finishProgress()
 
 void Guid::readStdIn()
 {
+    QOUT_ERR
     if (!gs_stdin->isOpen())
         return;
     QSocketNotifier *notifier = qobject_cast<QSocketNotifier*>(sender());
@@ -1235,7 +1248,7 @@ void Guid::readStdIn()
             if (line.left(split) == "icon") {
                 userNeedsHelp = false;
                 // TODO: some icon filename, seems gnome specific and i've no idea how to handle this atm.
-                qWarning("'icon' command not yet supported - if you know what this is supposed to do, please file a bug");
+                qOutErr << m_prefix_err + "'icon' command not yet supported - if you know what this is supposed to do, please file a bug";
             } else if (line.left(split) == "message" || line.left(split) == "tooltip") {
                 userNeedsHelp = false;
                 notify(line.mid(split+1));
@@ -1245,13 +1258,13 @@ void Guid::readStdIn()
                     m_dialog->setVisible(line.mid(split+1).trimmed().compare("false", Qt::CaseInsensitive) &&
                                          line.mid(split+1).trimmed().compare("0", Qt::CaseInsensitive));
                 else
-                    qWarning("'visible' command only supported for failsafe dialog notification");
+                    qOutErr << m_prefix_err + "'visible' command only supported for failsafe dialog notification";
             } else if (line.left(split) == "hints") {
                 m_notificationHints = line.mid(split+1);
             }
         }
         if (userNeedsHelp)
-            qDebug() << "icon: <filename>\nmessage: <UTF-8 encoded text>\ntooltip: <UTF-8 encoded text>\nvisible: <true|false>";
+            qOutErr << m_prefix_err + "icon: <filename>\nmessage: <UTF-8 encoded text>\ntooltip: <UTF-8 encoded text>\nvisible: <true|false>";
     } else if (m_type == List) {
         if (QTreeWidget *tw = m_dialog->findChild<QTreeWidget*>()) {
             const int twflags = tw->property("guid_list_flags").toInt();
@@ -1314,11 +1327,13 @@ char Guid::showProgress(const QStringList &args)
 
 void Guid::printInteger(int v)
 {
-    printf("%d\n", v);
+    QOUT
+    qOut << m_prefix_ok + QString::number(v);
 }
 
 char Guid::showScale(const QStringList &args)
 {
+    QOUT_ERR
     NEW_DIALOG
 
     QHBoxLayout *hl = new QHBoxLayout;
@@ -1350,7 +1365,7 @@ char Guid::showScale(const QStringList &args)
                 else if (alignment == "right")
                     lbl->setAlignment(Qt::AlignRight);
                 else
-                    qDebug() << "argument --align: unknown value" << args.at(i);
+                    qOutErr << m_prefix_err + "argument --align: unknown value" << args.at(i);
             } else
                 WARN_UNKNOWN_ARG("--text");
         } else if (args.at(i) == "--value")
@@ -1475,6 +1490,7 @@ char Guid::showText(const QStringList &args)
 
 char Guid::showColorSelection(const QStringList &args)
 {
+    QOUT_ERR
     QColorDialog *dlg = new QColorDialog;
     QVariantList l = QSettings("guid").value("CustomPalette").toList();
     for (int i = 0; i < l.count() && i < dlg->customCount(); ++i)
@@ -1483,7 +1499,7 @@ char Guid::showColorSelection(const QStringList &args)
         if (args.at(i) == "--color") {
             dlg->setCurrentColor(QColor(NEXT_ARG));
         } else if (args.at(i) == "--show-palette") {
-            qWarning("The show-palette parameter is not supported by guid. Sorry.");
+            qOutErr << m_prefix_err + "The show-palette parameter is not supported by guid. Sorry.";
             void(0);
         } else if (args.at(i) == "--custom-palette") {
             if (i+1 < args.count()) {
@@ -1506,10 +1522,10 @@ char Guid::showColorSelection(const QStringList &args)
                     }
                     file.close();
                 } else {
-                    qWarning("Cannot read %s", path.toLocal8Bit().constData());
+                    qOutErr << m_prefix_err + "Cannot read" << path.toLocal8Bit().constData();
                 }
             } else {
-                qWarning("You have to provide a gimp palette (*.gpl)");
+                qOutErr << m_prefix_err + "You have to provide a gimp palette (*.gpl)";
             }
         }{ WARN_UNKNOWN_ARG("--color-selection") }
     }
@@ -1519,6 +1535,7 @@ char Guid::showColorSelection(const QStringList &args)
 
 char Guid::showFontSelection(const QStringList &args)
 {
+    QOUT_ERR
     QFontDialog *dlg = new QFontDialog;
     QString pattern = "%1-%2:%3:%4";
     QString sample = "The quick brown fox jumps over the lazy dog";
@@ -1538,7 +1555,7 @@ char Guid::showFontSelection(const QStringList &args)
         } else if (args.at(i) == "--pattern") {
             pattern = NEXT_ARG;
             if (!pattern.contains("%1"))
-                qWarning("The output pattern doesn't include a placeholder for the font name...");
+                qOutErr << m_prefix_err + "The output pattern doesn't include a placeholder for the font name...";
         } else if (args.at(i) == "--sample") {
             sample = NEXT_ARG;
         } { WARN_UNKNOWN_ARG("--font-selection") }
@@ -1631,6 +1648,7 @@ static void setCol2Label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
 
 char Guid::showForms(const QStringList &args)
 {
+    QOUT_ERR
     NEW_DIALOG
     dlg->setProperty("guid_separator", "|");
     dlg->setProperty("guid_list_row_separator", "~");
@@ -2276,7 +2294,7 @@ char Guid::showForms(const QStringList &args)
                     } else if (alignment == "right") {
                         labelToSet->setAlignment(Qt::AlignRight);
                     } else {
-                        qDebug() << "argument --align: unknown value" << args.at(i);
+                        qOutErr << m_prefix_err + "argument --align: unknown value" << args.at(i);
                     }
                 } else if (args.at(i) == "--bold") {
                     labelToSetFont.setBold(true);
@@ -2347,7 +2365,7 @@ char Guid::showForms(const QStringList &args)
             } else if (alignment == "right") {
                 fl->setLabelAlignment(Qt::AlignRight);
             } else {
-                qDebug() << "argument --forms-align: unknown value" << args.at(i);
+                qOutErr << m_prefix_err + "argument --forms-align: unknown value" << args.at(i);
             }
         }
         
@@ -2477,6 +2495,8 @@ void Guid::printHelp(const QString &category)
             Help("", tr("")) <<
             Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
             Help("--modal", tr("Set the modal hint")) <<
+            Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
+            Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
             Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
             
         helpDict["application"] = CategoryHelp(tr("Application Options"), HelpList() <<
