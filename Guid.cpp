@@ -36,6 +36,7 @@
 #include <QFileDialog>
 #include <QFontDialog>
 #include <QFormLayout>
+#include <QHeaderView>
 #include <QIcon>
 #include <QInputDialog>
 #include <QLabel>
@@ -918,6 +919,24 @@ static QStringList listValuesFromFile(QString data)
     return values;
 }
 
+static QSize getQTreeWidgetSize(QTreeWidget **qtw)
+{
+    QTreeWidget *tw = *qtw;
+    int rows = 0;
+    int height = 2 * tw->frameWidth();
+    if (!tw->isHeaderHidden())
+        height += tw->header()->sizeHint().height();
+    
+    for (int i = 0; i < tw->topLevelItemCount(); ++i) {
+        rows += 1;
+        QTreeWidgetItem *twi = tw->topLevelItem(i);
+        QRect rec = twi->treeWidget()->visualItemRect(twi);
+        height += rec.height();
+    }
+    
+    return QSize(tw->header()->length() + 2 * tw->frameWidth(), height);
+}
+
 char Guid::showList(const QStringList &args)
 {
     NEW_DIALOG
@@ -931,8 +950,11 @@ char Guid::showList(const QStringList &args)
     tw->setSelectionMode(QAbstractItemView::SingleSelection);
     tw->setRootIsDecorated(false);
     tw->setAllColumnsShowFocus(true);
+    tw->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    tw->header()->setStretchLastSection(true);
 
     bool editable(false), checkable(false), exclusive(false), icons(false), ok, needFilter(true);
+    int heightToSet = -1;
     QStringList columns;
     QStringList values;
     QList<int> hiddenCols;
@@ -992,6 +1014,10 @@ char Guid::showList(const QStringList &args)
                         tw->topLevelItem(i)->setHidden(!tw->topLevelItem(i)->text(0).contains(match, Qt::CaseInsensitive));
                 });
             }
+        } else if (args.at(i) == "--field-height") {
+            heightToSet = NEXT_ARG.toInt(&ok);
+            if (!ok)
+                heightToSet = -1;
         } else if (args.at(i) == "--list-values-from-file") {
             values = listValuesFromFile(NEXT_ARG);
         } else if (args.at(i) != "--list") {
@@ -1020,6 +1046,9 @@ char Guid::showList(const QStringList &args)
     }
     for (int i = 0; i < columns.count(); ++i)
         tw->resizeColumnToContents(i);
+
+    if (heightToSet >= 0 && heightToSet < getQTreeWidgetSize(&tw).height())
+        tw->setMaximumHeight(heightToSet);
 
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
@@ -1521,7 +1550,8 @@ char Guid::showFontSelection(const QStringList &args)
     return 0;
 }
 
-static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader, Qt::ItemFlags &flags)
+static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader,
+                           Qt::ItemFlags &flags, int &height)
 {
     QTreeWidget *tw = *tree;
 
@@ -1558,10 +1588,14 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
 
     tw->setStyleSheet(QTREEWIDGET_STYLE);
 
+    if (height >= 0 && height < getQTreeWidgetSize(&tw).height())
+        tw->setMaximumHeight(height);
+
     values.clear();
     columns.clear();
     showHeader = false;
     flags = Qt::NoItemFlags;
+    height = -1;
     *tree = NULL;
 }
 
@@ -1636,6 +1670,7 @@ char Guid::showForms(const QStringList &args)
     QStringList lastListValues, lastListColumns, lastComboValues;
     bool lastListHeader(false);
     Qt::ItemFlags lastListFlags;
+    int lastListHeight = -1;
     
     QComboBox *lastCombo = NULL;
     
@@ -1921,8 +1956,10 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--add-list") {
             lastWidget = "list";
             QLabel *labelList = new QLabel(NEXT_ARG);
-            buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
+            buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
             lastList = new QTreeWidget(dlg);
+            lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+            lastList->header()->setStretchLastSection(true);
             
             if (lastColumn == "col1") {
                 SET_FORMS_COL1(labelList, lastList)
@@ -2174,6 +2211,17 @@ char Guid::showForms(const QStringList &args)
             lastListHeader = true;
         }
         
+        // --field-height
+        else if (args.at(i) == "--field-height") {
+            if (lastWidget == "list") {
+                lastListHeight = NEXT_ARG.toInt(&ok);
+                if (!ok || lastListHeight < 0)
+                    lastListHeight = -1;
+            } else {
+                WARN_UNKNOWN_ARG("--add-list");
+            }
+        }
+        
         /******************************
          * scale
          ******************************/
@@ -2326,7 +2374,7 @@ char Guid::showForms(const QStringList &args)
         }
     }
     
-    buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags);
+    buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
     
     if (labelInBold) {
         QFont mainLabelFont = label->font();
@@ -2552,6 +2600,7 @@ void Guid::printHelp(const QString &category)
             Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
             Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
             Help("--show-header", tr("Show the columns header")) <<
             Help("", tr("")) <<
             Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
@@ -2659,6 +2708,7 @@ helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
             Help("", tr("")) <<
             Help("--mid-search", tr("Change list default search function searching for text in the middle,")) <<
             Help("...", tr("not on the beginning")) <<
+            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
             Help("--separator=SEPARATOR", tr("Set output separator character")));
             
 helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
