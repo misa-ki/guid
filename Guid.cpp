@@ -1953,6 +1953,25 @@ char Guid::showForms(const QStringList &args)
             }
         }
         
+        // QLabel: --add-hrule
+        else if (args.at(i) == "--add-hrule") {
+            lastWidget = "hrule";
+            QLabel *hRule = new QLabel();
+            QString hRuleCss = QString("color: " + NEXT_ARG + ";");
+            hRule->setContentsMargins(0, 0, 0, 0);
+            hRule->setFrameShape(QFrame::HLine);
+            hRule->setStyleSheet(hRuleCss);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), hRule)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), hRule)
+                colsHBoxLayout->setSpacing(0);
+            } else {
+                fl->addRow(hRule);
+            }
+        }
+        
         // QComboBox: --add-combo
         else if (args.at(i) == "--add-combo") {
             lastWidget = "combo";
@@ -2702,6 +2721,9 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("", tr("")) <<
+            Help("--add-hrule=COLOR", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:")) <<
+            Help("", tr("guid --forms --text=\"Form description\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"")) <<
             Help("", tr("")) <<
             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
             Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
