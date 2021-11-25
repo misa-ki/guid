@@ -585,7 +585,7 @@ void Guid::quitOnError()
 
 #define NEXT_ARG QString((++i < args.count()) ? args.at(i) : QString())
 #define WARN_UNKNOWN_ARG(_KNOWN_) if (args.at(i).startsWith("--") && args.at(i) != _KNOWN_) qDebug() << "unspecific argument" << args.at(i);
-#define SHOW_DIALOG m_dialog = dlg; connect(dlg, SIGNAL(finished(int)), SLOT(dialogFinished(int))); dlg->show();
+#define SHOW_DIALOG m_dialog = dlg; Qt::WindowFlags dFlags = dlg->windowFlags(); dFlags |= Qt::WindowStaysOnTopHint; dlg->setWindowFlags(dFlags); connect(dlg, SIGNAL(finished(int)), SLOT(dialogFinished(int))); dlg->show();
 
 bool Guid::readGeneral(QStringList &args) {
     QStringList remains;
