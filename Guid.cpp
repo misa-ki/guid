@@ -2272,9 +2272,10 @@ char Guid::showForms(const QStringList &args)
          * label
          ******************************/
         
-        // --align || --bold || --italics || --font-size || --foreground-color || --background-color
+        // --align || --bold || --italics || --small-caps || --font-size || --foreground-color || --background-color
         else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" ||
-                 args.at(i) == "--font-size" || args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
+                 args.at(i) == "--small-caps" || args.at(i) == "--font-size" ||
+                 args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
             QLabel *labelToSet = NULL;
             if (lastWidget == "label") {
                 labelToSet = label;
@@ -2301,6 +2302,9 @@ char Guid::showForms(const QStringList &args)
                     labelToSet->setFont(labelToSetFont);
                 } else if (args.at(i) == "--italics") {
                     labelToSetFont.setItalic(true);
+                    labelToSet->setFont(labelToSetFont);
+                } else if (args.at(i) == "--small-caps") {
+                    labelToSetFont.setCapitalization(QFont::SmallCaps);
                     labelToSet->setFont(labelToSetFont);
                 } else if (args.at(i) == "--font-size") {
                     int fontSize = NEXT_ARG.toInt(&ok);
@@ -2576,6 +2580,7 @@ void Guid::printHelp(const QString &category)
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
             Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
             Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
             Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
             Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
@@ -2680,6 +2685,7 @@ void Guid::printHelp(const QString &category)
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
             Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
             Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
             Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
             Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
