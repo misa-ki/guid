@@ -57,6 +57,7 @@
 #include <QSpinBox>
 #include <QStringBuilder>
 #include <QStringList>
+#include <QTabWidget>
 #include <QTextBrowser>
 #include <QTextCodec>
 #include <QTimer>
@@ -167,6 +168,7 @@ InputGuard *InputGuard::s_instance = NULL;
 #include <X11/Xlib.h>
 #endif
 
+typedef QPair<bool, QString> ValuePair;
 typedef QPair<QString, QString> Help;
 typedef QList<Help> HelpList;
 typedef QPair<QString, HelpList> CategoryHelp;
@@ -339,13 +341,13 @@ bool Guid::error(const QString message)
 
 #define IF_IS(_TYPE_) if (const _TYPE_ *t = qobject_cast<const _TYPE_*>(w))
 
-static QString value(const QWidget *w, const QString &pattern)
+static ValuePair value(const QWidget *w, const QString &dateFormat, const QString &separator, const QString &listRowSeparator)
 {
     if (!w)
-        return QString();
+        return ValuePair(false, QString());
 
     IF_IS(QLineEdit) {
-        return t->text();
+        return ValuePair(true, t->text());
     } else IF_IS(QTreeWidget) {
         QString selected_items;
         QString selected_row;
@@ -357,41 +359,75 @@ static QString value(const QWidget *w, const QString &pattern)
                 selected_row += item->text(i);
             }
             if (!selected_items.isEmpty())
-                selected_items += w->property("guid_list_row_separator").toString();
+                selected_items += listRowSeparator;
             selected_items += selected_row;
         }
-        return selected_items;
+        return ValuePair(true, selected_items);
     } else IF_IS(QComboBox) {
-        return t->currentText();
+        return ValuePair(true, t->currentText());
     } else IF_IS(QCalendarWidget) {
-        if (pattern.isNull())
-            return QLocale::system().toString(t->selectedDate(), QLocale::ShortFormat);
-        return t->selectedDate().toString(pattern);
+        if (dateFormat.isNull())
+            return ValuePair(true, QLocale::system().toString(t->selectedDate(), QLocale::ShortFormat));
+        return ValuePair(true, t->selectedDate().toString(dateFormat));
     } else IF_IS(QCheckBox) {
-        return t->isChecked() ? "true" : "false";
+        return ValuePair(true, t->isChecked() ? "true" : "false");
     } else IF_IS(QSlider) {
-        return QString::number(t->value());
+        return ValuePair(true, QString::number(t->value()));
     } else IF_IS(QSpinBox) {
-        return QString::number(t->value());
+        return ValuePair(true, QString::number(t->value()));
     } else IF_IS(QDoubleSpinBox) {
-        return QString::number(t->value());
-    } else IF_IS(QWidget) {
-        QString widgets_value;
-        QString widget_value;
-        if (t->property("guid_cols_container").toBool() || t->property("guid_scale_container").toBool()) {
-            QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
-            foreach(QWidget *widget, wChildren) {
-                widget_value = value(widget, pattern);
-                if (qstrcmp(widget->metaObject()->className(), "QLabel") == 0)
+        return ValuePair(true, QString::number(t->value()));
+    } else IF_IS(QTabWidget) {
+        QString tabsValue = NULL;
+        ValuePair resultPair;
+        ValuePair tabPair;
+        int nbResults = 0;
+        for (int i = 0; i < t->count(); ++i) {
+            QWidget *tab = t->widget(i);
+            QList<QWidget*> tabChildren = tab->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+            foreach(QWidget *tabChild, tabChildren) {
+                if (qstrcmp(tabChild->metaObject()->className(), "QLabel") == 0)
                     continue;
-                if (!widgets_value.isEmpty())
-                    widgets_value += t->property("guid_separator").toString();
-                widgets_value += widget_value;
+                tabPair = value(tabChild, dateFormat, separator, listRowSeparator);
+                if (tabPair.first) {
+                    if (nbResults > 0) {
+                        tabsValue += separator;
+                    }
+                    tabsValue += tabPair.second;
+                    nbResults++;
+                }
             }
         }
-        return widgets_value;
+        resultPair = ValuePair(true, tabsValue);
+        if (tabsValue.isNull())
+            resultPair.first = false;
+        return resultPair;
+    } else IF_IS(QWidget) {
+        QString widgetsValue = NULL;
+        ValuePair resultPair;
+        ValuePair widgetPair;
+        if (t->property("guid_cols_container").toBool() || t->property("guid_scale_container").toBool()) {
+            int nbResults = 0;
+            QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+            foreach(QWidget *widget, wChildren) {
+                if (qstrcmp(widget->metaObject()->className(), "QLabel") == 0)
+                    continue;
+                widgetPair = value(widget, dateFormat, separator, listRowSeparator);
+                if (widgetPair.first) {
+                    if (nbResults > 0) {
+                        widgetsValue += separator;
+                    }
+                    widgetsValue += widgetPair.second;
+                    nbResults++;
+                }
+            }
+        }
+        resultPair = ValuePair(true, widgetsValue);
+        if (widgetsValue.isNull())
+            resultPair.first = false;
+        return resultPair;
     }
-    return QString();
+    return ValuePair(false, QString());
 }
 
 void Guid::dialogFinished(int status)
@@ -428,12 +464,12 @@ void Guid::dialogFinished(int status)
         case Notification:
             break;
         case Calendar: {
-            QString format = sender()->property("guid_date_format").toString();
+            QString dateFormat = sender()->property("guid_date_format").toString();
             QDate date = sender()->findChild<QCalendarWidget*>()->selectedDate();
-            if (format.isEmpty())
+            if (dateFormat.isEmpty())
                 qOut << m_prefix_ok + QLocale::system().toString(date, QLocale::ShortFormat);
             else
-                qOut << m_prefix_ok + date.toString(format);
+                qOut << m_prefix_ok + date.toString(dateFormat);
             break;
         }
         case Entry: {
@@ -552,14 +588,18 @@ void Guid::dialogFinished(int status)
             // We skip the first layout used for the top menu
             QFormLayout *fl = layouts.at(1);
             QStringList result;
-            QString format = sender()->property("guid_date_format").toString();
+            ValuePair resultPair;
+            QString dateFormat = sender()->property("guid_date_format").toString();
+            QString separator = sender()->property("guid_separator").toString();
+            QString listRowSeparator = sender()->property("guid_list_row_separator").toString();
             for (int i = 0; i < fl->count(); ++i) {
                 if (QLayoutItem *li = fl->itemAt(i, QFormLayout::FieldRole)) {
-                    li->widget()->setProperty("guid_list_row_separator", sender()->property("guid_list_row_separator").toString());
-                    result << value(li->widget(), format);
+                    resultPair = value(li->widget(), dateFormat, separator, listRowSeparator);
+                    if (resultPair.first)
+                        result << resultPair.second;
                 }
             }
-            qOut << m_prefix_ok + result.join(sender()->property("guid_separator").toString());
+            qOut << m_prefix_ok + result.join(separator);
             break;
         }
         default:
@@ -1627,7 +1667,11 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
     colsHBoxLayout->addStretch(); \
     colsHBoxLayout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
     setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
-    fl->addRow(labelCol1, colsContainer);
+    if (!lastTabName.isEmpty()) { \
+        lastTabLayout->addRow(labelCol1, colsContainer); \
+    } else { \
+        fl->addRow(labelCol1, colsContainer); \
+    }
 
 static void setFormsColumns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLayout, QString prop_separator, bool &columnsAreSet)
 {
@@ -1670,13 +1714,20 @@ char Guid::showForms(const QStringList &args)
     QFormLayout *fl = new QFormLayout();
     vl->addLayout(fl);
     
-    vl->layout()->setSpacing(15);
+    vl->layout()->setSpacing(9);
     vl->addStretch();
-
+    
+    QTabWidget *lastTabBar = new QTabWidget();
+    QFormLayout *lastTabLayout = NULL;
+    QWidget *lastTab = NULL;
+    QString lastTabName = "";
+    int lastTabIndex = -1;
+    
     bool columnsAreSet = false;
     QLabel *labelCol1 = NULL;
     QHBoxLayout *colsHBoxLayout = NULL;
     QWidget *colsContainer = NULL;
+    QString lastColumn = NULL;
     
     QLineEdit *lastEntry = NULL;
     
@@ -1701,9 +1752,7 @@ char Guid::showForms(const QStringList &args)
     QSpinBox *lastSpinBox = NULL;
     QDoubleSpinBox *lastDoubleSpinBox = NULL;
     
-    QString lastColumn = NULL;
     QString lastWidget = NULL;
-    
     QMenuBar *lastMenu = NULL;
     QSignalMapper *menuSignalMapper = new QSignalMapper(this);
     bool topMenu = false;
@@ -1715,10 +1764,28 @@ char Guid::showForms(const QStringList &args)
          * WIDGET CONTAINERS
          ********************************************************************************/
         
+        // --tab
+        if (args.at(i) == "--tab") {
+            QString next_arg = NEXT_ARG;
+            if (next_arg == "stop") {
+                fl->addRow(lastTabBar);
+                lastTabBar = new QTabWidget();
+                lastTabName = "";
+                lastTabIndex = -1;
+            } else if (lastTabName.isEmpty() || lastTabName != next_arg) {
+                lastTabName = next_arg;
+                lastTabIndex++;
+                lastTab = new QWidget();
+                lastTabLayout = new QFormLayout();
+                lastTab->setLayout(lastTabLayout);
+                lastTabBar->addTab(lastTab, lastTabName);
+            }
+        }
+        
         // --col1
-        if (args.at(i) == "--col1") {
+        else if (args.at(i) == "--col1") {
             lastColumn = "col1";
-            colsHBoxLayout = new QHBoxLayout;
+            colsHBoxLayout = new QHBoxLayout();
         }
         
         // --col2
@@ -1740,6 +1807,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelCal, cal)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelCal, cal)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelCal, cal);
             } else {
                 fl->addRow(labelCal, cal);
             }
@@ -1754,6 +1823,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(new QLabel(), cb)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(new QLabel(), cb)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(new QLabel(), cb);
             } else {
                 fl->addRow(cb);
             }
@@ -1769,6 +1840,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelEntry, lastEntry)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelEntry, lastEntry)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelEntry, lastEntry);
             } else {
                 fl->addRow(labelEntry, lastEntry);
             }
@@ -1879,6 +1952,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(new QLabel(), lastMenu)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(new QLabel(), lastMenu)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(lastMenu);
             } else if (topMenu) {
                 lastMenu->setStyleSheet("background: white; border-top: 1px solid #F0F0F0;");
                 flTopMenu->addRow(lastMenu);
@@ -1898,6 +1973,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelPassword, lastPassword)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelPassword, lastPassword)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelPassword, lastPassword);
             } else {
                 fl->addRow(labelPassword, lastPassword);
             }
@@ -1913,6 +1990,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelSpinBox, lastSpinBox)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelSpinBox, lastSpinBox)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelSpinBox, lastSpinBox);
             } else {
                 fl->addRow(labelSpinBox, lastSpinBox);
             }
@@ -1932,6 +2011,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelDoubleSpinBox, lastDoubleSpinBox)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelDoubleSpinBox, lastDoubleSpinBox)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelDoubleSpinBox, lastDoubleSpinBox);
             } else {
                 fl->addRow(labelDoubleSpinBox, lastDoubleSpinBox);
             }
@@ -1948,6 +2029,8 @@ char Guid::showForms(const QStringList &args)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(new QLabel(), lastText)
                 colsHBoxLayout->setSpacing(0);
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(lastText);
             } else {
                 fl->addRow(lastText);
             }
@@ -1967,6 +2050,8 @@ char Guid::showForms(const QStringList &args)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(new QLabel(), hRule)
                 colsHBoxLayout->setSpacing(0);
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(hRule);
             } else {
                 fl->addRow(hRule);
             }
@@ -1982,6 +2067,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelCombo, lastCombo)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelCombo, lastCombo)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelCombo, lastCombo);
             } else {
                 fl->addRow(labelCombo, lastCombo);
             }
@@ -2002,6 +2089,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(labelList, lastList)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(labelList, lastList)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(labelList, lastList);
             } else {
                 fl->addRow(labelList, lastList);
             }
@@ -2031,6 +2120,8 @@ char Guid::showForms(const QStringList &args)
                 SET_FORMS_COL1(lastScaleLabel, scaleContainer)
             } else if (lastColumn == "col2") {
                 SET_FORMS_COL2(lastScaleLabel, scaleContainer)
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(lastScaleLabel, scaleContainer);
             } else {
                 fl->addRow(lastScaleLabel, scaleContainer);
             }
@@ -2043,6 +2134,19 @@ char Guid::showForms(const QStringList &args)
             
             label->setText(labelText(NEXT_ARG));
             label->setVisible(true);
+        }
+        
+        /********************************************************************************
+         * CONTAINER SETTINGS
+         ********************************************************************************/
+        
+        /******************************
+         * tab
+         ******************************/
+        
+        // --tab-visible
+        else if (args.at(i) == "--tab-visible") {
+            lastTabBar->setCurrentIndex(lastTabIndex);
         }
         
         /********************************************************************************
@@ -2614,6 +2718,15 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("", tr("")) <<
+            Help("--tab=NAME", "GUID ONLY! " + tr("Create a tab bar.")) <<
+            Help("...", tr("Next fields will be added to the tab NAME unless another one is specified with")) <<
+            Help("...", tr(" \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with --tab=\"stop\". Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"")) <<
+            Help("...", tr("--add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"")) <<
+            Help("...", tr("--add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop\"")) <<
+            Help("...", tr("--add-scale=\"Field outside tabs\" --step=5")) <<
+            Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
             Help("", tr("")) <<
             Help("--col1", "GUID ONLY! " + tr("Start a two-field row.")) <<
             Help("...", tr("The next form field specified will be added in the first column.")) <<
