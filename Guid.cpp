@@ -1928,6 +1928,9 @@ char Guid::showForms(const QStringList &args)
     
     QLabel *lastText = NULL;
     
+    QLabel *lastHRule = NULL;
+    QString lastHRuleCss = NULL;
+    
     QComboBox *lastCombo = NULL;
     GList lastComboGList = GList();
     
@@ -2248,21 +2251,21 @@ char Guid::showForms(const QStringList &args)
         // QLabel: --add-hrule
         else if (args.at(i) == "--add-hrule") {
             SWITCH_WIDGET("hrule")
-            QLabel *hRule = new QLabel();
-            QString hRuleCss = QString("color: " + NEXT_ARG + ";");
-            hRule->setContentsMargins(0, 0, 0, 0);
-            hRule->setFrameShape(QFrame::HLine);
-            hRule->setStyleSheet(hRuleCss);
+            lastHRule = new QLabel();
+            lastHRuleCss = QString("color: " + NEXT_ARG + ";");
+            lastHRule->setContentsMargins(0, 0, 0, 0);
+            lastHRule->setFrameShape(QFrame::HLine);
+            lastHRule->setStyleSheet(lastHRuleCss);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), hRule)
+                SET_FORMS_COL1(new QLabel(), lastHRule)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), hRule)
+                SET_FORMS_COL2(new QLabel(), lastHRule)
                 colsHBoxLayout->setSpacing(0);
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(hRule);
+                lastTabLayout->addRow(lastHRule);
             } else {
-                fl->addRow(hRule);
+                fl->addRow(lastHRule);
             }
         }
         
@@ -2473,13 +2476,17 @@ char Guid::showForms(const QStringList &args)
         }
         
         /******************************
-         * entry || password || spin-box || double-spin-box || combo || text-browser || text-info
+         * entry || text || hrule || password || spin-box || double-spin-box || combo || text-browser || text-info
          ******************************/
         
         // --field-width
         else if (args.at(i) == "--field-width") {
             if (lastWidget == "entry") {
                 lastEntry->setMaximumWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "text") {
+                lastText->setMaximumWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "hrule") {
+                lastHRule->setMaximumWidth(NEXT_ARG.toInt());
             } else if (lastWidget == "password") {
                 lastPassword->setMaximumWidth(NEXT_ARG.toInt());
             } else if (lastWidget == "spin-box") {
@@ -3356,6 +3363,7 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
             Help("--add-text-info=Field name", "GUID ONLY! " + tr("Add text information")) <<
             Help("...", tr("Note that this widget is a user input field only when the argument \"--editable\" is used.")) <<
@@ -3399,6 +3407,7 @@ void Guid::printHelp(const QString &category)
             Help("", tr("guid --forms --text=\"Form description\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"")) <<
             Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
             Help("...", tr("on the field count when parsing output printed on the console.")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
             Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
