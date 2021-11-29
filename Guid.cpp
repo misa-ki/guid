@@ -638,7 +638,7 @@ void Guid::exitAfterMenuClick(int i)
 void Guid::showMenuClick(int i)
 {
     QOUT
-    qOut << m_prefix_ok + "MENU CLICKED:" + QString::number(i);
+    qOut << m_prefix_ok + "MENU_CLICKED:" + QString::number(i);
 }
 
 void Guid::quitOnError()
@@ -2071,16 +2071,16 @@ char Guid::showForms(const QStringList &args)
             
             QString next_arg = NEXT_ARG;
             
-            bool menuWithSeparators = false;
-            if (next_arg.left(1) == "|") {
-                menuWithSeparators = true;
-                next_arg.remove(0, 1);
+            bool closeDlgAfterMenuClick = false;
+            if (next_arg.contains(QRegExp("^close=1//"))) {
+                closeDlgAfterMenuClick = true;
+                next_arg.remove(0, 9);
             }
             
-            bool closeDlgAfterMenuClick = false;
-            if (next_arg.left(1) == "$") {
-                closeDlgAfterMenuClick = true;
-                next_arg.remove(0, 1);
+            QString menuSeparator = "";
+            if (next_arg.contains(QRegExp("^sep=.//"))) {
+                menuSeparator = next_arg.mid(4, 1);
+                next_arg.remove(0, 7);
             }
             
             QStringList menuItemsMainLevel = next_arg.split('|');
@@ -2112,8 +2112,8 @@ char Guid::showForms(const QStringList &args)
                     continue;
                 }
                 
-                if (menuWithSeparators && i > 0) {
-                    auto* menuSep = new QAction(QStringLiteral("|"), this);
+                if (!menuSeparator.isEmpty() && i > 0) {
+                    auto* menuSep = new QAction(menuSeparator, this);
                     menuSep->setDisabled(true);
                     lastMenu->addAction(menuSep);
                 }
@@ -3340,7 +3340,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         // --add-menu
-        Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.\nFirst level menu items must be separated with the symbol \"|\".\nSecond level menu items must be separated with the symbol \"#\".\nEach menu item without children must have an output code specified as follows:\n\"MenuItemName:OutputCode\"\nBy default, the output code is printed on the console after a click on the menu\nitem, and the dialog stays open. We can specify to close the dialog by adding\nthe symbol \"$\" at the beginning of menu settings. Example:\nguid --forms --add-menu=\"$Item A#Subitem:10|Item B:11|Item C:12\"\nTo add separators between first level menu items, add the symbol \"|\" at the\nbeginning of menu settings. Example:\nguid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second\n     Item:12|Third Item:13\"\nExample of form menu with separators and with the dialog closing after a click\non a menu item:\nguid --forms --add-menu=\"|$First Item#First Subitem:10#Second\n     Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"\n     --add-entry=\"Text field\"\nNote that if a main label is set for the form with the argument \"--text=TEXT\",\nit'll be displayed on top of the dialog. Example:\nguid --forms --text=\"Form label\" --add-menu=\"First Item:10|Second Item:11\"\n     --add-entry=\"Text field\"\nIf we want to have a menu on top of the dialog but still have a main label for\nthe form, we must add the label as new text with \"--add-text=TEXT\" after the\nmenu. Example:\nguid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form label\"\n     --bold --add-entry=\"Text field\"")) <<
+        Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.\nFirst level menu items must be separated with the symbol \"|\".\nSecond level menu items must be separated with the symbol \"#\".\nEach menu item without children must have an output code specified as follows:\n\"MenuItemName:OutputCode\"\nBy default, the output code is printed on the console after a click on the menu\nitem, and the dialog stays open. We can specify to close the dialog by adding\n\"close=1//\" at the beginning of the menu settings. Example:\nguid --forms --add-menu=\"close=1//Item A#Subitem:10|Item B:11|Item C:12\"\nTo add separators between first level menu items, add \"sep=SEP//\" at the\nbeginning of menu settings. Example:\nguid --forms --add-menu=\"sep=|//First Item#First Subitem:10#Second Subitem:11|Second\n     Item:12|Third Item:13\"\nExample of form menu closing the dialog closing after a click and with separators:\nguid --forms --add-menu=\"close=1//sep=|//First Item#First Subitem:10#Second\n     Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"\n     --add-entry=\"Text field\"\nNote that if a main label is set for the form with the argument \"--text=TEXT\",\nit'll be displayed on top of the dialog. Example:\nguid --forms --text=\"Form label\" --add-menu=\"First Item:10|Second Item:11\"\n     --add-entry=\"Text field\"\nIf we want to have a menu on top of the dialog but still have a main label for\nthe form, we must add the label as new text with \"--add-text=TEXT\" after the\nmenu. Example:\nguid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form label\"\n     --bold --add-entry=\"Text field\"")) <<
         Help("", "") <<
         
         // --add-password
