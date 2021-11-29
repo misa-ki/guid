@@ -1928,6 +1928,8 @@ char Guid::showForms(const QStringList &args)
     
     QLabel *lastText = NULL;
     
+    QLabel *lastImageText = NULL;
+    
     QLabel *lastHRule = NULL;
     QString lastHRuleCss = NULL;
     
@@ -2248,6 +2250,35 @@ char Guid::showForms(const QStringList &args)
             }
         }
         
+        // QLabel: --add-image-text
+        else if (args.at(i) == "--add-image-text") {
+            SWITCH_WIDGET("image-text")
+            QString next_arg = NEXT_ARG;
+            QStringList imageTextData = next_arg.split("//");
+            QString labelImageText;
+            if (imageTextData.count() == 2 && QFile::exists(imageTextData[0])) {
+                labelImageText += "<table><tr>";
+                labelImageText += "<td><img src=\"" + imageTextData[0] + "\" /></td>";
+                labelImageText += "<td style=\"padding-left: 5px; vertical-align: middle;\">" + imageTextData[1] + "</td>";
+                labelImageText += "</tr></table>";
+            } else {
+                labelImageText = next_arg;
+            }
+            lastImageText = new QLabel(labelImageText);
+            lastImageText->setContentsMargins(0, 3, 0, 0);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), lastImageText)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), lastImageText)
+                colsHBoxLayout->setSpacing(0);
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(lastImageText);
+            } else {
+                fl->addRow(lastImageText);
+            }
+        }
+        
         // QLabel: --add-hrule
         else if (args.at(i) == "--add-hrule") {
             SWITCH_WIDGET("hrule")
@@ -2476,7 +2507,7 @@ char Guid::showForms(const QStringList &args)
         }
         
         /******************************
-         * entry || text || hrule || password || spin-box || double-spin-box || combo || text-browser || text-info
+         * entry || text || image-text || hrule || password || spin-box || double-spin-box || combo || text-browser || text-info
          ******************************/
         
         // --field-width
@@ -2485,6 +2516,8 @@ char Guid::showForms(const QStringList &args)
                 lastEntry->setMaximumWidth(NEXT_ARG.toInt());
             } else if (lastWidget == "text") {
                 lastText->setMaximumWidth(NEXT_ARG.toInt());
+            } else if (lastWidget == "image-text") {
+                lastImageText->setMaximumWidth(NEXT_ARG.toInt());
             } else if (lastWidget == "hrule") {
                 lastHRule->setMaximumWidth(NEXT_ARG.toInt());
             } else if (lastWidget == "password") {
@@ -2746,7 +2779,7 @@ char Guid::showForms(const QStringList &args)
         }
         
         /******************************
-         * label || text-info
+         * label || text || image-text || text-info
          ******************************/
         
         // --align || --bold || --italics || --underline || --small-caps || --font-family || --font-size ||
@@ -2759,9 +2792,11 @@ char Guid::showForms(const QStringList &args)
                 labelToSet = label;
             } else if (lastWidget == "text") {
                 labelToSet = lastText;
+            } else if (lastWidget == "image-text") {
+                labelToSet = lastImageText;
             }
             
-            // label
+            // labelToSet
             if (labelToSet) {
                 QFont fontToSet = labelToSet->font();
                 
@@ -3350,6 +3385,25 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.")) <<
+            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
+            Help("...", tr("on the field count when parsing output printed on the console.")) <<
+            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
+            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+            Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
+            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
+            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("", tr("")) <<
+            Help("--add-image-text=PATH_TO_IMAGE//TEXT", "GUID ONLY! " + tr("Add an image and text without field.")) <<
+            Help("...", tr("Set the path to the image followed by \"//\", then the text that will be displayed")) <<
+            Help("...", tr(" to the right of the image. Example:")) <<
+            Help("...", tr("guid --forms --add-image-text=\"/path/to/image.png//Text displayed\"")) <<
             Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
             Help("...", tr("on the field count when parsing output printed on the console.")) <<
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
