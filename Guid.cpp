@@ -346,9 +346,13 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
 {
     if (!w)
         return ValuePair(false, QString());
-
+    
+    QString var = w->property("guid_var").toString().simplified().replace(" ", "");
+    if (!var.isEmpty())
+        var += "=";
+    
     IF_IS(QLineEdit) {
-        return ValuePair(true, t->text());
+        return ValuePair(true, var + t->text());
     } else IF_IS(QTreeWidget) {
         QString selected_items;
         QString selected_row;
@@ -363,21 +367,21 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
                 selected_items += listRowSeparator;
             selected_items += selected_row;
         }
-        return ValuePair(true, selected_items);
+        return ValuePair(true, var + selected_items);
     } else IF_IS(QComboBox) {
-        return ValuePair(true, t->currentText());
+        return ValuePair(true, var + t->currentText());
     } else IF_IS(QCalendarWidget) {
         if (dateFormat.isNull())
-            return ValuePair(true, QLocale::system().toString(t->selectedDate(), QLocale::ShortFormat));
-        return ValuePair(true, t->selectedDate().toString(dateFormat));
+            return ValuePair(true, var + QLocale::system().toString(t->selectedDate(), QLocale::ShortFormat));
+        return ValuePair(true, var + t->selectedDate().toString(dateFormat));
     } else IF_IS(QCheckBox) {
-        return ValuePair(true, t->isChecked() ? "true" : "false");
+        return ValuePair(true, t->isChecked() ? var + "true" : var + "false");
     } else IF_IS(QSlider) {
-        return ValuePair(true, QString::number(t->value()));
+        return ValuePair(true, var + QString::number(t->value()));
     } else IF_IS(QSpinBox) {
-        return ValuePair(true, QString::number(t->value()));
+        return ValuePair(true, var + QString::number(t->value()));
     } else IF_IS(QDoubleSpinBox) {
-        return ValuePair(true, QString::number(t->value()));
+        return ValuePair(true, var + QString::number(t->value()));
     } else IF_IS(QTabWidget) {
         QString tabsValue = NULL;
         ValuePair resultPair;
@@ -402,10 +406,12 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
         resultPair = ValuePair(true, tabsValue);
         if (tabsValue.isNull())
             resultPair.first = false;
+        else
+            resultPair.second = var + resultPair.second;
         return resultPair;
     } else IF_IS(QTextEdit) {
         if (!t->isReadOnly()) {
-            ValuePair resultPair = ValuePair(true, t->toPlainText());
+            ValuePair resultPair = ValuePair(true, var + t->toPlainText());
             QString nsep = t->property("guid_text_info_nsep").toString();
             if (!nsep.isEmpty())
                 resultPair.second.replace("\n", nsep);
@@ -436,6 +442,8 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
         resultPair = ValuePair(true, widgetsValue);
         if (widgetsValue.isNull())
             resultPair.first = false;
+        else
+            resultPair.second = var + resultPair.second;
         return resultPair;
     }
     return ValuePair(false, QString());
@@ -1779,6 +1787,28 @@ static void setCol2Label(QHBoxLayout* &colsHBoxLayout, QLabel* label)
         setTextInfo(lastTextBrowser, lastTextFilename, lastTextIsReadOnly, lastTextIsUrl, lastTextFormat, lastTextCurlPath, lastTextHeight); \
     else if (lastWidget == "text-info") \
         setTextInfo(lastTextInfo, lastTextFilename, lastTextIsReadOnly, lastTextIsUrl, lastTextFormat, lastTextCurlPath, lastTextHeight); \
+    if (!lastVar.isEmpty()) { \
+        if (lastWidget == "calendar") \
+            lastCalendar->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "checkbox") \
+            lastCheckbox->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "entry") \
+            lastEntry->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "password") \
+            lastPassword->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "spin-box") \
+            lastSpinBox->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "double-spin-box") \
+            lastDoubleSpinBox->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "scale") \
+            lastScale->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "combo") \
+            lastCombo->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "list") \
+            lastList->setProperty("guid_var", lastVar); \
+        else if (lastWidget == "text-info") \
+            lastTextInfo->setProperty("guid_var", lastVar); \
+    } \
     lastWidget = NEW_WIDGET;
 
 static void setTextInfoReadOnly(QTextEdit* textInfo, bool isReadOnly)
@@ -1888,6 +1918,10 @@ char Guid::showForms(const QStringList &args)
     QWidget *colsContainer = NULL;
     QString lastColumn = NULL;
     
+    QCheckBox *lastCheckbox = NULL;
+    
+    QCalendarWidget *lastCalendar = NULL;
+    
     QLineEdit *lastEntry = NULL;
     
     QLineEdit *lastPassword = NULL;
@@ -1930,6 +1964,8 @@ char Guid::showForms(const QStringList &args)
     QFileSystemWatcher * comboWatcher = new QFileSystemWatcher(dlg);
     QFileSystemWatcher * listWatcher = new QFileSystemWatcher(dlg);
     
+    QString lastVar = "";
+    
     bool ok;
     
     for (int i = 0; i < args.count(); ++i) {
@@ -1950,17 +1986,20 @@ char Guid::showForms(const QStringList &args)
                 lastTab->setLayout(lastTabLayout);
                 lastTabBar->addTab(lastTab, lastTabName);
             }
+            lastVar = "";
         }
         
         // --col1
         else if (args.at(i) == "--col1") {
             lastColumn = "col1";
             colsHBoxLayout = new QHBoxLayout();
+            lastVar = "";
         }
         
         // --col2
         else if (args.at(i) == "--col2") {
             lastColumn = "col2";
+            lastVar = "";
         }
         
         /********************************************************************************
@@ -1970,33 +2009,33 @@ char Guid::showForms(const QStringList &args)
         // QCalendarWidget: --add-calendar
         else if (args.at(i) == "--add-calendar") {
             SWITCH_WIDGET("calendar")
-            QLabel *labelCal = new QLabel(NEXT_ARG);
-            QCalendarWidget *cal = new QCalendarWidget(dlg);
+            QLabel *labelCalendar = new QLabel(NEXT_ARG);
+            lastCalendar = new QCalendarWidget(dlg);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(labelCal, cal)
+                SET_FORMS_COL1(labelCalendar, lastCalendar)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(labelCal, cal)
+                SET_FORMS_COL2(labelCalendar, lastCalendar)
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(labelCal, cal);
+                lastTabLayout->addRow(labelCalendar, lastCalendar);
             } else {
-                fl->addRow(labelCal, cal);
+                fl->addRow(labelCalendar, lastCalendar);
             }
         }
         
         // QCheckBox: --add-checkbox
         else if (args.at(i) == "--add-checkbox") {
             SWITCH_WIDGET("checkbox")
-            QCheckBox *cb = new QCheckBox(NEXT_ARG, dlg);
+            lastCheckbox = new QCheckBox(NEXT_ARG, dlg);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), cb)
+                SET_FORMS_COL1(new QLabel(), lastCheckbox)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), cb)
+                SET_FORMS_COL2(new QLabel(), lastCheckbox)
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(new QLabel(), cb);
+                lastTabLayout->addRow(new QLabel(), lastCheckbox);
             } else {
-                fl->addRow(cb);
+                fl->addRow(lastCheckbox);
             }
         }
         
@@ -2388,6 +2427,19 @@ char Guid::showForms(const QStringList &args)
         /********************************************************************************
          * WIDGET SETTINGS
          ********************************************************************************/
+        
+        /******************************
+         * calendar || checkbox || entry || password || spin-box || double-spin-box || scale || combo || list || text-info
+         ******************************/
+        
+        // --var
+        else if (args.at(i) == "--var") {
+            if (lastWidget == "calendar" || lastWidget == "checkbox" || lastWidget == "entry" || lastWidget == "password" || lastWidget == "spin-box" || lastWidget == "double-spin-box" || lastWidget == "scale" || lastWidget == "combo" || lastWidget == "list" || lastWidget == "text-info") {
+                lastVar = NEXT_ARG;
+            } else {
+                WARN_UNKNOWN_ARG("--add-entry");
+            }
+        }
         
         /******************************
          * entry
@@ -3150,8 +3202,18 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("--field-width=100 --add-entry=\"Full-width row\"")) <<
             Help("", tr("")) <<
             Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
@@ -3161,11 +3223,21 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("--combo-values-from-file=\"monitor=1//C:\\Users\\name\\Desktop\\file.txt\"")) <<
             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
             Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
             Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
@@ -3189,6 +3261,11 @@ void Guid::printHelp(const QString &category)
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
             Help("--show-header", tr("Show the columns header")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
             Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
@@ -3219,6 +3296,11 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("--bold --add-entry=\"Text field\"")) <<
             Help("", tr("")) <<
             Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
             Help("--value=VALUE", tr("Set initial value")) <<
@@ -3227,6 +3309,11 @@ void Guid::printHelp(const QString &category)
             Help("--step=VALUE", tr("Set step size")) <<
             Help("--hide-value", tr("Hide value")) <<
             Help("--print-partial", tr("Print partial values")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
             Help("--value=VALUE", tr("Set initial value")) <<
@@ -3235,6 +3322,11 @@ void Guid::printHelp(const QString &category)
             Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
             Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
             Help("--value=VALUE", tr("Set initial value")) <<
@@ -3244,6 +3336,11 @@ void Guid::printHelp(const QString &category)
             Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
             Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.")) <<
             Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
@@ -3283,6 +3380,11 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output (when the field is editable).")) <<
+            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
+            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
+            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
+            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
             Help("", tr("")) <<
             Help("--add-text-browser=Field name", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled.")) <<
             Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
