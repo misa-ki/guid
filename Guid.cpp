@@ -2256,7 +2256,7 @@ char Guid::showForms(const QStringList &args)
             QString next_arg = NEXT_ARG;
             QStringList imageTextData = next_arg.split("//");
             QString labelImageText;
-            if (imageTextData.count() == 2 && QFile::exists(imageTextData[0])) {
+            if (imageTextData.count() == 2 && (imageTextData[0].startsWith(":/") || QFile::exists(imageTextData[0]))) {
                 labelImageText += "<table><tr>";
                 labelImageText += "<td><img src=\"" + imageTextData[0] + "\" /></td>";
                 labelImageText += "<td style=\"padding-left: 5px; vertical-align: middle;\">" + imageTextData[1] + "</td>";
@@ -3091,532 +3091,568 @@ QString Guid::labelText(const QString &s) const
 void Guid::printHelp(const QString &category)
 {
     static HelpDict helpDict;
-    QString main_separator = "================================================================================";
+    QString main_separator      = "#####################################################################################";
+    QString secondary_separator = "-------------------------------------------------------------------------------------";
+    
     if (helpDict.isEmpty()) {
+        /******************************
+         * help
+         ******************************/
+        
         helpDict["help"] = CategoryHelp(tr("Help options"), HelpList() <<
-            Help("-h, --help", tr("Show help options")) <<
-            Help("--help-all", tr("Show all help options")) <<
-            Help("--help-general", tr("Show general options")) <<
-            Help("--help-misc", tr("Show miscellaneous options")) <<
-            Help("--help-qt", tr("Show Qt Options")) <<
-            Help("", tr("")) <<
-            Help("--help-calendar", tr("Show calendar options")) <<
-            Help("--help-color-selection", tr("Show color selection options")) <<
-            Help("--help-entry", tr("Show text entry options")) <<
-            Help("--help-error", tr("Show error options")) <<
-            Help("--help-file-selection", tr("Show file selection options")) <<
-            Help("--help-forms", tr("Show forms dialog options")) <<
-            Help("--help-info", tr("Show info options")) <<
-            Help("--help-list", tr("Show list options")) <<
-            Help("--help-notification", tr("Show notification icon options")) <<
-            Help("--help-password", tr("Show password dialog options")) <<
-            Help("--help-progress", tr("Show progress options")) <<
-            Help("--help-question", tr("Show question options")) <<
-            Help("--help-scale", tr("Show scale options")) <<
-            Help("--help-text-info", tr("Show text information options")) <<
-            Help("--help-warning", tr("Show warning options")));
+        Help("-h, --help", tr("Show help options")) <<
+        Help("--help-all", tr("Show all help options")) <<
+        Help("--help-general", tr("Show general options")) <<
+        Help("--help-misc", tr("Show miscellaneous options")) <<
+        Help("--help-qt", tr("Show Qt Options")) <<
+        Help("", "") <<
+        
+        Help("--help-calendar", tr("Show calendar options")) <<
+        Help("--help-color-selection", tr("Show color selection options")) <<
+        Help("--help-entry", tr("Show text entry options")) <<
+        Help("--help-error", tr("Show error options")) <<
+        Help("--help-file-selection", tr("Show file selection options")) <<
+        Help("--help-forms", tr("Show forms dialog options")) <<
+        Help("--help-info", tr("Show info options")) <<
+        Help("--help-list", tr("Show list options")) <<
+        Help("--help-notification", tr("Show notification icon options")) <<
+        Help("--help-password", tr("Show password dialog options")) <<
+        Help("--help-progress", tr("Show progress options")) <<
+        Help("--help-question", tr("Show question options")) <<
+        Help("--help-scale", tr("Show scale options")) <<
+        Help("--help-text-info", tr("Show text information options")) <<
+        Help("--help-warning", tr("Show warning options")));
             
+        /******************************
+         * misc
+         ******************************/
+        
         helpDict["misc"] = CategoryHelp(tr("Miscellaneous options"), HelpList() <<
-            Help("--about", tr("About guid")) <<
-            Help("--version", tr("Print version")));
+        Help("--about", tr("About guid")) <<
+        Help("--version", tr("Print version")));
             
+        /******************************
+         * qt
+         ******************************/
+        
         helpDict["qt"] = CategoryHelp(tr("Qt options"), HelpList() <<
-            Help("--foo", tr("Foo")) <<
-            Help("--bar", tr("Bar")));
+        Help("--foo", tr("Foo")) <<
+        Help("--bar", tr("Bar")));
             
+        /******************************
+         * general
+         ******************************/
+        
         helpDict["general"] = CategoryHelp(tr("General options"), HelpList() <<
-            Help("--title=TITLE", tr("Set the dialog title")) <<
-            Help("--window-icon=ICONPATH", tr("Set the window icon")) <<
-            Help("--width=WIDTH", tr("Set the width")) <<
-            Help("--height=HEIGHT", tr("Set the height")) <<
-            Help("", tr("")) <<
-            Help("--ok-label=TEXT", tr("Sets the label of the Ok button")) <<
-            Help("--cancel-label=TEXT", tr("Sets the label of the Cancel button")) <<
-            Help("", tr("")) <<
-            Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
-            Help("--modal", tr("Set the modal hint")) <<
-            Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
-            Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
-            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
+        Help("--title=TITLE", tr("Set the dialog title")) <<
+        Help("--window-icon=ICONPATH", tr("Set the window icon")) <<
+        Help("--width=WIDTH", tr("Set the width")) <<
+        Help("--height=HEIGHT", tr("Set the height")) <<
+        Help("", "") <<
+        
+        Help("--ok-label=TEXT", tr("Sets the label of the Ok button")) <<
+        Help("--cancel-label=TEXT", tr("Sets the label of the Cancel button")) <<
+        Help("", "") <<
+        
+        Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
+        Help("--modal", tr("Set the modal hint")) <<
+        Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
+        Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
+        Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
             
+        /******************************
+         * application
+         ******************************/
+        
         helpDict["application"] = CategoryHelp(tr("Application Options"), HelpList() <<
-            Help("--display=DISPLAY", tr("X display to use")) <<
-            Help("", tr("")) <<
-            Help("--calendar", tr("Display calendar dialog")) <<
-            Help("--color-selection", tr("Display color selection dialog")) <<
-            Help("--entry", tr("Display text entry dialog")) <<
-            Help("--error", tr("Display error dialog")) <<
-            Help("--file-selection", tr("Display file selection dialog")) <<
-            Help("--font-selection", "GUID ONLY! " + tr("Display font selection dialog")) <<
-            Help("--forms", tr("Display forms dialog")) <<
-            Help("--info", tr("Display info dialog")) <<
-            Help("--list", tr("Display list dialog")) <<
-            Help("--notification", tr("Display notification")) <<
-            Help("--password", tr("Display password dialog")) <<
-            Help("--progress", tr("Display progress indication dialog")) <<
-            Help("--question", tr("Display question dialog")) <<
-            Help("--scale", tr("Display scale dialog")) <<
-            Help("--text-info", tr("Display text information dialog")) <<
-            Help("--warning", tr("Display warning dialog")));
+        Help("--display=DISPLAY", tr("X display to use")) <<
+        Help("", "") <<
+        
+        Help("--calendar", tr("Display calendar dialog")) <<
+        Help("--color-selection", tr("Display color selection dialog")) <<
+        Help("--entry", tr("Display text entry dialog")) <<
+        Help("--error", tr("Display error dialog")) <<
+        Help("--file-selection", tr("Display file selection dialog")) <<
+        Help("--font-selection", "GUID ONLY! " + tr("Display font selection dialog")) <<
+        Help("--forms", tr("Display forms dialog")) <<
+        Help("--info", tr("Display info dialog")) <<
+        Help("--list", tr("Display list dialog")) <<
+        Help("--notification", tr("Display notification")) <<
+        Help("--password", tr("Display password dialog")) <<
+        Help("--progress", tr("Display progress indication dialog")) <<
+        Help("--question", tr("Display question dialog")) <<
+        Help("--scale", tr("Display scale dialog")) <<
+        Help("--text-info", tr("Display text information dialog")) <<
+        Help("--warning", tr("Display warning dialog")));
             
+        /******************************
+         * calendar
+         ******************************/
+        
         helpDict["calendar"] = CategoryHelp(tr("Calendar options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("", tr("")) <<
-            Help("--day=DAY", tr("Set the calendar day")) <<
-            Help("--month=MONTH", tr("Set the calendar month")) <<
-            Help("--year=YEAR", tr("Set the calendar year")) <<
-            Help("--date-format=PATTERN", tr("Set the format for the returned date")) <<
-            Help("", tr("")) <<
-            Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("", "") <<
+        
+        Help("--day=DAY", tr("Set the calendar day")) <<
+        Help("--month=MONTH", tr("Set the calendar month")) <<
+        Help("--year=YEAR", tr("Set the calendar year")) <<
+        Help("--date-format=PATTERN", tr("Set the format for the returned date")) <<
+        Help("", "") <<
+        
+        Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
             
+        /******************************
+         * color-selection
+         ******************************/
+        
         helpDict["color-selection"] = CategoryHelp(tr("Color selection options"), HelpList() <<
-            Help("--color=VALUE", tr("Set the color")) <<
-            Help("--custom-palette=path/to/some.gpl",  "GUID ONLY! " + tr("Load a custom GPL for standard colors")) <<
-            Help("--show-palette", tr("Show the palette")));
+        Help("--color=VALUE", tr("Set the color")) <<
+        Help("--custom-palette=path/to/some.gpl",  "GUID ONLY! " + tr("Load a custom GPL for standard colors")) <<
+        Help("--show-palette", tr("Show the palette")));
             
+        /******************************
+         * entry
+         ******************************/
+        
         helpDict["entry"] = CategoryHelp(tr("Text entry options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("", tr("")) <<
-            Help("--entry-text=TEXT", tr("Set the entry text")) <<
-            Help("--hide-text", tr("Hide the entry text")) <<
-            Help("", tr("")) <<
-            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-            Help("--values=v1|v2|v3|...", "GUID ONLY! " + tr("Offer preset values to pick from")));
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("", "") <<
+        
+        Help("--entry-text=TEXT", tr("Set the entry text")) <<
+        Help("--hide-text", tr("Hide the entry text")) <<
+        Help("", "") <<
+        
+        Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+        Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+        Help("--values=v1|v2|v3|...", "GUID ONLY! " + tr("Offer preset values to pick from")));
             
+        /******************************
+         * error
+         ******************************/
+        
         helpDict["error"] = CategoryHelp(tr("Error options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-            Help("--no-markup", tr("Do not enable html markup")) <<
-            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-            Help("", tr("")) <<
-            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-            Help("", tr("")) <<
-            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+        Help("--no-markup", tr("Do not enable html markup")) <<
+        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("", "") <<
+        
+        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("", "") <<
+        
+        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
             
+        /******************************
+         * file-selection
+         ******************************/
+        
         helpDict["file-selection"] = CategoryHelp(tr("File selection options"), HelpList() <<
-            Help("--filename=FILENAME", tr("Set the filename")) <<
-            Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
-            Help("--directory", tr("Activate directory-only selection")) <<
-            Help("--multiple", tr("Allow multiple files to be selected")) <<
-            Help("", tr("")) <<
-            Help("--confirm-overwrite", tr("Confirm file selection if filename already exists")) <<
-            Help("--save", tr("Activate save mode")) <<
-            Help("", tr("")) <<
-            Help("--separator=SEPARATOR", tr("Set output separator character")));
+        Help("--filename=FILENAME", tr("Set the filename")) <<
+        Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
+        Help("--directory", tr("Activate directory-only selection")) <<
+        Help("--multiple", tr("Allow multiple files to be selected")) <<
+        Help("", "") <<
+        
+        Help("--confirm-overwrite", tr("Confirm file selection if filename already exists")) <<
+        Help("--save", tr("Activate save mode")) <<
+        Help("", "") <<
+        
+        Help("--separator=SEPARATOR", tr("Set output separator character")));
             
+        /******************************
+         * font-selection
+         ******************************/
+        
         helpDict["font-selection"] = CategoryHelp(tr("Font selection options"), HelpList() <<
-            Help("--sample=TEXT", tr("Sample text, defaults to the foxdogthing")) <<
-            Help("--pattern=%1-%2:%3:%4", tr("Output pattern, %1: Name, %2: Size, %3: weight, %4: slant")) <<
-            Help("--type=[vector][,bitmap][,fixed][,variable]", tr("Filter fonts (default: all)")));
-            
+        Help("--sample=TEXT", tr("Sample text, defaults to the foxdogthing")) <<
+        Help("--pattern=%1-%2:%3:%4", tr("Output pattern, %1: Name, %2: Size, %3: weight, %4: slant")) <<
+        Help("--type=[vector][,bitmap][,fixed][,variable]", tr("Filter fonts (default: all)")));
+        
+        /******************************
+         * forms
+         ******************************/
+        
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
-            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-            Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-            Help("", tr("")) <<
-            Help("--tab=NAME", "GUID ONLY! " + tr("Create a tab bar.")) <<
-            Help("...", tr("Next fields will be added to the tab NAME unless another one is specified with")) <<
-            Help("...", tr(" \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with --tab=\"stop\". Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"")) <<
-            Help("...", tr("--add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"")) <<
-            Help("...", tr("--add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop\"")) <<
-            Help("...", tr("--add-scale=\"Field outside tabs\" --step=5")) <<
-            Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
-            Help("", tr("")) <<
-            Help("--col1", "GUID ONLY! " + tr("Start a two-field row.")) <<
-            Help("...", tr("The next form field specified will be added in the first column.")) <<
-            Help("...", tr("See --col2 for details.")) <<
-            Help("--col2", "GUID ONLY! " + tr("Finish a two-field row.")) <<
-            Help("...", tr("The next form field specified will be added in the second column. Example:")) <<
-            Help("...", tr("guid --forms --width=500 --text=\"The next row has two columns:\"")) <<
-            Help("...", tr("--col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\"")) <<
-            Help("...", tr("--field-width=100 --add-entry=\"Full-width row\"")) <<
-            Help("", tr("")) <<
-            Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
-            Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
-            Help("--combo-values-from-file=[monitor=VALUE//]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.")) <<
-            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
-            Help("...", tr("guid --forms --add-combo=\"Combo description\"")) <<
-            Help("...", tr("--combo-values-from-file=\"monitor=1//C:\\Users\\name\\Desktop\\file.txt\"")) <<
-            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
-            Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-            Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
-            Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
-            Help("--list-values=List of values separated by |", tr("List of values for List")) <<
-            Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
-            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"monitor=1///path/to/file\"")) <<
-            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
-            Help("...", tr("To use another separator, specify it with \"sep=SEP\" followed by \"//\". Example with \",\" as separator:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"sep=,///path/to/file\"")) <<
-            Help("...", tr("Example with file monitord and custom separator:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
-            Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-            Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
-            Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-            Help("--show-header", tr("Show the columns header")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
-            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
-            Help("...", tr("on the field count when parsing output printed on the console.")) <<
-            Help("...", tr("First level menu items must be separated with the symbol \"|\".")) <<
-            Help("...", tr("Second level menu items must be separated with the symbol \"#\".")) <<
-            Help("...", tr("Each menu item without children must have an output code specified as follows:")) <<
-            Help("...", tr("\"MenuItemName:OutputCode\"")) <<
-            Help("...", tr("By default, the output code is printed on the console after a click on the menu item,")) <<
-            Help("...", tr("and the dialog stays open. We can specify to close the dialog by adding the symbol \"$\"")) <<
-            Help("...", tr("at the beginning of menu settings. Example:")) <<
-            Help("...", tr("guid --forms --add-menu=\"$First Item#First Subitem:10|Second Item:11|Third Item:12\"")) <<
-            Help("...", tr("To add separators between first level menu items, add the symbol \"|\" at the beginning")) <<
-            Help("...", tr("of menu settings. Example:")) <<
-            Help("...", tr("guid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second")) <<
-            Help("...", tr("Item:12|Third Item:13\"")) <<
-            Help("...", tr("Example of form menu with separators and with the dialog closing after a click on a menu item:")) <<
-            Help("...", tr("guid --forms --add-menu=\"|$First Item#First Subitem:10#Second")) <<
-            Help("...", tr("Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"")) <<
-            Help("...", tr("--add-entry=\"Text field\"")) <<
-            Help("...", tr("Note that if a main label is set for the form with the argument \"--text=TEXT\",")) <<
-            Help("...", tr("it'll be displayed on top of the dialog. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --add-menu=\"First Item:10|Second Item:11\"")) <<
-            Help("...", tr("--add-entry=\"Text field\"")) <<
-            Help("...", tr("If we want to have a menu on top of the dialog but still have a main label for the form,")) <<
-            Help("...", tr("we must add the label as new text with \"--add-text=TEXT\" after the menu. Example:")) <<
-            Help("...", tr("guid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form description\"")) <<
-            Help("...", tr("--bold --add-entry=\"Text field\"")) <<
-            Help("", tr("")) <<
-            Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
-            Help("--value=VALUE", tr("Set initial value")) <<
-            Help("--min-value=VALUE", tr("Set minimum value")) <<
-            Help("--max-value=VALUE", tr("Set maximum value")) <<
-            Help("--step=VALUE", tr("Set step size")) <<
-            Help("--hide-value", tr("Hide value")) <<
-            Help("--print-partial", tr("Print partial values")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
-            Help("--value=VALUE", tr("Set initial value")) <<
-            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
-            Help("--value=VALUE", tr("Set initial value")) <<
-            Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
-            Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-            Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-            Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-            Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.")) <<
-            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
-            Help("...", tr("on the field count when parsing output printed on the console.")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-            Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("", tr("")) <<
-            Help("--add-image-text=PATH_TO_IMAGE//TEXT", "GUID ONLY! " + tr("Add an image and text without field.")) <<
-            Help("...", tr("Set the path to the image followed by \"//\", then the text that will be displayed")) <<
-            Help("...", tr(" to the right of the image. Example:")) <<
-            Help("...", tr("guid --forms --add-image-text=\"/path/to/image.png//Text displayed\"")) <<
-            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
-            Help("...", tr("on the field count when parsing output printed on the console.")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-            Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("", tr("")) <<
-            Help("--add-text-info=Field name", "GUID ONLY! " + tr("Add text information")) <<
-            Help("...", tr("Note that this widget is a user input field only when the argument \"--editable\" is used.")) <<
-            Help("--filename=FILENAME", tr("Get content from the specified file")) <<
-            Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-            Help("--editable", tr("Allow changes to text")) <<
-            Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will try to guess the format")) <<
-            Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
-            Help("--newline-separator=SEPARATOR", "GUID ONLY! " + tr("Replace newlines with SEPARATOR in the text output, so everything's output on one line")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-            Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-            Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-            Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-            Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-            Help("--font=TEXT", tr("Set the text font")) <<
-            Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-            Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-            Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
-            Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-            Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output (when the field is editable).")) <<
-            Help("...", tr("Spaces are removed and the character \"=\" is added after the variable name. Example:")) <<
-            Help("...", tr("guid --forms --add-calendar=\"Choose a date\" --var=\"cal\" --add-entry=\"Type your pseudo\" --var=\"pseudo\"")) <<
-            Help("...", tr("Here's what the output looks like: cal=2020-12-12|pseudo=Abcde")) <<
-            Help("...", tr("Without \"--var\", the output would be: 2020-12-12|Abcde")) <<
-            Help("", tr("")) <<
-            Help("--add-text-browser=Field name", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled.")) <<
-            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
-            Help("...", tr("on the field count when parsing output printed on the console.")) <<
-            Help("--filename=FILENAME", tr("Get content from the specified file")) <<
-            Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-            Help("", tr("")) <<
-            Help("--add-hrule=COLOR", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:")) <<
-            Help("", tr("guid --forms --text=\"Form description\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"")) <<
-            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
-            Help("...", tr("on the field count when parsing output printed on the console.")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-            Help("", tr("")) <<
-            Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
-            Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
-            Help("--separator=SEPARATOR", tr("Set output separator character")));
-            
-helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-            Help("--no-markup", tr("Do not enable html markup")) <<
-            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-            Help("", tr("")) <<
-            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-            Help("", tr("")) <<
-            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-            
-helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("", tr("")) <<
-            Help("--checklist", tr("Use check boxes for first column")) <<
-            Help("--imagelist", tr("Use an image for first column")) <<
-            Help("--radiolist", tr("Use radio buttons for first column")) <<
-            Help("", tr("")) <<
-            Help("--column=COLUMN", tr("Set the column header")) <<
-            Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
-            Help("--print-column=NUMBER", tr("Print a specific column.")) <<
-            Help("...", tr("Default is 1. 'ALL' can be used to print all columns.")) <<
-            Help("--hide-header", tr("Hides the column headers")) <<
-            Help("", tr("")) <<
-            Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
-            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"monitor=1///path/to/file\"")) <<
-            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
-            Help("...", tr("To use another separator, specify it with \"sep=SEP\" followed by \"//\".")) <<
-            Help("...", tr("Example with \",\" as separator:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"sep=,///path/to/file\"")) <<
-            Help("...", tr("Example with file monitord and custom separator:")) <<
-            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
-            Help("", tr("")) <<
-            Help("--editable", tr("Allow changes to text")) <<
-            Help("--multiple", tr("Allow multiple rows to be selected")) <<
-            Help("", tr("")) <<
-            Help("--mid-search", tr("Change list default search function searching for text in the middle,")) <<
-            Help("...", tr("not on the beginning")) <<
-            Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-            Help("--separator=SEPARATOR", tr("Set output separator character")));
-            
-helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("", tr("")) <<
-            Help("--hint=TEXT", tr("Set the notification hints")) <<
-            Help("", tr("")) <<
-            Help("--listen", tr("Listen for commands on stdin")) <<
-            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-            
-helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
-            Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
-            Help("--username", tr("Display the username option")) <<
-            Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
-            
-helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("", tr("")) <<
-            Help("--percentage=PERCENTAGE", tr("Set initial percentage")) <<
-            Help("--pulsate", tr("Pulsate progress bar")) <<
-            Help("", tr("")) <<
-            Help("--auto-close", tr("Dismiss the dialog when 100% has been reached")) <<
-            Help("--auto-kill", tr("Kill parent process if Cancel button is pressed")) <<
-            Help("--no-cancel", tr("Hide Cancel button")));
-helpDict["question"] = CategoryHelp(tr("Question options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-            Help("--no-markup", tr("Do not enable html markup")) <<
-            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-            Help("", tr("")) <<
-            Help("--default-cancel", tr("Give cancel button focus by default")) <<
-            Help("", tr("")) <<
-            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-            Help("", tr("")) <<
-            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-            
-helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-            Help("", tr("")) <<
-            Help("--value=VALUE", tr("Set initial value")) <<
-            Help("--min-value=VALUE", tr("Set minimum value")) <<
-            Help("--max-value=VALUE", tr("Set maximum value")) <<
-            Help("--step=VALUE", tr("Set step size")) <<
-            Help("", tr("")) <<
-            Help("--hide-value", tr("Hide value")) <<
-            Help("--print-partial", tr("Print partial values")));
-            
-helpDict["text-info"] = CategoryHelp(tr("Text information options"), HelpList() <<
-            Help("--filename=FILENAME", tr("Open file")) <<
-            Help("", tr("")) <<
-            Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-            Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-            Help("", tr("")) <<
-            Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
-            Help("", tr("")) <<
-            Help("--editable", tr("Allow changes to text")) <<
-            Help("--font=TEXT", tr("Set the text font")) <<
-            Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will try to guess the format")) <<
-            Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
-            Help("", tr("")) <<
-            Help("--auto-scroll", tr("Auto scroll the text to the end. Only when text is captured from stdin")) <<
-            Help("--no-interaction", tr("Do not enable user interaction with the WebView.")) <<
-            Help("...", tr("Only works if you use --html option.")));
-            
-helpDict["warning"] = CategoryHelp(tr("Warning options"), HelpList() <<
-            Help("--text=TEXT", tr("Set the dialog text")) <<
-            Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-            Help("--no-markup", tr("Do not enable html markup")) <<
-            Help("--no-wrap", tr("Do not enable text wrapping")) <<
-            Help("", tr("")) <<
-            Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
-            Help("", tr("")) <<
-            Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-            
+        
+        // --text
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
+        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+        Help("", "") <<
+        
+        // --tab
+        Help("--tab=NAME", "GUID ONLY! " + tr("Create a tab bar.\nNext fields will be added to the tab NAME unless another one is specified with\n \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with --tab=\"stop\".\nExample:\nguid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"\n     --add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop\"\n     --add-scale=\"Field outside tabs\" --step=5")) <<
+        Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
+        Help("", "") <<
+        
+        // --col1 || --col2
+        Help("--col1", "GUID ONLY! " + tr("Start a two-field row.\nThe next form field specified will be added in the first column.\nSee --col2 for details.")) <<
+        Help("--col2", "GUID ONLY! " + tr("Finish a two-field row.\nThe next form field specified will be added in the second column. Example:\nguid --forms --width=500 --text=\"The next row has two columns:\"\n     --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\"\n     --field-width=100 --add-entry=\"Full-width row\"")) <<
+        Help("", "") <<
+        
+        // --add-calendar
+        Help("--add-calendar=Calendar field name", tr("Add a new Calendar in forms dialog")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-checkbox
+        Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-combo
+        Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
+        Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
+        Help("--combo-values-from-file=[monitor=VALUE//]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-combo=\"Combo description\"\n     --combo-values-from-file=\"monitor=1//C:\\Users\\name\\Desktop\\file.txt\"")) <<
+        Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-entry
+        Help("--add-entry=Field name", tr("Add a new Entry in forms dialog")) <<
+        Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+        Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-list
+        Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
+        Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
+        Help("--list-values=List of values separated by |", tr("List of values for List")) <<
+        Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
+        Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
+        Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+        Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--show-header", tr("Show the columns header")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-menu
+        Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.\nFirst level menu items must be separated with the symbol \"|\".\nSecond level menu items must be separated with the symbol \"#\".\nEach menu item without children must have an output code specified as follows:\n\"MenuItemName:OutputCode\"\nBy default, the output code is printed on the console after a click on the menu\nitem, and the dialog stays open. We can specify to close the dialog by adding\nthe symbol \"$\" at the beginning of menu settings. Example:\nguid --forms --add-menu=\"$Item A#Subitem:10|Item B:11|Item C:12\"\nTo add separators between first level menu items, add the symbol \"|\" at the\nbeginning of menu settings. Example:\nguid --forms --add-menu=\"|First Item#First Subitem:10#Second Subitem:11|Second\n     Item:12|Third Item:13\"\nExample of form menu with separators and with the dialog closing after a click\non a menu item:\nguid --forms --add-menu=\"|$First Item#First Subitem:10#Second\n     Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"\n     --add-entry=\"Text field\"\nNote that if a main label is set for the form with the argument \"--text=TEXT\",\nit'll be displayed on top of the dialog. Example:\nguid --forms --text=\"Form label\" --add-menu=\"First Item:10|Second Item:11\"\n     --add-entry=\"Text field\"\nIf we want to have a menu on top of the dialog but still have a main label for\nthe form, we must add the label as new text with \"--add-text=TEXT\" after the\nmenu. Example:\nguid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form label\"\n     --bold --add-entry=\"Text field\"")) <<
+        Help("", "") <<
+        
+        // --add-password
+        Help("--add-password=Field name", tr("Add a new Password Entry in forms dialog")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-scale
+        Help("--add-scale=Field name", tr("Add a new Scale/Slider in forms dialog")) <<
+        Help("--value=VALUE", tr("Set initial value")) <<
+        Help("--min-value=VALUE", tr("Set minimum value")) <<
+        Help("--max-value=VALUE", tr("Set maximum value")) <<
+        Help("--step=VALUE", tr("Set step size")) <<
+        Help("--hide-value", tr("Hide value")) <<
+        Help("--print-partial", tr("Print partial values")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-spin-box
+        Help("--add-spin-box=Spin box name", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
+        Help("--value=VALUE", tr("Set initial value")) <<
+        Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+        Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+        Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+        Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-double-spin-box
+        Help("--add-double-spin-box=Double spin box name", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
+        Help("--value=VALUE", tr("Set initial value")) <<
+        Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
+        Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
+        Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
+        Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
+        Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-text
+        Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("", "") <<
+        
+        // --add-image-text
+        Help("--add-image-text=PATH_TO_IMAGE//TEXT", "GUID ONLY! " + tr("Add an image and text without field.\nSet the path to the image followed by \"//\", then the text that will be\ndisplayed to the right of the image. Example:\nguid --forms --add-image-text=\"/path/to/image.png//Text displayed\"\nDefault resources shipped with guid can be used. To do so, start the image path\nwith \":/\" followed by the name of the resource. Example to use an icon\ndisplaying the number 5:\nguid --forms --add-image-text=\":/5//Text displayed\"\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("", "") <<
+        
+        // --add-hrule
+        Help("--add-hrule=COLOR", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:\nguid --forms --text=\"Text\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("", "") <<
+        
+        // --add-text-info
+        Help("--add-text-info=Field name", "GUID ONLY! " + tr("Add text information\nNote that this widget is a user input field only when the argument \"--editable\"\nis used.")) <<
+        Help("--filename=FILENAME", tr("Get content from the specified file")) <<
+        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
+        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
+        Help("--editable", tr("Allow changes to text")) <<
+        Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will\ntry to guess the format")) <<
+        Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
+        Help("--newline-separator=SEPARATOR", "GUID ONLY! " + tr("Replace newlines with SEPARATOR in the text output, so everything's\noutput on one line")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
+        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font=TEXT", tr("Set the text font")) <<
+        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
+        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output (when the field is\neditable). Spaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("", "") <<
+        
+        // --add-text-browser
+        Help("--add-text-browser=Field name", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--filename=FILENAME", tr("Get content from the specified file")) <<
+        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
+        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("", "") <<
+        
+        // misc.
+        Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
+        Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
+        Help("--separator=SEPARATOR", tr("Set output separator character")));
+        
+        /******************************
+         * info
+         ******************************/
+        
+        helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+        Help("--no-markup", tr("Do not enable html markup")) <<
+        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("", "") <<
+        
+        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("", "") <<
+        
+        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        
+        /******************************
+         * list
+         ******************************/
+        
+        helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("", "") <<
+        
+        Help("--checklist", tr("Use check boxes for first column")) <<
+        Help("--imagelist", tr("Use an image for first column")) <<
+        Help("--radiolist", tr("Use radio buttons for first column")) <<
+        Help("", "") <<
+        
+        Help("--column=COLUMN", tr("Set the column header")) <<
+        Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
+        Help("--print-column=NUMBER", tr("Print a specific column.\nDefault is 1. 'ALL' can be used to print all columns.")) <<
+        Help("--hide-header", tr("Hides the column headers")) <<
+        Help("", "") <<
+        
+        Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\".\nExample with \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
+        Help("", "") <<
+        
+        Help("--editable", tr("Allow changes to text")) <<
+        Help("--multiple", tr("Allow multiple rows to be selected")) <<
+        Help("", "") <<
+        
+        Help("--mid-search", tr("Change list default search function searching for text in the middle,\nnot on the beginning")) <<
+        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--separator=SEPARATOR", tr("Set output separator character")));
+        
+        /******************************
+         * notification
+         ******************************/
+        
+        helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("", "") <<
+        
+        Help("--hint=TEXT", tr("Set the notification hints")) <<
+        Help("", "") <<
+        
+        Help("--listen", tr("Listen for commands on stdin")) <<
+        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        
+        /******************************
+         * password
+         ******************************/
+        
+        helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
+        Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
+        Help("--username", tr("Display the username option")) <<
+        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
+        
+        /******************************
+         * progress
+         ******************************/
+        
+        helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("", "") <<
+        
+        Help("--percentage=PERCENTAGE", tr("Set initial percentage")) <<
+        Help("--pulsate", tr("Pulsate progress bar")) <<
+        Help("", "") <<
+        
+        Help("--auto-close", tr("Dismiss the dialog when 100% has been reached")) <<
+        Help("--auto-kill", tr("Kill parent process if Cancel button is pressed")) <<
+        Help("--no-cancel", tr("Hide Cancel button")));
+        
+        /******************************
+         * question
+         ******************************/
+        
+        helpDict["question"] = CategoryHelp(tr("Question options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+        Help("--no-markup", tr("Do not enable html markup")) <<
+        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("", "") <<
+        
+        Help("--default-cancel", tr("Give cancel button focus by default")) <<
+        Help("", "") <<
+        
+        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("", "") <<
+        
+        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        
+        /******************************
+         * scale
+         ******************************/
+        
+        helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
+        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("", "") <<
+        
+        Help("--value=VALUE", tr("Set initial value")) <<
+        Help("--min-value=VALUE", tr("Set minimum value")) <<
+        Help("--max-value=VALUE", tr("Set maximum value")) <<
+        Help("--step=VALUE", tr("Set step size")) <<
+        Help("", "") <<
+        
+        Help("--hide-value", tr("Hide value")) <<
+        Help("--print-partial", tr("Print partial values")));
+        
+        /******************************
+         * text-info
+         ******************************/
+        
+        helpDict["text-info"] = CategoryHelp(tr("Text information options"), HelpList() <<
+        Help("--filename=FILENAME", tr("Open file")) <<
+        Help("", "") <<
+        
+        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
+        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
+        Help("", "") <<
+        
+        Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
+        Help("", "") <<
+        
+        Help("--editable", tr("Allow changes to text")) <<
+        Help("--font=TEXT", tr("Set the text font")) <<
+        Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will\ntry to guess the format")) <<
+        Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
+        Help("", "") <<
+        
+        Help("--auto-scroll", tr("Auto scroll the text to the end. Only when text is captured from stdin")) <<
+        Help("--no-interaction", tr("Do not enable user interaction with the WebView.\nOnly works if you use --html option.")));
+        
+        /******************************
+         * warning
+         ******************************/
+        
+        helpDict["warning"] = CategoryHelp(tr("Warning options"), HelpList() <<
+        Help("--text=TEXT", tr("Set\nthe dialog text")) <<
+        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
+        Help("--no-markup", tr("Do not enable html markup")) <<
+        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("", "") <<
+        
+        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("", "") <<
+        
+        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
     }
-
+    
+    QStringList helpGeneralCats = {"help", "misc", "qt", "general", "application"}; 
+    QStringList helpWidgetCats  = {"calendar", "color-selection", "entry", "error", "file-selection",
+                                   "font-selection", "forms", "info", "list", "notification", "password",
+                                   "progress", "scale", "text-info", "warning"};
+    QStringList helpCatsToDisplay = helpGeneralCats;
+    
     if (category == "all") {
-        foreach(const CategoryHelp &el, helpDict) {
-            printf("\n%s\n", qPrintable(el.first));
-            printf("------------------------------\n\n");
-            foreach (const Help &help, el.second)
-                printf(" %-47s%s\n", qPrintable(help.first), qPrintable(help.second));
-            printf("\n%s\n", qPrintable(main_separator));
+        helpCatsToDisplay << helpWidgetCats;
+    } else if (helpDict.contains(category)) {
+        helpCatsToDisplay << category;
+    }
+    
+    printf("\nUsage: guid [OPTION ...]\n");
+    
+    for (int i = 0; i < helpCatsToDisplay.count(); ++i) {
+        QString catName = helpCatsToDisplay.at(i);
+        
+        printf("\n%s\n# %s\n%s\n\n", qPrintable(main_separator),
+                             qPrintable(helpDict[catName].first),
+                             qPrintable(main_separator));
+        
+        foreach (const Help &help, helpDict[catName].second) {
+            QString helpArgument = help.first;
+            QString helpDescription = help.second;
+            
+            if (helpArgument.isEmpty() && helpDescription.isEmpty()) {
+                printf("%s\n", qPrintable(secondary_separator));
+            } else {
+                helpDescription = "      " + helpDescription;
+                helpDescription.replace("\n", "\n      ");
+                printf("%s\n%s\n", qPrintable(help.first), qPrintable(helpDescription));
+            }
         }
-        return;
     }
-
-    HelpDict::const_iterator it = helpDict.constEnd();
-    if (!category.isEmpty())
-        it = helpDict.find(category);
-
-    if (it == helpDict.constEnd()) {
-        printf("\nUsage:\n  %s [OPTION ...]\n\n", qPrintable(applicationName()));
-        printf("%s\n\n", qPrintable(main_separator));
-        printHelp("help");
-        printf("%s\n\n", qPrintable(main_separator));
-        printHelp("application");
-        return;
-    }
-
-    printf("%s\n", qPrintable(it->first));
-    foreach (const Help &help, it->second)
-        printf(" %-47s%s\n", qPrintable(help.first), qPrintable(help.second));
-    printf("\n");
+    
+    return;
 }
 
 int main (int argc, char **argv)
@@ -3625,7 +3661,7 @@ int main (int argc, char **argv)
         Guid::printHelp();
         return 1;
     }
-
+    
     bool helpMission = false;
     for (int i = 1; i < argc; ++i) {
         const QString arg(argv[i]);
@@ -3634,18 +3670,18 @@ int main (int argc, char **argv)
             Guid::printHelp(arg.mid(7)); // "--help-"
         }
     }
-
+    
     if (helpMission) {
         return 0;
     }
-
+    
     QFont appFont("Sans-serif", 9);
     QApplication::setFont(appFont);
     foreach (QWidget *widget, QApplication::allWidgets()) {
         widget->setFont(appFont);
         widget->update();
     }
-
+    
     Guid d(argc, argv);
     return d.exec();
 }

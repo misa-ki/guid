@@ -1,5 +1,6 @@
 HEADERS = Guid.h
 SOURCES = Guid.cpp
+RESOURCES = guid.qrc
 QT += dbus gui widgets
 unix:!macx:QT += x11extras
 TARGET = guid
