@@ -34,6 +34,7 @@
 #include <QDoubleSpinBox>
 #include <QEvent>
 #include <QFileDialog>
+#include <QFileSystemWatcher>
 #include <QFontDialog>
 #include <QFormLayout>
 #include <QHeaderView>
@@ -955,29 +956,32 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
 
 #define QTREEWIDGET_STYLE "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 3px; font-weight: bold;}"
 
-static QStringList listValuesFromFile(QString data)
+static GList listValuesFromFile(QString data)
 {
-    QStringList values;
-    QString separator;
-    QString filename;
-    
-    if (data.contains(QRegExp("^.//"))) {
-        separator = data.left(1);
-        filename = data.remove(0, 3);
-    } else {
-        separator = "|";
-        filename = data;
+    GList list = GList();
+    list.monitorFile = false;
+    if (data.contains(QRegExp("^monitor=.//"))) {
+        if (data.mid(8, 1) == "1")
+            list.monitorFile = true;
+        data.remove(0, 11);
     }
     
-    QFile file(filename);
+    list.fileSep = "|";
+    if (data.contains(QRegExp("^sep=.//"))) {
+        list.fileSep = data.mid(4, 1);
+        data.remove(0, 7);
+    }
+    
+    list.filePath = data;
+    QFile file(list.filePath);
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     
     if (file.open(QIODevice::ReadOnly)) {
-        values = QString::fromLocal8Bit(file.readAll()).trimmed().replace(QRegExp("[\r\n]+"), separator).split(separator);
+        list.val = QString::fromLocal8Bit(file.readAll()).trimmed().replace(QRegExp("[\r\n]+"), list.fileSep).split(list.fileSep);
         file.close();
     }
     
-    return values;
+    return list;
 }
 
 static QSize getQTreeWidgetSize(QTreeWidget **qtw)
@@ -1018,10 +1022,12 @@ char Guid::showList(const QStringList &args)
     bool editable(false), checkable(false), exclusive(false), icons(false), ok, needFilter(true);
     int heightToSet = -1;
     QStringList columns;
-    QStringList values;
+    GList list = GList();
     QList<int> hiddenCols;
     dlg->setProperty("guid_print_column", 1);
     dlg->setProperty("guid_separator", "|");
+    QFileSystemWatcher * listWatcher = new QFileSystemWatcher(dlg);
+    
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--text")
             lbl->setText(labelText(NEXT_ARG));
@@ -1081,12 +1087,21 @@ char Guid::showList(const QStringList &args)
             if (!ok)
                 heightToSet = -1;
         } else if (args.at(i) == "--list-values-from-file") {
-            values = listValuesFromFile(NEXT_ARG);
+            list = listValuesFromFile(NEXT_ARG);
+            
+            tw->setProperty("guid_file_sep", list.fileSep);
+            tw->setProperty("guid_file_path", list.filePath);
+            tw->setProperty("guid_monitor_file", list.monitorFile);
+            
+            if (QFile::exists(list.filePath)) {
+                listWatcher->addPath(list.filePath);
+                connect(listWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateList(QString)), Qt::UniqueConnection);
+            }
         } else if (args.at(i) != "--list") {
-            values << args.at(i);
+            list.val << args.at(i);
         }
     }
-    if (values.isEmpty())
+    if (list.val.isEmpty())
         listenToStdIn();
 
     if (checkable)
@@ -1101,7 +1116,7 @@ char Guid::showList(const QStringList &args)
     foreach (const int &i, hiddenCols)
         tw->setColumnHidden(i, true);
 
-    addItems(tw, values, editable, checkable, icons);
+    addItems(tw, list.val, editable, checkable, icons);
 
     if (exclusive) {
         connect (tw, SIGNAL(itemChanged(QTreeWidgetItem*, int)), SLOT(toggleItems(QTreeWidgetItem*, int)));
@@ -1617,7 +1632,59 @@ char Guid::showFontSelection(const QStringList &args)
     return 0;
 }
 
-static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList &columns, bool &showHeader,
+void Guid::updateCombo(QString filePath)
+{
+    if (!QFile::exists(filePath))
+        return;
+    
+    foreach (QComboBox *combo, sender()->parent()->findChildren<QComboBox*>()) {
+        if (combo->property("guid_monitor_file").toBool() && combo->property("guid_file_path").toString() == filePath) {
+            combo->clear();
+            GList list = listValuesFromFile(filePath);
+            combo->addItems(list.val);
+        }
+    }
+}
+
+void Guid::updateList(QString filePath)
+{
+    if (!QFile::exists(filePath))
+        return;
+    
+    foreach (QTreeWidget *tw, sender()->parent()->findChildren<QTreeWidget*>()) {
+        if (tw->property("guid_monitor_file").toBool() && tw->property("guid_file_path").toString() == filePath) {
+            int columnCount = tw->columnCount();
+            Qt::ItemFlags flags = tw->topLevelItem(0)->flags();
+            tw->clear();
+            
+            QString fileArg = "";
+            QString fileSep = tw->property("guid_file_sep").toString();
+            if (!fileSep.isEmpty())
+                fileArg += "sep=" + fileSep + "//";
+            fileArg += filePath;
+            GList list = listValuesFromFile(fileArg);
+            for (int i = 0; i < list.val.count(); ) {
+                QStringList itemValues;
+                for (int j = 0; j < columnCount; ++j) {
+                    itemValues << list.val.at(i++);
+                    if (i == list.val.count())
+                        break;
+                }
+                QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
+                flags |= item->flags();
+                item->setFlags(flags);
+                item->setTextAlignment(0, Qt::AlignLeft);
+                tw->addTopLevelItem(item);
+            }
+            
+            for (int i = 0; i < columnCount; ++i) {
+                tw->resizeColumnToContents(i);
+            }
+        }
+    }
+}
+
+static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns, bool &showHeader,
                            Qt::ItemFlags &flags, int &height)
 {
     QTreeWidget *tw = *tree;
@@ -1635,12 +1702,11 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
         columnCount = 1;
     }
 
-
-    for (int i = 0; i < values.count(); ) {
+    for (int i = 0; i < list.val.count(); ) {
         QStringList itemValues;
         for (int j = 0; j < columnCount; ++j) {
-            itemValues << values.at(i++);
-            if (i == values.count())
+            itemValues << list.val.at(i++);
+            if (i == list.val.count())
                 break;
         }
         QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
@@ -1658,7 +1724,7 @@ static void buildFormsList(QTreeWidget **tree, QStringList &values, QStringList 
     if (height >= 0 && height < getQTreeWidgetSize(&tw).height())
         tw->setMaximumHeight(height);
 
-    values.clear();
+    list = GList();
     columns.clear();
     showHeader = false;
     flags = Qt::NoItemFlags;
@@ -1828,9 +1894,13 @@ char Guid::showForms(const QStringList &args)
     
     QLabel *lastText = NULL;
     
+    QComboBox *lastCombo = NULL;
+    GList lastComboGList = GList();
+    
     QTreeWidget *lastList = NULL;
-    QStringList lastListValues, lastListColumns, lastComboValues;
-    bool lastListHeader(false);
+    GList lastListGList = GList();
+    QStringList lastListColumns;
+    bool lastListHeader = false;
     Qt::ItemFlags lastListFlags;
     int lastListHeight = -1;
     
@@ -1843,8 +1913,6 @@ char Guid::showForms(const QStringList &args)
     bool lastTextIsUrl = NULL;
     int lastTextHeight = -1;
     
-    QComboBox *lastCombo = NULL;
-    
     QHBoxLayout *scaleHBoxLayout = NULL;
     QWidget *scaleContainer = NULL;
     QLabel *lastScaleLabel = NULL;
@@ -1856,8 +1924,11 @@ char Guid::showForms(const QStringList &args)
     
     QString lastWidget = NULL;
     QMenuBar *lastMenu = NULL;
-    QSignalMapper *menuSignalMapper = new QSignalMapper(this);
     bool topMenu = false;
+    QSignalMapper *menuSignalMapper = new QSignalMapper(this);
+    
+    QFileSystemWatcher * comboWatcher = new QFileSystemWatcher(dlg);
+    QFileSystemWatcher * listWatcher = new QFileSystemWatcher(dlg);
     
     bool ok;
     
@@ -2218,6 +2289,9 @@ char Guid::showForms(const QStringList &args)
             SWITCH_WIDGET("combo")
             QLabel *labelCombo = new QLabel(NEXT_ARG);
             lastCombo = new QComboBox(dlg);
+            lastCombo->setProperty("guid_file_sep", "");
+            lastCombo->setProperty("guid_file_path", "");
+            lastCombo->setProperty("guid_monitor_file", false);
             
             if (lastColumn == "col1") {
                 SET_FORMS_COL1(labelCombo, lastCombo)
@@ -2229,15 +2303,18 @@ char Guid::showForms(const QStringList &args)
                 fl->addRow(labelCombo, lastCombo);
             }
             
-            lastCombo->addItems(lastComboValues);
+            lastCombo->addItems(lastComboGList.val);
         }
         
         // QTreeWidget: --add-list
         else if (args.at(i) == "--add-list") {
             SWITCH_WIDGET("list")
             QLabel *labelList = new QLabel(NEXT_ARG);
-            buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
+            buildFormsList(&lastList, lastListGList, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
             lastList = new QTreeWidget(dlg);
+            lastList->setProperty("guid_file_sep", "");
+            lastList->setProperty("guid_file_path", "");
+            lastList->setProperty("guid_monitor_file", false);
             lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
             lastList->header()->setStretchLastSection(true);
             
@@ -2302,7 +2379,10 @@ char Guid::showForms(const QStringList &args)
         
         // --tab-visible
         else if (args.at(i) == "--tab-visible") {
-            lastTabBar->setCurrentIndex(lastTabIndex);
+            if (!lastTabName.isEmpty())
+                lastTabBar->setCurrentIndex(lastTabIndex);
+            else
+                WARN_UNKNOWN_ARG("--tab");
         }
         
         /********************************************************************************
@@ -2480,17 +2560,31 @@ char Guid::showForms(const QStringList &args)
         
         // --combo-values
         else if (args.at(i) == "--combo-values") {
-            lastComboValues = NEXT_ARG.split('|');
             if (lastWidget == "combo") {
-                lastCombo->addItems(lastComboValues);
+                lastComboGList.val = NEXT_ARG.split('|');
+                lastCombo->addItems(lastComboGList.val);
+            } else {
+                WARN_UNKNOWN_ARG("--add-combo");
             }
         }
         
         // --combo-values-from-file
         else if (args.at(i) == "--combo-values-from-file") {
-            lastComboValues = listValuesFromFile(NEXT_ARG);
             if (lastWidget == "combo") {
-                lastCombo->addItems(lastComboValues);
+                lastComboGList = listValuesFromFile(NEXT_ARG);
+                
+                lastCombo->setProperty("guid_file_sep", lastComboGList.fileSep);
+                lastCombo->setProperty("guid_file_path", lastComboGList.filePath);
+                lastCombo->setProperty("guid_monitor_file", lastComboGList.monitorFile);
+                
+                if (QFile::exists(lastComboGList.filePath)) {
+                    comboWatcher->addPath(lastComboGList.filePath);
+                    connect(comboWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateCombo(QString)), Qt::UniqueConnection);
+                }
+                
+                lastCombo->addItems(lastComboGList.val);
+            } else {
+                WARN_UNKNOWN_ARG("--add-combo");
             }
         }
         
@@ -2535,17 +2629,36 @@ char Guid::showForms(const QStringList &args)
         
         // --column-values
         else if (args.at(i) == "--column-values") {
-            lastListColumns = NEXT_ARG.split('|');
+            if (lastWidget == "list")
+                lastListColumns = NEXT_ARG.split('|');
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         }
         
         // --list-values
         else if (args.at(i) == "--list-values") {
-            lastListValues = NEXT_ARG.split('|');
+            if (lastWidget == "list")
+                lastListGList.val = NEXT_ARG.split('|');
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         }
         
         // --list-values-from-file
         else if (args.at(i) == "--list-values-from-file") {
-            lastListValues = listValuesFromFile(NEXT_ARG);
+            if (lastWidget == "list") {
+                lastListGList = listValuesFromFile(NEXT_ARG);
+                
+                lastList->setProperty("guid_file_sep", lastListGList.fileSep);
+                lastList->setProperty("guid_file_path", lastListGList.filePath);
+                lastList->setProperty("guid_monitor_file", lastListGList.monitorFile);
+                
+                if (QFile::exists(lastListGList.filePath)) {
+                    listWatcher->addPath(lastListGList.filePath);
+                    connect(listWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateList(QString)), Qt::UniqueConnection);
+                }
+            } else {
+                WARN_UNKNOWN_ARG("--add-list");
+            }
         }
         
         // --multiple
@@ -2558,7 +2671,10 @@ char Guid::showForms(const QStringList &args)
         
         // --show-header
         else if (args.at(i) == "--show-header") {
-            lastListHeader = true;
+            if (lastWidget == "list")
+                lastListHeader = true;
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         }
         
         /******************************
@@ -2576,9 +2692,9 @@ char Guid::showForms(const QStringList &args)
         
         // --align || --bold || --italics || --underline || --small-caps || --font-family || --font-size ||
         // --foreground-color || --background-color
-        else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" || args.at(i) == "--underline" ||
-                 args.at(i) == "--small-caps" || args.at(i) == "--font-family" || args.at(i) == "--font-size" ||
-                 args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
+        else if (args.at(i) == "--align" || args.at(i) == "--bold" || args.at(i) == "--italics" ||
+                 args.at(i) == "--underline" || args.at(i) == "--small-caps" || args.at(i) == "--font-family" ||
+                 args.at(i) == "--font-size" || args.at(i) == "--foreground-color" || args.at(i) == "--background-color") {
             QLabel *labelToSet = NULL;
             if (lastWidget == "label") {
                 labelToSet = label;
@@ -2750,18 +2866,28 @@ char Guid::showForms(const QStringList &args)
         
         // --filename
         else if (args.at(i) == "--filename") {
-            lastTextFilename = NEXT_ARG;
+            if (lastWidget == "text-browser" || lastWidget == "text-info")
+                lastTextFilename = NEXT_ARG;
+            else
+                WARN_UNKNOWN_ARG("--text-info");
         }
         
         // --url
         else if (args.at(i) == "--url") {
-            lastTextFilename = NEXT_ARG;
-            lastTextIsUrl = true;
+            if (lastWidget == "text-browser" || lastWidget == "text-info") {
+                lastTextFilename = NEXT_ARG;
+                lastTextIsUrl = true;
+            } else {
+                WARN_UNKNOWN_ARG("--text-info");
+            }
         }
         
         // --curl-path
         else if (args.at(i) == "--curl-path") {
-            lastTextCurlPath = NEXT_ARG;
+            if (lastWidget == "text-browser" || lastWidget == "text-info")
+                lastTextCurlPath = NEXT_ARG;
+            else
+                WARN_UNKNOWN_ARG("--text-info");
         }
         
         /********************************************************************************
@@ -2802,7 +2928,7 @@ char Guid::showForms(const QStringList &args)
             WARN_UNKNOWN_ARG("--forms");
         }
         
-        lastComboValues.clear();
+        lastComboGList = GList();
         if (columnsAreSet) {
             labelCol1 = new QLabel();
             lastColumn = "";
@@ -2813,7 +2939,7 @@ char Guid::showForms(const QStringList &args)
     SWITCH_WIDGET(lastWidget)
     if (!lastTabName.isEmpty())
         setTabs(lastTabBar, fl, lastTabName, lastTabIndex);
-    buildFormsList(&lastList, lastListValues, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
+    buildFormsList(&lastList, lastListGList, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
     
     if (labelInBold) {
         QFont mainLabelFont = label->font();
@@ -2867,7 +2993,6 @@ QString Guid::labelText(const QString &s) const
     }
     return s;
 }
-
 
 void Guid::printHelp(const QString &category)
 {
@@ -3030,7 +3155,10 @@ void Guid::printHelp(const QString &category)
             Help("", tr("")) <<
             Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
             Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
-            Help("--combo-values-from-file=FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values")) <<
+            Help("--combo-values-from-file=[monitor=VALUE//]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.")) <<
+            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
+            Help("...", tr("guid --forms --add-combo=\"Combo description\"")) <<
+            Help("...", tr("--combo-values-from-file=\"monitor=1//C:\\Users\\name\\Desktop\\file.txt\"")) <<
             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
@@ -3042,13 +3170,19 @@ void Guid::printHelp(const QString &category)
             Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
             Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
             Help("--list-values=List of values separated by |", tr("List of values for List")) <<
-            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
+            Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
             Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
             Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
-            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
-            Help("...", tr("To use another separator, specify it followed by \"//\". Example with \",\" as separator:")) <<
+            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
             Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\",///path/to/file\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"monitor=1///path/to/file\"")) <<
+            Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
+            Help("...", tr("To use another separator, specify it with \"sep=SEP\" followed by \"//\". Example with \",\" as separator:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"sep=,///path/to/file\"")) <<
+            Help("...", tr("Example with file monitord and custom separator:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
             Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
             Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
             Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
@@ -3057,6 +3191,8 @@ void Guid::printHelp(const QString &category)
             Help("--show-header", tr("Show the columns header")) <<
             Help("", tr("")) <<
             Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.")) <<
+            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
+            Help("...", tr("on the field count when parsing output printed on the console.")) <<
             Help("...", tr("First level menu items must be separated with the symbol \"|\".")) <<
             Help("...", tr("Second level menu items must be separated with the symbol \"#\".")) <<
             Help("...", tr("Each menu item without children must have an output code specified as follows:")) <<
@@ -3109,7 +3245,9 @@ void Guid::printHelp(const QString &category)
             Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
             Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
             Help("", tr("")) <<
-            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field")) <<
+            Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.")) <<
+            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
+            Help("...", tr("on the field count when parsing output printed on the console.")) <<
             Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
             Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
             Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
@@ -3123,6 +3261,7 @@ void Guid::printHelp(const QString &category)
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
             Help("", tr("")) <<
             Help("--add-text-info=Field name", "GUID ONLY! " + tr("Add text information")) <<
+            Help("...", tr("Note that this widget is a user input field only when the argument \"--editable\" is used.")) <<
             Help("--filename=FILENAME", tr("Get content from the specified file")) <<
             Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
             Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
@@ -3145,7 +3284,9 @@ void Guid::printHelp(const QString &category)
             Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:")) <<
             Help("...", tr("guid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
             Help("", tr("")) <<
-            Help("--add-text-browser=Field name", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled")) <<
+            Help("--add-text-browser=Field name", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled.")) <<
+            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
+            Help("...", tr("on the field count when parsing output printed on the console.")) <<
             Help("--filename=FILENAME", tr("Get content from the specified file")) <<
             Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
             Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
@@ -3154,6 +3295,8 @@ void Guid::printHelp(const QString &category)
             Help("", tr("")) <<
             Help("--add-hrule=COLOR", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:")) <<
             Help("", tr("guid --forms --text=\"Form description\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"")) <<
+            Help("...", tr("Note that this widget is not a user input field, so it doesn't have any impact")) <<
+            Help("...", tr("on the field count when parsing output printed on the console.")) <<
             Help("", tr("")) <<
             Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
             Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
@@ -3183,14 +3326,20 @@ helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
             Help("...", tr("Default is 1. 'ALL' can be used to print all columns.")) <<
             Help("--hide-header", tr("Hides the column headers")) <<
             Help("", tr("")) <<
-            Help("--list-values-from-file=[SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
+            Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:")) <<
             Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
             Help("...", tr("--show-header --list-values-from-file=\"/path/to/file\"")) <<
+            Help("...", tr("To monitor file changes, add \"monitor=1\" followed by \"//\". Example:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"monitor=1///path/to/file\"")) <<
             Help("...", tr("By default, the symbol \"|\" is used as separator between values.")) <<
-            Help("...", tr("To use another separator, specify it followed by \"//\".")) <<
+            Help("...", tr("To use another separator, specify it with \"sep=SEP\" followed by \"//\".")) <<
             Help("...", tr("Example with \",\" as separator:")) <<
             Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
-            Help("...", tr("--show-header --list-values-from-file=\",///path/to/file\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"sep=,///path/to/file\"")) <<
+            Help("...", tr("Example with file monitord and custom separator:")) <<
+            Help("...", tr("guid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"")) <<
+            Help("...", tr("--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
             Help("", tr("")) <<
             Help("--editable", tr("Allow changes to text")) <<
             Help("--multiple", tr("Allow multiple rows to be selected")) <<

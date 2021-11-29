@@ -26,6 +26,13 @@ class QTreeWidgetItem;
 #include <QApplication>
 #include <QPair>
 
+struct GList {
+    QStringList val;
+    QString fileSep;
+    QString filePath;
+    bool monitorFile;
+};
+
 class Guid : public QApplication
 {
     Q_OBJECT
@@ -66,6 +73,8 @@ private slots:
     void finishProgress();
     void exitAfterMenuClick(int i);
     void showMenuClick(int i);
+    void updateCombo(QString filePath);
+    void updateList(QString filePath);
 private:
     bool m_helpMission, m_modal, m_zenity, m_selectableLabel;
     QString m_caption, m_icon, m_ok, m_cancel, m_notificationHints;
