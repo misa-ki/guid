@@ -353,20 +353,32 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
     IF_IS(QLineEdit) {
         return ValuePair(true, var + t->text());
     } else IF_IS(QTreeWidget) {
-        QString selected_items;
-        QString selected_row;
-        foreach (QTreeWidgetItem *item, t->selectedItems()) {
-            selected_row = "";
-            for (int i = 0; i < t->columnCount(); ++i) {
-                if (!selected_row.isEmpty())
-                    selected_row += ',';
-                selected_row += item->text(i);
+        QString results;
+        QString rowValue;
+        QString printMode = t->property("guid_list_print_values_mode").toString().toLower();
+        QList<QTreeWidgetItem*> items;
+        
+        if (printMode == "all") {
+            for (int i = 0; i < t->topLevelItemCount(); ++i) {
+                QTreeWidgetItem *item = t->topLevelItem(i);
+                items << item;
             }
-            if (!selected_items.isEmpty())
-                selected_items += listRowSeparator;
-            selected_items += selected_row;
+        } else {
+            items = t->selectedItems();
         }
-        return ValuePair(true, var + selected_items);
+        
+        foreach(QTreeWidgetItem *item, items) {
+            rowValue = "";
+            for (int i = 0; i < t->columnCount(); ++i) {
+                if (!rowValue.isEmpty())
+                    rowValue += ',';
+                rowValue += item->text(i);
+            }
+            if (!results.isEmpty())
+                results += listRowSeparator;
+            results += rowValue;
+        }
+        return ValuePair(true, var + results);
     } else IF_IS(QComboBox) {
         return ValuePair(true, var + t->currentText());
     } else IF_IS(QCalendarWidget) {
@@ -568,32 +580,47 @@ void Guid::dialogFinished(int status)
             QStringList result;
             if (tw) {
                 bool done(false);
-                QString selected;
-                foreach (const QTreeWidgetItem *twi, tw->selectedItems()) {
+                QString rowValue;
+                QString printMode = tw->property("guid_list_print_values_mode").toString().toLower();
+                QList<QTreeWidgetItem*> allItems;
+                QList<QTreeWidgetItem*> itemsToCheck;
+                
+                for (int i = 0; i < tw->topLevelItemCount(); ++i) {
+                    QTreeWidgetItem *item = tw->topLevelItem(i);
+                    allItems << item;
+                }
+                
+                if (printMode == "all") {
+                    itemsToCheck = allItems;
+                } else {
+                    itemsToCheck = tw->selectedItems();
+                }
+                
+                foreach (QTreeWidgetItem *twi, itemsToCheck) {
                     done = true;
-                    selected = "";
+                    rowValue = "";
                     for (int i = 0; i < tw->columnCount(); ++i) {
                         if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
-                            if (!selected.isEmpty())
-                                selected += ',';
-                            selected += twi->text(i);
+                            if (!rowValue.isEmpty())
+                                rowValue += ',';
+                            rowValue += twi->text(i);
                         }
                     }
-                    result << selected;
+                    result << rowValue;
                 }
                 if (!done) { // checkable
-                    for (int i = 0; i < tw->topLevelItemCount(); ++i) {
-                        const QTreeWidgetItem *twi = tw->topLevelItem(i);
+                    itemsToCheck = allItems;
+                    foreach (QTreeWidgetItem *twi, itemsToCheck) {
                         if (twi->checkState(0) == Qt::Checked) {
-                            selected = "";
+                            rowValue = "";
                             for (int i = 0; i < tw->columnCount(); ++i) {
                                 if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
-                                    if (!selected.isEmpty())
-                                        selected += ',';
-                                    selected += twi->text(i);
+                                    if (!rowValue.isEmpty())
+                                        rowValue += ',';
+                                    rowValue += twi->text(i);
                                 }
                             }
-                            result << selected;
+                            result << rowValue;
                         }
                     }
                 }
@@ -1138,6 +1165,8 @@ char Guid::showList(const QStringList &args)
                 listWatcher->addPath(list.filePath);
                 connect(listWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateList(QString)), Qt::UniqueConnection);
             }
+        } else if (args.at(i) == "--print-values") {
+            tw->setProperty("guid_list_print_values_mode", NEXT_ARG);
         } else if (args.at(i) != "--list") {
             list.val << args.at(i);
         }
@@ -2439,6 +2468,7 @@ char Guid::showForms(const QStringList &args)
             lastList->setProperty("guid_file_sep", "");
             lastList->setProperty("guid_file_path", "");
             lastList->setProperty("guid_monitor_file", false);
+            lastList->setProperty("guid_list_print_values_mode", "selected");
             lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
             lastList->header()->setStretchLastSection(true);
             
@@ -2802,6 +2832,14 @@ char Guid::showForms(const QStringList &args)
             } else {
                 WARN_UNKNOWN_ARG("--add-list");
             }
+        }
+        
+        // --print-values
+        else if (args.at(i) == "--print-values") {
+            if (lastWidget == "list")
+                lastList->setProperty("guid_list_print_values_mode", NEXT_ARG);
+            else
+                WARN_UNKNOWN_ARG("--add-list");
         }
         
         // --multiple
@@ -3422,6 +3460,7 @@ void Guid::printHelp(const QString &category)
         Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
         Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
         Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+        Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
         Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
         Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
         Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
@@ -3584,6 +3623,7 @@ void Guid::printHelp(const QString &category)
         
         Help("--editable", tr("Allow changes to text")) <<
         Help("--multiple", tr("Allow multiple rows to be selected")) <<
+        Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
         Help("", "") <<
         
         Help("--mid-search", tr("Change list default search function searching for text in the middle,\nnot on the beginning")) <<
