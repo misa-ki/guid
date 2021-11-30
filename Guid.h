@@ -71,8 +71,7 @@ private slots:
     void readStdIn();
     void toggleItems(QTreeWidgetItem *item, int column);
     void finishProgress();
-    void exitAfterMenuClick(int i);
-    void showMenuClick(int i);
+    void afterMenuClick();
     void updateCombo(QString filePath);
     void updateList(QString filePath);
 private:

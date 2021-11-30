@@ -52,7 +52,6 @@
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
-#include <QSignalMapper>
 #include <QSlider>
 #include <QSocketNotifier>
 #include <QSpinBox>
@@ -628,17 +627,51 @@ void Guid::dialogFinished(int status)
     exit (0);
 }
 
-void Guid::exitAfterMenuClick(int i)
-{
-    showMenuClick(i);
-    
-    exit(i);
-}
-
-void Guid::showMenuClick(int i)
+void Guid::afterMenuClick()
 {
     QOUT
-    qOut << m_prefix_ok + "MENU_CLICKED:" + QString::number(i);
+    
+    QString menuItemName = sender()->property("guid_menu_item_name").toString();
+    int menuItemExitCode = sender()->property("guid_menu_item_exit_code").toInt();
+    QString menuItemCommand = sender()->property("guid_menu_item_command").toString();
+    bool menuItemCommandPrintOutput = sender()->property("guid_menu_item_command_print_output").toBool();
+    
+    QString output = QString("%1MENU_CLICKED_DATA_START|name=%2|exitCode=%3|command=%4|commandPrintOutput=%5|commandOutput=")
+        .arg(m_prefix_ok)
+        .arg(menuItemName)
+        .arg(QString::number(menuItemExitCode))
+        .arg(menuItemCommand)
+        .arg(QString::number(menuItemCommandPrintOutput));
+    
+    qOut << output;
+    
+    if (menuItemCommand.isEmpty() || !menuItemCommandPrintOutput) {
+        qOut << "|MENU_CLICKED_DATA_END" << Qt::endl;
+    }
+    
+    if (!menuItemCommand.isEmpty()) {
+        QStringList commandArgs = menuItemCommand.split("@@");
+        QString commandExec = commandArgs[0];
+        commandArgs.removeFirst();
+        QProcess *process = new QProcess;
+        
+        if (menuItemCommandPrintOutput) {
+            connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=]() {
+                QString commandOutput = QString::fromLocal8Bit(process->readAllStandardOutput());
+                QOUT
+                qOut << commandOutput << "|MENU_CLICKED_DATA_END";
+                delete process;
+            });
+            process->start(commandExec, commandArgs);
+            qOut << Qt::endl;
+        } else {
+            process->startDetached(commandExec, commandArgs);
+        }
+    }
+    
+    if (menuItemExitCode >=0 && menuItemExitCode <= 255) {
+        exit(menuItemExitCode);
+    }
 }
 
 void Guid::quitOnError()
@@ -1879,6 +1912,13 @@ static void setTextInfo(QTextEdit* textInfo, QString filename, bool isReadOnly, 
         textInfo->setMaximumHeight(heightToSet);
 }
 
+#define SET_MENU_ITEM_DATA \
+    if (menuItemData.count() > 0) menuItemName = menuItemData.at(0); \
+    if (menuItemData.count() > 1) menuItemExitCode = menuItemData.at(1).toInt(&ok); \
+    if (menuItemData.count() > 2) menuItemCommand = menuItemData.at(2); \
+    if (menuItemData.count() > 3) menuItemCommandPrintOutput = menuItemData.at(3) == "1" ? true : false; \
+    if (menuItemData.count() > 4) menuItemIcon = menuItemData.at(4);
+
 char Guid::showForms(const QStringList &args)
 {
     QOUT_ERR
@@ -1964,7 +2004,6 @@ char Guid::showForms(const QStringList &args)
     QString lastWidget = NULL;
     QMenuBar *lastMenu = NULL;
     bool topMenu = false;
-    QSignalMapper *menuSignalMapper = new QSignalMapper(this);
     
     QFileSystemWatcher * comboWatcher = new QFileSystemWatcher(dlg);
     QFileSystemWatcher * listWatcher = new QFileSystemWatcher(dlg);
@@ -2071,11 +2110,9 @@ char Guid::showForms(const QStringList &args)
             
             QString next_arg = NEXT_ARG;
             
-            bool closeDlgAfterMenuClick = false;
-            if (next_arg.contains(QRegExp("^close=1//"))) {
-                closeDlgAfterMenuClick = true;
-                next_arg.remove(0, 9);
-            }
+            QIcon menuActionIcon = QApplication::style()->standardIcon(QStyle::SP_TitleBarMaxButton);
+            
+            // Global menu settings
             
             QString menuSeparator = "";
             if (next_arg.contains(QRegExp("^sep=.//"))) {
@@ -2083,34 +2120,39 @@ char Guid::showForms(const QStringList &args)
                 next_arg.remove(0, 7);
             }
             
+            // Menu items
+            
             QStringList menuItemsMainLevel = next_arg.split('|');
             QStringList menuItemChildren;
             
-            QString menuItemData;
+            QStringList menuItemData;
             QString menuItemName;
-            int menuItemOutputCode;
-            QIcon menuActionIcon = QApplication::style()->standardIcon(QStyle::SP_TitleBarMaxButton);
+            int menuItemExitCode;
+            QString menuItemCommand;
+            bool menuItemCommandPrintOutput;
+            QString menuItemIcon;
             
             for (int i = 0; i < menuItemsMainLevel.size(); ++i) {
+                menuItemName = "";
+                menuItemExitCode = -1;
+                menuItemCommand = "";
+                menuItemCommandPrintOutput = false;
+                menuItemIcon = "";
+                
                 if (menuItemsMainLevel.at(i).contains('#')) {
-                    menuItemData = menuItemsMainLevel.at(i).section('#', 0, 0);
+                    menuItemData = menuItemsMainLevel.at(i).section('#', 0, 0).split(';');
                     menuItemChildren << menuItemsMainLevel.at(i).section('#', 1, -1).split('#');
                 } else {
-                    menuItemData = menuItemsMainLevel.at(i);
+                    menuItemData = menuItemsMainLevel.at(i).split(';');
                 }
                 
-                menuItemName = menuItemData.section(':', 0, -2);
-                menuItemOutputCode = menuItemData.section(':', -1, -1).toInt(&ok);
+                SET_MENU_ITEM_DATA
                 
-                if (menuItemName.isEmpty()) {
-                    menuItemName = menuItemData;
-                    menuItemOutputCode = 0;
-                    ok = true;
-                }
-                
-                if (menuItemName.isEmpty() || !ok || menuItemOutputCode < 0 || menuItemOutputCode > 255) {
+                if (menuItemName.isEmpty())
                     continue;
-                }
+                
+                if (!ok)
+                    menuItemExitCode = -1;
                 
                 if (!menuSeparator.isEmpty() && i > 0) {
                     auto* menuSep = new QAction(menuSeparator, this);
@@ -2124,24 +2166,34 @@ char Guid::showForms(const QStringList &args)
                     lastMenu->addMenu(menuItem);
                     
                     for (int j = 0; j < menuItemChildren.size(); ++j) {
-                        menuItemName = menuItemChildren.at(j).section(':', 0, -2);
-                        menuItemOutputCode = menuItemChildren.at(j).section(':', -1, -1).toInt(&ok);
+                        menuItemName = "";
+                        menuItemExitCode = -1;
+                        menuItemCommand = "";
+                        menuItemCommandPrintOutput = false;
+                        menuItemIcon = "";
                         
-                        if (menuItemName.isEmpty() || !ok || menuItemOutputCode < 0 || menuItemOutputCode > 255) {
+                        menuItemData = menuItemChildren.at(j).split(';');
+                        SET_MENU_ITEM_DATA
+                        
+                        if (menuItemName.isEmpty())
                             continue;
-                        }
+                        
+                        if (!ok)
+                            menuItemExitCode = -1;
                         
                         QAction *menuAction = new QAction(menuItemName, this);
-                        menuAction->setIcon(menuActionIcon);
+                        
+                        if (menuItemIcon != "false")
+                            menuAction->setIcon(menuActionIcon);
+                        
+                        menuAction->setProperty("guid_menu_item_name", menuItemName);
+                        menuAction->setProperty("guid_menu_item_exit_code", menuItemExitCode);
+                        menuAction->setProperty("guid_menu_item_command", menuItemCommand);
+                        menuAction->setProperty("guid_menu_item_command_print_output", menuItemCommandPrintOutput);
+                        
                         menuItem->addAction(menuAction);
                         
-                        connect(menuAction, SIGNAL(triggered()), menuSignalMapper, SLOT(map()), Qt::UniqueConnection);
-                        menuSignalMapper->setMapping(menuAction, menuItemOutputCode);
-                        if (closeDlgAfterMenuClick) {
-                            connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(exitAfterMenuClick(int)), Qt::UniqueConnection);
-                        } else {
-                            connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(showMenuClick(int)), Qt::UniqueConnection);
-                        }
+                        connect(menuAction, SIGNAL(triggered()), this, SLOT(afterMenuClick()), Qt::UniqueConnection);
                     }
                     
                     menuItemChildren.clear();
@@ -2150,15 +2202,14 @@ char Guid::showForms(const QStringList &args)
                 // Menu without submenu items (first level elements are added as QAction)
                 else {
                     QAction *menuAction = new QAction(menuItemName, this);
+                    menuAction->setProperty("guid_menu_item_name", menuItemName);
+                    menuAction->setProperty("guid_menu_item_exit_code", menuItemExitCode);
+                    menuAction->setProperty("guid_menu_item_command", menuItemCommand);
+                    menuAction->setProperty("guid_menu_item_command_print_output", menuItemCommandPrintOutput);
+                    
                     lastMenu->addAction(menuAction);
                     
-                    connect(menuAction, SIGNAL(triggered()), menuSignalMapper, SLOT(map()), Qt::UniqueConnection);
-                    menuSignalMapper->setMapping(menuAction, menuItemOutputCode);
-                    if (closeDlgAfterMenuClick) {
-                        connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(exitAfterMenuClick(int)), Qt::UniqueConnection);
-                    } else {
-                        connect(menuSignalMapper, SIGNAL(mapped(int)), this, SLOT(showMenuClick(int)), Qt::UniqueConnection);
-                    }
+                    connect(menuAction, SIGNAL(triggered()), this, SLOT(afterMenuClick()), Qt::UniqueConnection);
                 }
             }
             
@@ -3094,6 +3145,45 @@ void Guid::printHelp(const QString &category)
     QString main_separator      = "#####################################################################################";
     QString secondary_separator = "-------------------------------------------------------------------------------------";
     
+    const char *addMenuHelpDescription = "Add a new Menu in forms dialog.\n"
+        "Note that this widget is not a user input field, so it doesn't have any impact\n"
+        "on the field count when parsing output printed on the console.\n"
+        "First level menu items must be separated with the symbol \"|\". Example:\n"
+        "Main Item A|Main Item B|Main Item C\n"
+        "Second level menu items must be separated with the symbol \"#\". Example:\n"
+        "Main Item A#Subitem A1#Subitem A2|Main Item B|Main Item C#Subitem C1\n"
+        "Each menu item that doesn't contain subitems can have up to 5 settings separated\n"
+        "with \";\": Menu item name;Exit code;Command to run;Print command output;Icon\n"
+        "The menu item name is mandatory. Other settings have these default values:\n"
+        "Menu item name;-1;\"\";0;\"\"\n"
+        "Possible values are as follows:\n"
+        "- Menu item name: string not containing the character \";\".\n"
+        "- Exit code: integer. If the value is < 0, the dialog will not be closed after\n"
+        "             a click on the menu item. If the value is >=0 and <= 255, the dialog\n"
+        "             will be closed with the exit code sent by the command \"exit()\".\n"
+        "- Command to run: the executable name/path and all arguments must be separated\n"
+        "                  with \"@@\". For example, if the command to run is the following\n:"
+        "                  explorer.exe /separate, \"C:\\Users\\My Name\\Desktop\"\n"
+        "                  it must be set like this:\n"
+        "                  explorer.exe@@/separate,@@\"C:\\Users\\My Name\\Desktop\"\n"
+        "- Print command output: 0 or 1. If the value is 1, the command output will be\n"
+        "                        printed on the console.\n"
+        "- Icon: for now, the only valid value is 0. If the value is 0, the default icon\n"
+        "        won't be added to the left of the menu item. TODO: set arbitrary icon.\n"
+        "No matter if the dialog is closed or not after a click on the menu item, all\n"
+        "settings (menu name, exit code, etc.) are printed on the console after a click,\n"
+        "so it can be parsed by a script. Here's an example:\n"
+        "guid --forms --add-menu=\"File#Profile;-1;explorer.exe@@%UserProfile%;0|Exit;10\"\n"
+        "To add separators between first level menu items, add \"sep=SEP//\" at the\n"
+        "beginning of the menu settings. Example:\n"
+        "guid --forms --add-menu=\"sep=|//File#Profile;-1;explorer.exe@@%UserProfile%;0|Exit;10\"\n"
+        "If a menu is the first widget added to the form and the form doesn't have a main\n"
+        "label added with \"--text=TEXT\", special settings are applied to the menu to have it\n"
+        "look like a main application menu. If we want a menu on top of the dialog but still\n"
+        "have a form label, we must not add the form label with \"--text=TEXT\", but with\n"
+        "\"--add-text=TEXT\" after the menu. Example:\n"
+        "guid --forms --add-menu=\"Item A;10|Item B;20\" --add-text=\"Form label\" --bold";
+    
     if (helpDict.isEmpty()) {
         /******************************
          * help
@@ -3340,7 +3430,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         // --add-menu
-        Help("--add-menu=Menu settings", "GUID ONLY! " + tr("Add a new Menu in forms dialog.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.\nFirst level menu items must be separated with the symbol \"|\".\nSecond level menu items must be separated with the symbol \"#\".\nEach menu item without children must have an output code specified as follows:\n\"MenuItemName:OutputCode\"\nBy default, the output code is printed on the console after a click on the menu\nitem, and the dialog stays open. We can specify to close the dialog by adding\n\"close=1//\" at the beginning of the menu settings. Example:\nguid --forms --add-menu=\"close=1//Item A#Subitem:10|Item B:11|Item C:12\"\nTo add separators between first level menu items, add \"sep=SEP//\" at the\nbeginning of menu settings. Example:\nguid --forms --add-menu=\"sep=|//First Item#First Subitem:10#Second Subitem:11|Second\n     Item:12|Third Item:13\"\nExample of form menu closing the dialog closing after a click and with separators:\nguid --forms --add-menu=\"close=1//sep=|//First Item#First Subitem:10#Second\n     Subitem:11|Second Item:12|Third Item:13|Fourth Item#First Subitem:14\"\n     --add-entry=\"Text field\"\nNote that if a main label is set for the form with the argument \"--text=TEXT\",\nit'll be displayed on top of the dialog. Example:\nguid --forms --text=\"Form label\" --add-menu=\"First Item:10|Second Item:11\"\n     --add-entry=\"Text field\"\nIf we want to have a menu on top of the dialog but still have a main label for\nthe form, we must add the label as new text with \"--add-text=TEXT\" after the\nmenu. Example:\nguid --forms --add-menu=\"First Item:10|Second Item:11\" --add-text=\"Form label\"\n     --bold --add-entry=\"Text field\"")) <<
+        Help("--add-menu=Menu settings", "GUID ONLY! " + tr(addMenuHelpDescription)) <<
         Help("", "") <<
         
         // --add-password
