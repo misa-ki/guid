@@ -28,6 +28,7 @@ class QTreeWidgetItem;
 
 struct GList {
     QStringList val;
+    QString addValue;
     QString fileSep;
     QString filePath;
     bool monitorFile;

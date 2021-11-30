@@ -49,6 +49,7 @@
 #include <QProgressDialog>
 #include <QPropertyAnimation>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
@@ -355,28 +356,71 @@ static ValuePair value(const QWidget *w, const QString &dateFormat, const QStrin
     } else IF_IS(QTreeWidget) {
         QString results;
         QString rowValue;
-        QString printMode = t->property("guid_list_print_values_mode").toString().toLower();
-        QList<QTreeWidgetItem*> items;
+        QString printColumn = t->property("guid_list_print_column").toString();
+        QString printMode = t->property("guid_list_print_values_mode").toString();
+        QString selectionType = t->property("guid_list_selection_type").toString();
+        QList<QTreeWidgetItem*> itemsToCheck;
         
-        if (printMode == "all") {
+        if (selectionType == "checklist" || selectionType == "radiolist" || printMode == "all") {
             for (int i = 0; i < t->topLevelItemCount(); ++i) {
                 QTreeWidgetItem *item = t->topLevelItem(i);
-                items << item;
+                itemsToCheck << item;
             }
         } else {
-            items = t->selectedItems();
+            itemsToCheck = t->selectedItems();
         }
         
-        foreach(QTreeWidgetItem *item, items) {
-            rowValue = "";
-            for (int i = 0; i < t->columnCount(); ++i) {
-                if (!rowValue.isEmpty())
-                    rowValue += ',';
-                rowValue += item->text(i);
+        if (selectionType == "checklist" || selectionType == "radiolist") {
+            bool isChecked = false;
+            int itemNo = 0;
+            foreach (QTreeWidgetItem *item, itemsToCheck) {
+                if (selectionType == "checklist") {
+                    QCheckBox *cb = qobject_cast<QCheckBox*>(t->itemWidget(item, 0));
+                    isChecked = cb->isChecked();
+                } else if (selectionType == "radiolist") {
+                    QRadioButton *rb = qobject_cast<QRadioButton*>(t->itemWidget(item, 0));
+                    isChecked = rb->isChecked();
+                }
+                
+                if (isChecked || printMode == "all") {
+                    rowValue = "";
+                    for (int i = 0; i < t->columnCount(); ++i) {
+                        if (printColumn == "all" || printColumn == QString::number(i + 1)) {
+                            if (i > 0)
+                                rowValue += ',';
+                            
+                            if (i == 0) {
+                                if (isChecked)
+                                    rowValue += "true";
+                                else
+                                    rowValue += "false";
+                            } else {
+                                rowValue += item->text(i);
+                            }
+                        }
+                    }
+                    if (itemNo > 0)
+                        results += listRowSeparator;
+                    results += rowValue;
+                    itemNo++;
+                }
             }
-            if (!results.isEmpty())
-                results += listRowSeparator;
-            results += rowValue;
+        } else {
+            int itemNo = 0;
+            foreach (QTreeWidgetItem *item, itemsToCheck) {
+                rowValue = "";
+                for (int i = 0; i < t->columnCount(); ++i) {
+                    if (printColumn == "all" || printColumn == QString::number(i + 1)) {
+                        if (i > 0)
+                            rowValue += ',';
+                        rowValue += item->text(i);
+                    }
+                }
+                if (itemNo > 0)
+                    results += listRowSeparator;
+                results += rowValue;
+                itemNo++;
+            }
         }
         return ValuePair(true, var + results);
     } else IF_IS(QComboBox) {
@@ -579,49 +623,63 @@ void Guid::dialogFinished(int status)
             QTreeWidget *tw = sender()->findChild<QTreeWidget*>();
             QStringList result;
             if (tw) {
-                bool done(false);
                 QString rowValue;
-                QString printMode = tw->property("guid_list_print_values_mode").toString().toLower();
-                QList<QTreeWidgetItem*> allItems;
+                QString printColumn = tw->property("guid_list_print_column").toString();
+                QString printMode = tw->property("guid_list_print_values_mode").toString();
+                QString selectionType = tw->property("guid_list_selection_type").toString();
                 QList<QTreeWidgetItem*> itemsToCheck;
                 
-                for (int i = 0; i < tw->topLevelItemCount(); ++i) {
-                    QTreeWidgetItem *item = tw->topLevelItem(i);
-                    allItems << item;
-                }
-                
-                if (printMode == "all") {
-                    itemsToCheck = allItems;
+                if (selectionType == "checklist" || selectionType == "radiolist" || printMode == "all") {
+                    for (int i = 0; i < tw->topLevelItemCount(); ++i) {
+                        QTreeWidgetItem *item = tw->topLevelItem(i);
+                        itemsToCheck << item;
+                    }
                 } else {
                     itemsToCheck = tw->selectedItems();
                 }
                 
-                foreach (QTreeWidgetItem *twi, itemsToCheck) {
-                    done = true;
-                    rowValue = "";
-                    for (int i = 0; i < tw->columnCount(); ++i) {
-                        if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
-                            if (!rowValue.isEmpty())
-                                rowValue += ',';
-                            rowValue += twi->text(i);
-                        }
-                    }
-                    result << rowValue;
-                }
-                if (!done) { // checkable
-                    itemsToCheck = allItems;
+                if (selectionType == "checklist" || selectionType == "radiolist") {
+                    bool isChecked = false;
                     foreach (QTreeWidgetItem *twi, itemsToCheck) {
-                        if (twi->checkState(0) == Qt::Checked) {
+                        if (selectionType == "checklist") {
+                            QCheckBox *cb = qobject_cast<QCheckBox*>(tw->itemWidget(twi, 0));
+                            isChecked = cb->isChecked();
+                        } else if (selectionType == "radiolist") {
+                            QRadioButton *rb = qobject_cast<QRadioButton*>(tw->itemWidget(twi, 0));
+                            isChecked = rb->isChecked();
+                        }
+                        
+                        if (isChecked || printMode == "all") {
                             rowValue = "";
                             for (int i = 0; i < tw->columnCount(); ++i) {
-                                if (sender()->property("guid_print_column") == "ALL" || sender()->property("guid_print_column") == i + 1) {
-                                    if (!rowValue.isEmpty())
+                                if (printColumn == "all" || printColumn == QString::number(i + 1)) {
+                                    if (i > 0)
                                         rowValue += ',';
-                                    rowValue += twi->text(i);
+                                    
+                                    if (i == 0) {
+                                        if (isChecked)
+                                            rowValue += "true";
+                                        else
+                                            rowValue += "false";
+                                    } else {
+                                        rowValue += twi->text(i);
+                                    }
                                 }
                             }
                             result << rowValue;
                         }
+                    }
+                } else {
+                    foreach (QTreeWidgetItem *twi, itemsToCheck) {
+                        rowValue = "";
+                        for (int i = 0; i < tw->columnCount(); ++i) {
+                            if (printColumn == "all" || printColumn == QString::number(i + 1)) {
+                                if (i > 0)
+                                    rowValue += ',';
+                                rowValue += twi->text(i);
+                            }
+                        }
+                        result << rowValue;
                     }
                 }
             }
@@ -996,6 +1054,8 @@ void Guid::toggleItems(QTreeWidgetItem *item, int column)
 
 static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool checkable, bool icons)
 {
+    QString selectionType = tw->property("guid_list_selection_type").toString();
+    
     for (int i = 0; i < values.count(); ) {
         QStringList itemValues;
         for (int j = 0; j < tw->columnCount(); ++j) {
@@ -1003,13 +1063,33 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
             if (i == values.count())
                 break;
         }
+        
         QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
+        tw->addTopLevelItem(item);
+        
         Qt::ItemFlags flags = item->flags();
         if (editable)
             flags |= Qt::ItemIsEditable;
-        if (checkable) {
-            flags |= Qt::ItemIsUserCheckable;
-            item->setCheckState(0, Qt::Unchecked);
+        item->setFlags(flags);
+        
+        if (selectionType == "checklist") {
+            QCheckBox *cb = new QCheckBox();
+            cb->setContentsMargins(0, 0, 0, 0);
+            if (itemValues.at(0).toLower() == "true")
+                cb->setCheckState(Qt::Checked);
+            else
+                cb->setCheckState(Qt::Unchecked);
+            cb->setStyleSheet("QCheckBox::indicator {subcontrol-position: center center;}");
+            tw->setItemWidget(item, 0, cb);
+        } else if (selectionType == "radiolist") {
+            QRadioButton *rb = new QRadioButton();
+            rb->setContentsMargins(0, 0, 0, 0);
+            if (itemValues.at(0).toLower() == "true")
+                rb->setChecked(true);
+            else
+                rb->setChecked(false);
+            rb->setStyleSheet("QRadioButton::indicator {subcontrol-position: center center;}");
+            tw->setItemWidget(item, 0, rb);
         }
         if (icons)
             item->setIcon(0, QPixmap(item->text(0)));
@@ -1017,8 +1097,6 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
             item->setData(0, Qt::EditRole, item->text(0));
             item->setText(0, QString());
         }
-        item->setFlags(flags);
-        tw->addTopLevelItem(item);
     }
 }
 
@@ -1027,6 +1105,13 @@ static void addItems(QTreeWidget *tw, QStringList &values, bool editable, bool c
 static GList listValuesFromFile(QString data)
 {
     GList list = GList();
+    
+    list.addValue = "";
+    if (data.contains(QRegExp("^addValue=.+//"))) {
+        list.addValue = data.section("//", 0, 0).replace("addValue=", "");
+        data = data.section("//", 1, -1);
+    }
+    
     list.monitorFile = false;
     if (data.contains(QRegExp("^monitor=.//"))) {
         if (data.mid(8, 1) == "1")
@@ -1070,6 +1155,26 @@ static QSize getQTreeWidgetSize(QTreeWidget **qtw)
     return QSize(tw->header()->length() + 2 * tw->frameWidth(), height);
 }
 
+static QStringList addColumnToListValues(QStringList values, QString addValue, int nbColumns)
+{
+    QStringList result;
+    
+    if (!addValue.isEmpty()) {
+        int i = 0;
+        foreach(QString v, values) {
+            if (nbColumns % i == 0) {
+                result << addValue;
+            }
+            result << v;
+            i++;
+        }
+    } else {
+        result = values;
+    }
+    
+    return result;
+}
+
 char Guid::showList(const QStringList &args)
 {
     QOUT_ERR
@@ -1086,13 +1191,15 @@ char Guid::showList(const QStringList &args)
     tw->setAllColumnsShowFocus(true);
     tw->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     tw->header()->setStretchLastSection(true);
-
-    bool editable(false), checkable(false), exclusive(false), icons(false), ok, needFilter(true);
+    tw->setProperty("guid_list_print_column", "1");
+    tw->setProperty("guid_list_add_value", "");
+    
+    bool editable(false), exclusive(false), checkable(false), icons(false), ok, needFilter(true);
+    QString selectionType;
     int heightToSet = -1;
     QStringList columns;
     GList list = GList();
     QList<int> hiddenCols;
-    dlg->setProperty("guid_print_column", 1);
     dlg->setProperty("guid_separator", "|");
     QFileSystemWatcher * listWatcher = new QFileSystemWatcher(dlg);
     
@@ -1127,14 +1234,16 @@ char Guid::showList(const QStringList &args)
             if (ok)
                 hiddenCols << v-1;
         } else if (args.at(i) == "--print-column") {
-            dlg->setProperty("guid_print_column", NEXT_ARG);
+            tw->setProperty("guid_list_print_column", NEXT_ARG.toLower());
         } else if (args.at(i) == "--checklist") {
             tw->setSelectionMode(QAbstractItemView::NoSelection);
             tw->setAllColumnsShowFocus(false);
+            selectionType = "checklist";
             checkable = true;
         } else if (args.at(i) == "--radiolist") {
             tw->setSelectionMode(QAbstractItemView::NoSelection);
             tw->setAllColumnsShowFocus(false);
+            selectionType = "radiolist";
             checkable = true;
             exclusive = true;
         } else if (args.at(i) == "--imagelist") {
@@ -1157,6 +1266,7 @@ char Guid::showList(const QStringList &args)
         } else if (args.at(i) == "--list-values-from-file") {
             list = listValuesFromFile(NEXT_ARG);
             
+            tw->setProperty("guid_list_add_value", list.addValue);
             tw->setProperty("guid_file_sep", list.fileSep);
             tw->setProperty("guid_file_path", list.filePath);
             tw->setProperty("guid_monitor_file", list.monitorFile);
@@ -1166,7 +1276,7 @@ char Guid::showList(const QStringList &args)
                 connect(listWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateList(QString)), Qt::UniqueConnection);
             }
         } else if (args.at(i) == "--print-values") {
-            tw->setProperty("guid_list_print_values_mode", NEXT_ARG);
+            tw->setProperty("guid_list_print_values_mode", NEXT_ARG.toLower());
         } else if (args.at(i) != "--list") {
             list.val << args.at(i);
         }
@@ -1174,9 +1284,7 @@ char Guid::showList(const QStringList &args)
     if (list.val.isEmpty())
         listenToStdIn();
 
-    if (checkable)
-        editable = false;
-
+    tw->setProperty("guid_list_selection_type", selectionType);
     tw->setProperty("guid_list_flags", int(editable | checkable << 1 | icons << 2));
 
     int columnCount = qMax(columns.count(), 1);
@@ -1186,6 +1294,7 @@ char Guid::showList(const QStringList &args)
     foreach (const int &i, hiddenCols)
         tw->setColumnHidden(i, true);
 
+    list.val = addColumnToListValues(list.val, list.addValue, columnCount);
     addItems(tw, list.val, editable, checkable, icons);
 
     if (exclusive) {
@@ -1193,6 +1302,9 @@ char Guid::showList(const QStringList &args)
     }
     for (int i = 0; i < columns.count(); ++i)
         tw->resizeColumnToContents(i);
+
+    if (!selectionType.isEmpty())
+        tw->header()->setSectionResizeMode(0, QHeaderView::Fixed);
 
     if (heightToSet >= 0 && heightToSet < getQTreeWidgetSize(&tw).height())
         tw->setMaximumHeight(heightToSet);
@@ -1722,17 +1834,25 @@ void Guid::updateList(QString filePath)
         return;
     
     foreach (QTreeWidget *tw, sender()->parent()->findChildren<QTreeWidget*>()) {
-        if (tw->property("guid_monitor_file").toBool() && tw->property("guid_file_path").toString() == filePath) {
+        bool propMonitorFile = tw->property("guid_monitor_file").toBool();
+        QString propFilePath = tw->property("guid_file_path").toString();
+        QString propSelectionType = tw->property("guid_list_selection_type").toString();
+        QString propAddValue = tw->property("guid_list_add_value").toString();
+        QString propFileSep = tw->property("guid_file_sep").toString();
+        
+        if (propMonitorFile && propFilePath == filePath) {
             int columnCount = tw->columnCount();
             Qt::ItemFlags flags = tw->topLevelItem(0)->flags();
             tw->clear();
             
             QString fileArg = "";
-            QString fileSep = tw->property("guid_file_sep").toString();
-            if (!fileSep.isEmpty())
-                fileArg += "sep=" + fileSep + "//";
+            if (!propAddValue.isEmpty())
+                fileArg += "addValue=" + propAddValue + "//";
+            if (!propFileSep.isEmpty())
+                fileArg += "sep=" + propFileSep + "//";
             fileArg += filePath;
             GList list = listValuesFromFile(fileArg);
+            list.val = addColumnToListValues(list.val, list.addValue, columnCount);
             for (int i = 0; i < list.val.count(); ) {
                 QStringList itemValues;
                 for (int j = 0; j < columnCount; ++j) {
@@ -1741,10 +1861,34 @@ void Guid::updateList(QString filePath)
                         break;
                 }
                 QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
+                tw->addTopLevelItem(item);
+                
                 flags |= item->flags();
                 item->setFlags(flags);
                 item->setTextAlignment(0, Qt::AlignLeft);
-                tw->addTopLevelItem(item);
+                
+                if (propSelectionType == "checklist") {
+                    QCheckBox *cb = new QCheckBox();
+                    cb->setContentsMargins(0, 0, 0, 0);
+                    if (itemValues.at(0).toLower() == "true")
+                        cb->setCheckState(Qt::Checked);
+                    else
+                        cb->setCheckState(Qt::Unchecked);
+                    cb->setStyleSheet("QCheckBox::indicator {subcontrol-position: center center;}");
+                    tw->setItemWidget(item, 0, cb);
+                } else if (propSelectionType == "radiolist") {
+                    QRadioButton *rb = new QRadioButton();
+                    rb->setContentsMargins(0, 0, 0, 0);
+                    if (itemValues.at(0).toLower() == "true")
+                        rb->setChecked(true);
+                    else
+                        rb->setChecked(false);
+                    rb->setStyleSheet("QRadioButton::indicator {subcontrol-position: center center;}");
+                    tw->setItemWidget(item, 0, rb);
+                }
+                
+                if (!propSelectionType.isEmpty())
+                    item->setText(0, QString());
             }
             
             for (int i = 0; i < columnCount; ++i) {
@@ -1761,7 +1905,7 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
 
     if (!tw)
         return;
-
+    
     tw->setRootIsDecorated(false);
     int columnCount = columns.count();
     tw->setHeaderHidden(!showHeader);
@@ -1771,7 +1915,10 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
     } else {
         columnCount = 1;
     }
-
+    
+    list.val = addColumnToListValues(list.val, list.addValue, columnCount);
+    QString selectionType = tw->property("guid_list_selection_type").toString();
+    
     for (int i = 0; i < list.val.count(); ) {
         QStringList itemValues;
         for (int j = 0; j < columnCount; ++j) {
@@ -1780,14 +1927,41 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
                 break;
         }
         QTreeWidgetItem *item = new QTreeWidgetItem(tw, itemValues);
+        tw->addTopLevelItem(item);
+        
         flags |= item->flags();
         item->setFlags(flags);
         item->setTextAlignment(0, Qt::AlignLeft);
-        tw->addTopLevelItem(item);
+        
+        if (selectionType == "checklist") {
+            QCheckBox *cb = new QCheckBox();
+            cb->setContentsMargins(0, 0, 0, 0);
+            if (itemValues.at(0).toLower() == "true")
+                cb->setCheckState(Qt::Checked);
+            else
+                cb->setCheckState(Qt::Unchecked);
+            cb->setStyleSheet("QCheckBox::indicator {subcontrol-position: center center;}");
+            tw->setItemWidget(item, 0, cb);
+        } else if (selectionType == "radiolist") {
+            QRadioButton *rb = new QRadioButton();
+            rb->setContentsMargins(0, 0, 0, 0);
+            if (itemValues.at(0).toLower() == "true")
+                rb->setChecked(true);
+            else
+                rb->setChecked(false);
+            rb->setStyleSheet("QRadioButton::indicator {subcontrol-position: center center;}");
+            tw->setItemWidget(item, 0, rb);
+        }
+        
+        if (!selectionType.isEmpty())
+            item->setText(0, QString());
     }
 
     for (int i = 0; i < columns.count(); ++i)
         tw->resizeColumnToContents(i);
+
+    if (!selectionType.isEmpty())
+        tw->header()->setSectionResizeMode(0, QHeaderView::Fixed);
 
     tw->setStyleSheet(QTREEWIDGET_STYLE);
 
@@ -2468,7 +2642,10 @@ char Guid::showForms(const QStringList &args)
             lastList->setProperty("guid_file_sep", "");
             lastList->setProperty("guid_file_path", "");
             lastList->setProperty("guid_monitor_file", false);
+            lastList->setProperty("guid_list_add_value", "");
             lastList->setProperty("guid_list_print_values_mode", "selected");
+            lastList->setProperty("guid_list_selection_type", "");
+            lastList->setProperty("guid_list_print_column", "1");
             lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
             lastList->header()->setStretchLastSection(true);
             
@@ -2808,6 +2985,14 @@ char Guid::showForms(const QStringList &args)
                 WARN_UNKNOWN_ARG("--add-list");
         }
         
+        // --print-column
+        else if (args.at(i) == "--print-column") {
+            if (lastWidget == "list")
+                lastList->setProperty("guid_list_print_column", NEXT_ARG.toLower());
+            else
+                WARN_UNKNOWN_ARG("--add-list");
+        }
+        
         // --list-values
         else if (args.at(i) == "--list-values") {
             if (lastWidget == "list")
@@ -2821,6 +3006,7 @@ char Guid::showForms(const QStringList &args)
             if (lastWidget == "list") {
                 lastListGList = listValuesFromFile(NEXT_ARG);
                 
+                lastList->setProperty("guid_list_add_value", lastListGList.addValue);
                 lastList->setProperty("guid_file_sep", lastListGList.fileSep);
                 lastList->setProperty("guid_file_path", lastListGList.filePath);
                 lastList->setProperty("guid_monitor_file", lastListGList.monitorFile);
@@ -2837,7 +3023,23 @@ char Guid::showForms(const QStringList &args)
         // --print-values
         else if (args.at(i) == "--print-values") {
             if (lastWidget == "list")
-                lastList->setProperty("guid_list_print_values_mode", NEXT_ARG);
+                lastList->setProperty("guid_list_print_values_mode", NEXT_ARG.toLower());
+            else
+                WARN_UNKNOWN_ARG("--add-list");
+        }
+        
+        // --checklist
+        else if (args.at(i) == "--checklist") {
+            if (lastWidget == "list")
+                lastList->setProperty("guid_list_selection_type", "checklist");
+            else
+                WARN_UNKNOWN_ARG("--add-list");
+        }
+        
+        // --radiolist
+        else if (args.at(i) == "--radiolist") {
+            if (lastWidget == "list")
+                lastList->setProperty("guid_list_selection_type", "radiolist");
             else
                 WARN_UNKNOWN_ARG("--add-list");
         }
@@ -3457,9 +3659,12 @@ void Guid::printHelp(const QString &category)
         Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
         Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
         Help("--list-values=List of values separated by |", tr("List of values for List")) <<
-        Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
+        Help("--list-values-from-file=[addValue=VALUE//][monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo add automatically a value at the beginning of each row (for example\nthe value \"false\" in combination with \"--checklist\"), add \"addValue=VALUE\"\nfollowed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Delete|Column 1|Column 2\"\n     --show-header --list-values-from-file=\"addValue=false///path/to/file\" --checklist\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
+        Help("--checklist", tr("Use check boxes for first column.\nMultiple rows will be selectable.")) <<
+        Help("--radiolist", tr("Use radio buttons for first column.\nOnly one row will be selectable.")) <<
         Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
         Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+        Help("--print-column=NUMBER|all", tr("Print a specific column.\nDefault is 1. The value \"all\" can be used to print all columns.")) <<
         Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
         Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
         Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
@@ -3607,14 +3812,14 @@ void Guid::printHelp(const QString &category)
         Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
         Help("", "") <<
         
-        Help("--checklist", tr("Use check boxes for first column")) <<
+        Help("--checklist", tr("Use check boxes for first column.\nMultiple rows will be selectable.")) <<
         Help("--imagelist", tr("Use an image for first column")) <<
-        Help("--radiolist", tr("Use radio buttons for first column")) <<
+        Help("--radiolist", tr("Use radio buttons for first column.\nOnly one row will be selectable.")) <<
         Help("", "") <<
         
         Help("--column=COLUMN", tr("Set the column header")) <<
         Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
-        Help("--print-column=NUMBER", tr("Print a specific column.\nDefault is 1. 'ALL' can be used to print all columns.")) <<
+        Help("--print-column=NUMBER|all", tr("Print a specific column.\nDefault is 1. The value \"all\" can be used to print all columns.")) <<
         Help("--hide-header", tr("Hides the column headers")) <<
         Help("", "") <<
         
