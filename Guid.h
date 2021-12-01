@@ -25,66 +25,93 @@ class QTreeWidgetItem;
 
 #include <QApplication>
 #include <QPair>
+#include <QSystemTrayIcon>
+#include <QTreeWidget>
+#include <QWidget>
 
 struct GList {
-    QStringList val;
     QString addValue;
-    QString fileSep;
     QString filePath;
+    QString fileSep;
     bool monitorFile;
+    QStringList val;
 };
 
 class Guid : public QApplication
 {
     Q_OBJECT
+
 public:
     Guid(int &argc, char **argv);
-    enum Type { Invalid, Calendar, Entry, Error, Info, FileSelection, List, Notification, Progress, Question, Warning,
-                Scale, TextInfo, ColorSelection, FontSelection, Password, Forms };
+    enum Type {
+        Invalid, Calendar, Entry, Error, Info, FileSelection, List, Notification, Progress,
+        Question, Warning, Scale, TextInfo, ColorSelection, FontSelection, Password, Forms
+    };
     static void printHelp(const QString &category = QString());
     using  QApplication::notify;
+
 private:
+    // Misc.
+    void centerWidget(QWidget *widget, QWidget *host = Q_NULLPTR);
+    bool error(const QString message);
+    QString labelText(const QString &s) const; // m_zenity requires \n and \t interpretation in html.
+    void listenToStdIn();
+    void notify(const QString message, bool noClose = false);
+    bool readGeneral(QStringList &args);
+    void setSysTrayAction(QString actionId, bool valueToSet);
+    
+    // Show dialogs
     char showCalendar(const QStringList &args);
+    char showColorSelection(const QStringList &args);
     char showEntry(const QStringList &args);
-    char showPassword(const QStringList &args);
-
-    char showMessage(const QStringList &args, char type);
-
     char showFileSelection(const QStringList &args);
+    char showFontSelection(const QStringList &args);
+    char showForms(const QStringList &args);
     char showList(const QStringList &args);
+    char showMessage(const QStringList &args, char type);
     char showNotification(const QStringList &args);
+    char showPassword(const QStringList &args);
     char showProgress(const QStringList &args);
     char showScale(const QStringList &args);
     char showText(const QStringList &args);
-    char showColorSelection(const QStringList &args);
-    char showFontSelection(const QStringList &args);
-    char showForms(const QStringList &args);
-    bool readGeneral(QStringList &args);
-    bool error(const QString message);
-    void listenToStdIn();
-    void notify(const QString message, bool noClose = false);
 
-    QString labelText(const QString &s) const; // m_zenity requires \n and \t interpretation in html.
 private slots:
-    void dialogFinished(int status);
-    void printInteger(int v);
-    void quitOnError();
-    void readStdIn();
-    void toggleItems(QTreeWidgetItem *item, int column);
-    void finishProgress();
+    void afterCloseButtonClick();
     void afterMenuClick();
+    void dialogFinished(int status);
+    void exitGuid(int exitCode = 0, bool minimize = false);
+    void finishProgress();
+    void minimizeDialog();
+    void printInteger(int v);
+    void quitDialog();
+    void readStdIn();
+    void showDialog();
+    void showSysTrayMenu(QSystemTrayIcon::ActivationReason reason);
+    void toggleItems(QTreeWidgetItem *item, int column);
     void updateCombo(QString filePath);
     void updateList(QString filePath);
+
 private:
-    bool m_helpMission, m_modal, m_zenity, m_selectableLabel;
-    QString m_caption, m_icon, m_ok, m_cancel, m_notificationHints;
-    QSize m_size;
-    int m_parentWindow, m_timeout;
-    uint m_notificationId;
-    QDialog *m_dialog;
-    Type m_type;
-    QString m_prefix_ok;
-    QString m_prefix_err;
+    QString          m_cancel;
+    QString          m_caption;
+    bool             m_closeToSysTray;
+    QDialog         *m_dialog;
+    bool             m_helpMission;
+    QString          m_icon;
+    bool             m_modal;
+    QString          m_notificationHints;
+    uint             m_notificationId;
+    QString          m_ok;
+    int              m_parentWindow;
+    QString          m_prefixErr;
+    QString          m_prefixOk;
+    bool             m_selectableLabel;
+    QSize            m_size;
+    QSystemTrayIcon *m_sysTray;
+    bool             m_sysTrayMsg;
+    int              m_timeout;
+    Type             m_type;
+    bool             m_zenity;
 };
 
 #endif //GUID_H
