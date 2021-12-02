@@ -76,6 +76,7 @@ private:
     char showText(const QStringList &args);
 
 private slots:
+    void addListRow();
     void afterCloseButtonClick();
     void afterMenuClick();
     void dialogFinished(int status);

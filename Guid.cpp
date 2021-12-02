@@ -606,7 +606,9 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
         QString widgetsValue = NULL;
         ValuePair resultPair;
         ValuePair widgetPair;
-        if (t->property("guid_cols_container").toBool() || t->property("guid_scale_container").toBool()) {
+        if (t->property("guid_list_container").toBool() ||
+            t->property("guid_cols_container").toBool() ||
+            t->property("guid_scale_container").toBool()) {
             int nbResults = 0;
             QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             foreach(QWidget *widget, wChildren) {
@@ -1196,7 +1198,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         // --add-list
-        Help("--add-list=List field and header name", tr("Add a new List in forms dialog")) <<
+        Help("--add-list=[addNewRowButton=1//]List label", tr("Add a new List in forms dialog.\nTo add a button allowing to add new rows when clicked, start the list label\nwith \"addNewRowButton=1\" followed by \"//\". Example:\nguid --forms --add-list=\"addNewRowButton=1//My list\" --column-values=\"C1|C2\"\n     --show-header --list-values=\"v1|v2|v3|v4\"")) <<
         Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
         Help("--list-values=List of values separated by |", tr("List of values for List")) <<
         Help("--list-values-from-file=[addValue=VALUE//][monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo add automatically a value at the beginning of each row (for example\nthe value \"false\" in combination with \"--checklist\"), add \"addValue=VALUE\"\nfollowed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Delete|Column 1|Column 2\"\n     --show-header --list-values-from-file=\"addValue=false///path/to/file\" --checklist\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
@@ -1543,6 +1545,38 @@ void Guid::printHelp(const QString &category)
 /******************************************************************************
  * private slots
  ******************************************************************************/
+
+void Guid::addListRow()
+{
+    QTreeWidget *list = sender()->parent()->findChild<QTreeWidget*>();
+    if (list && list->topLevelItemCount() > 0) {
+        QTreeWidgetItem *firstItem = list->topLevelItem(0);
+        QTreeWidgetItem *newItem = firstItem->clone();
+        list->addTopLevelItem(newItem);
+        list->setCurrentItem(newItem);
+        list->scrollToItem(newItem);
+        for (int i = 0; i < newItem->columnCount(); ++i) {
+            newItem->setText(i, QString());
+        }
+        
+        QWidget *firstItemWidget = list->itemWidget(firstItem, 0);
+        if (firstItemWidget) {
+            if (qstrcmp(firstItemWidget->metaObject()->className(), "QCheckBox") == 0) {
+                QCheckBox *cb = new QCheckBox();
+                cb->setContentsMargins(0, 0, 0, 0);
+                cb->setCheckState(Qt::Unchecked);
+                cb->setStyleSheet("QCheckBox::indicator {subcontrol-position: center center;}");
+                list->setItemWidget(newItem, 0, cb);
+            } else if (qstrcmp(firstItemWidget->metaObject()->className(), "QRadioButton") == 0) {
+                QRadioButton *rb = new QRadioButton();
+                rb->setContentsMargins(0, 0, 0, 0);
+                rb->setChecked(false);
+                rb->setStyleSheet("QRadioButton::indicator {subcontrol-position: center center;}");
+                list->setItemWidget(newItem, 0, rb);
+            }
+        }
+    }
+}
 
 void Guid::afterCloseButtonClick()
 {
@@ -2583,6 +2617,10 @@ char Guid::showForms(const QStringList &args)
     QComboBox *lastCombo = NULL;
     GList lastComboGList = GList();
     
+    QWidget *lastListContainer = NULL;
+    QFormLayout *lastListLayout = NULL;
+    QPushButton *lastListButton = NULL;
+    
     QTreeWidget *lastList = NULL;
     GList lastListGList = GList();
     QStringList lastListColumns;
@@ -3063,9 +3101,22 @@ char Guid::showForms(const QStringList &args)
         // QTreeWidget: --add-list
         else if (args.at(i) == "--add-list") {
             SWITCH_FORMS_WIDGET("list")
-            QLabel *labelList = new QLabel(NEXT_ARG);
+            
+            int lastListAddNewRowButton = 0;
+            QString textLabelList = NEXT_ARG;
+            if (textLabelList.contains(QRegExp("^addNewRowButton=.//"))) {
+                lastListAddNewRowButton = textLabelList.section("//", 0, 0).replace("addNewRowButton=", "").toInt();
+                textLabelList = textLabelList.section("//", 1, -1);
+            }
+            QLabel *labelList = new QLabel(textLabelList);
+            
             buildFormsList(&lastList, lastListGList, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
+            
+            lastListContainer = new QWidget();
+            lastListLayout = new QFormLayout();
             lastList = new QTreeWidget(dlg);
+            lastListButton = new QPushButton();
+            
             lastList->setProperty("guid_file_sep", "");
             lastList->setProperty("guid_file_path", "");
             lastList->setProperty("guid_monitor_file", false);
@@ -3076,14 +3127,29 @@ char Guid::showForms(const QStringList &args)
             lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
             lastList->header()->setStretchLastSection(true);
             
+            lastListLayout->addRow(lastList);
+            lastListLayout->setSpacing(0);
+            lastListLayout->setContentsMargins(0, 0, 0, 0);
+            
+            if (lastListAddNewRowButton == 1) {
+                lastListButton = new QPushButton(tr("Add row"), lastList);
+                connect(lastListButton, SIGNAL(clicked()), this, SLOT(addListRow()), Qt::UniqueConnection);
+                
+                lastListLayout->addRow(lastListButton);
+                lastListLayout->setAlignment(lastListButton, Qt::AlignLeft);
+            }
+            
+            lastListContainer->setLayout(lastListLayout);
+            lastListContainer->setProperty("guid_list_container", true);
+            
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(labelList, lastList)
+                SET_FORMS_COL1(labelList, lastListContainer)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(labelList, lastList)
+                SET_FORMS_COL2(labelList, lastListContainer)
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(labelList, lastList);
+                lastTabLayout->addRow(labelList, lastListContainer);
             } else {
-                fl->addRow(labelList, lastList);
+                fl->addRow(labelList, lastListContainer);
             }
         }
         
