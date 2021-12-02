@@ -1206,6 +1206,7 @@ void Guid::printHelp(const QString &category)
         Help("--radiolist", tr("Use radio buttons for first column.\nOnly one row will be selectable.")) <<
         Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
         Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+        Help("--no-selection", "GUID ONLY! " + tr("Prevent row selection (useful to display information in a structured way\nwithout user interaction)")) <<
         Help("--print-column=NUMBER|all", tr("Print a specific column.\nDefault is 1. The value \"all\" can be used to print all columns.")) <<
         Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
         Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
@@ -1260,6 +1261,7 @@ void Guid::printHelp(const QString &category)
         
         // --add-text
         Help("--add-text=TEXT", "GUID ONLY! " + tr("Add text without field.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--tooltip=Tooltip text", "GUID ONLY! " + tr("Set tooltip displayed when the cursor is over")) <<
         Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
         Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
         Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
@@ -1378,6 +1380,7 @@ void Guid::printHelp(const QString &category)
         
         Help("--editable", tr("Allow changes to text")) <<
         Help("--multiple", tr("Allow multiple rows to be selected")) <<
+        Help("--no-selection", "GUID ONLY! " + tr("Prevent row selection (useful to display information in a structured way\nwithout user interaction)")) <<
         Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
         Help("", "") <<
         
@@ -1887,9 +1890,9 @@ void Guid::minimizeDialog()
         if (!m_sysTrayMsg) {
             QMessageBox::information(
                 dlg,
-                "Comfirmed",
+                "Dialog in the system tray",
                 "The dialog will keep running in the system tray. "
-                "You can click on its icon to open the window or close it."
+                "You can click on its icon to open the dialog again or to close it."
             );
             m_sysTrayMsg = true;
         }
@@ -3547,6 +3550,16 @@ char Guid::showForms(const QStringList &args)
                 WARN_UNKNOWN_ARG("--add-list");
         }
         
+        // --no-selection
+        else if (args.at(i) == "--no-selection") {
+            if (lastWidget == "list") {
+                lastList->setSelectionMode(QAbstractItemView::NoSelection);
+                lastList->setFocusPolicy(Qt::NoFocus);
+            } else {
+                WARN_UNKNOWN_ARG("--add-list");
+            }
+        }
+        
         // --show-header
         else if (args.at(i) == "--show-header") {
             if (lastWidget == "list")
@@ -3562,6 +3575,15 @@ char Guid::showForms(const QStringList &args)
         // --no-bold
         else if (args.at(i) == "--no-bold") {
             labelInBold = false;
+        }
+        
+        /******************************
+         * text
+         ******************************/
+        
+        // --tooltip
+        else if (args.at(i) == "--tooltip") {
+            lastText->setToolTip(NEXT_ARG);
         }
         
         /******************************
@@ -3952,9 +3974,12 @@ char Guid::showList(const QStringList &args)
                     qOutErr << m_prefixErr + "argument --align: unknown value" << args.at(i);
             } else
                 WARN_UNKNOWN_ARG("--text");
-        } else if (args.at(i) == "--multiple")
+        } else if (args.at(i) == "--multiple") {
             tw->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        else if (args.at(i) == "--column") {
+        } else if (args.at(i) == "--no-selection") {
+            tw->setSelectionMode(QAbstractItemView::NoSelection);
+            tw->setFocusPolicy(Qt::NoFocus);
+    } else if (args.at(i) == "--column") {
             columns << NEXT_ARG;
         } else if (args.at(i) == "--editable")
             editable = true;

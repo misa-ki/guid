@@ -11,5 +11,8 @@
     <file alias="8">assets/8.png</file>
     <file alias="9">assets/9.png</file>
     <file alias="10">assets/10.png</file>
+    <file alias="info">assets/info.png</file>
+    <file alias="question-mark">assets/question-mark.png</file>
+    <file alias="warning">assets/warning.png</file>
 </qresource>
 </RCC>
