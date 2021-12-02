@@ -1143,7 +1143,7 @@ void Guid::printHelp(const QString &category)
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
         
         // --text
-        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--text=TEXT", tr("Set the dialog text (always displayed on top")) <<
         Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
         Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
         Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
@@ -1284,6 +1284,10 @@ void Guid::printHelp(const QString &category)
         // --add-hrule
         Help("--add-hrule=COLOR", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:\nguid --forms --text=\"Text\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
         Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
+        Help("", "") <<
+        
+        // --add-spacer
+        Help("--add-spacer=HEIGHT", "GUID ONLY! " + tr("Add vertical spacer.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
         Help("", "") <<
         
         // --add-text-info
@@ -2539,7 +2543,8 @@ char Guid::showForms(const QStringList &args)
     QFormLayout *fl = new QFormLayout();
     vl->addLayout(fl);
     
-    vl->layout()->setSpacing(9);
+    const int formsWidgetSpacing = 9;
+    vl->layout()->setSpacing(formsWidgetSpacing);
     vl->addStretch();
     
     QTabWidget *lastTabBar = new QTabWidget();
@@ -2568,6 +2573,9 @@ char Guid::showForms(const QStringList &args)
     
     QLabel *lastHRule = NULL;
     QString lastHRuleCss = NULL;
+    
+    QLabel *lastSpacer = NULL;
+    int lastSpacerHeight = 0;
     
     QComboBox *lastCombo = NULL;
     GList lastComboGList = GList();
@@ -2944,6 +2952,29 @@ char Guid::showForms(const QStringList &args)
                 lastTabLayout->addRow(lastHRule);
             } else {
                 fl->addRow(lastHRule);
+            }
+        }
+        
+        // QLabel: --add-spacer
+        else if (args.at(i) == "--add-spacer") {
+            SWITCH_FORMS_WIDGET("spacer")
+            lastSpacer = new QLabel();
+            lastSpacerHeight = NEXT_ARG.toInt();
+            lastSpacerHeight -= formsWidgetSpacing;
+            if (lastSpacerHeight < 0)
+                lastSpacerHeight = 0;
+            lastSpacer->setFixedHeight(lastSpacerHeight);
+            lastSpacer->setContentsMargins(0, 0, 0, 0);
+            
+            if (lastColumn == "col1") {
+                SET_FORMS_COL1(new QLabel(), lastSpacer)
+            } else if (lastColumn == "col2") {
+                SET_FORMS_COL2(new QLabel(), lastSpacer)
+                colsHBoxLayout->setSpacing(0);
+            } else if (!lastTabName.isEmpty()) {
+                lastTabLayout->addRow(lastSpacer);
+            } else {
+                fl->addRow(lastSpacer);
             }
         }
         
