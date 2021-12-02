@@ -307,9 +307,12 @@ static QStringList addColumnToListValues(QStringList values, QString addValue, i
     QStringList result;
     
     if (!addValue.isEmpty()) {
+        int moduloComp = nbColumns - 1;
+        if (moduloComp <= 0)
+            moduloComp = 1;
         int i = 0;
         foreach(QString v, values) {
-            if (nbColumns % i == 0) {
+            if (i % moduloComp == 0) {
                 result << addValue;
             }
             result << v;
