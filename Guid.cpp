@@ -143,22 +143,6 @@
  * Forms
  *******************/
 
-#define SET_FORMS_COL1(LABEL_COL1, WIDGET_COL1) \
-    labelCol1 = LABEL_COL1; \
-    colsHBoxLayout->addWidget(WIDGET_COL1); \
-    colsHBoxLayout->setAlignment(WIDGET_COL1, Qt::AlignTop);
-
-#define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
-    setCol2Label(colsHBoxLayout, LABEL_COL2); \
-    colsHBoxLayout->addWidget(WIDGET_COL2); \
-    colsHBoxLayout->addStretch(); \
-    colsHBoxLayout->setAlignment(WIDGET_COL2, Qt::AlignTop); \
-    setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
-    if (!lastTabName.isEmpty()) \
-        lastTabLayout->addRow(labelCol1, colsContainer); \
-    else \
-        fl->addRow(labelCol1, colsContainer);
-
 #define SWITCH_FORMS_WIDGET(NEW_WIDGET) \
     if (lastWidget == "text-browser") \
         setTextInfo(lastTextBrowser, lastTextFilename, lastTextIsReadOnly, lastTextIsUrl, \
@@ -186,6 +170,72 @@
     if (menuItemData.count() > 2) menuItemCommand = menuItemData.at(2); \
     if (menuItemData.count() > 3) menuItemCommandPrintOutput = menuItemData.at(3) == "1" ? true : false; \
     if (menuItemData.count() > 4) menuItemIcon = menuItemData.at(4);
+
+// Set forms column 1
+
+#define SET_FORMS_COL1(LABEL_COL1, WIDGET_COL1) \
+    labelCol1 = LABEL_COL1; \
+    if (col1HSpacer == "before") \
+        colsHBoxLayout->addStretch(); \
+    colsHBoxLayout->addWidget(WIDGET_COL1); \
+    if (col1HSpacer == "after") \
+        colsHBoxLayout->addStretch(); \
+    col1HSpacer = ""; \
+    colsHBoxLayout->setAlignment(WIDGET_COL1, col1VAlignFlag);
+
+#define SET_FORMS_COL1_NO_LABEL(WIDGET_COL1) \
+    if (col1HSpacer == "before") \
+        colsHBoxLayout->addStretch(); \
+    colsHBoxLayout->addWidget(WIDGET_COL1); \
+    if (col1HSpacer == "after") \
+        colsHBoxLayout->addStretch(); \
+    col1HSpacer = ""; \
+    colsHBoxLayout->setAlignment(WIDGET_COL1, col1VAlignFlag);
+
+// Set forms column 2
+
+#define SET_FORMS_COL2(LABEL_COL2, WIDGET_COL2) \
+    setCol2Label(colsHBoxLayout, LABEL_COL2); \
+    if (col2HSpacer == "before") \
+        colsHBoxLayout->addStretch(); \
+    colsHBoxLayout->addWidget(WIDGET_COL2); \
+    if (col2HSpacer == "after") \
+        colsHBoxLayout->addStretch(); \
+    col2HSpacer = ""; \
+    colsHBoxLayout->setAlignment(WIDGET_COL2, col2VAlignFlag); \
+    col1VAlignFlag = Qt::AlignTop; \
+    col2VAlignFlag = Qt::AlignTop; \
+    setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
+    if (!lastTabName.isEmpty()) \
+        if (labelCol1) \
+            lastTabLayout->addRow(labelCol1, colsContainer); \
+        else \
+            lastTabLayout->addRow(colsContainer); \
+    else if (labelCol1) \
+        fl->addRow(labelCol1, colsContainer); \
+    else \
+        fl->addRow(colsContainer);
+
+#define SET_FORMS_COL2_NO_LABEL(WIDGET_COL2) \
+    if (col2HSpacer == "before") \
+        colsHBoxLayout->addStretch(); \
+    colsHBoxLayout->addWidget(WIDGET_COL2); \
+    if (col2HSpacer == "after") \
+        colsHBoxLayout->addStretch(); \
+    col2HSpacer = ""; \
+    colsHBoxLayout->setAlignment(WIDGET_COL2, col2VAlignFlag); \
+    col1VAlignFlag = Qt::AlignTop; \
+    col2VAlignFlag = Qt::AlignTop; \
+    setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
+    if (!lastTabName.isEmpty()) \
+        if (labelCol1) \
+            lastTabLayout->addRow(labelCol1, colsContainer); \
+        else \
+            lastTabLayout->addRow(colsContainer); \
+    else if (labelCol1) \
+        fl->addRow(labelCol1, colsContainer); \
+    else \
+        fl->addRow(colsContainer);
 
 // End of "define"
 
@@ -681,7 +731,7 @@ static void setFormsColumns(QWidget* &colsContainer, QHBoxLayout* &colsHBoxLayou
     colsContainer = new QWidget();
     colsContainer->setProperty("guid_cols_container", true);
     colsContainer->setProperty("guid_separator", prop_separator);
-    colsHBoxLayout->setContentsMargins(0, 0, 0, 0);
+    colsHBoxLayout->setContentsMargins(0, 1, 0, 0);
     colsContainer->setLayout(colsHBoxLayout);
     columnsAreSet = true;
 }
@@ -1168,6 +1218,8 @@ void Guid::printHelp(const QString &category)
         // --col1 || --col2
         Help("--col1", "GUID ONLY! " + tr("Start a two-field row.\nThe next form field specified will be added in the first column.\nSee --col2 for details.")) <<
         Help("--col2", "GUID ONLY! " + tr("Finish a two-field row.\nThe next form field specified will be added in the second column. Example:\nguid --forms --width=500 --text=\"The next row has two columns:\"\n     --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\"\n     --field-width=100 --add-entry=\"Full-width row\"")) <<
+        Help("--add-hspacer=before|after", "GUID ONLY! " + tr("Add horizontal expanding spacer before or after the current column content")) <<
+        Help("--valign=top|center|bottom|baseline", "GUID ONLY! " + tr("Set vertical alignment of the current column. Example:\nguid --forms --width=500 --text=\"The next row has two columns:\"\n     --col1 --valign=bottom --add-text=\"Lorem ipsum\"\n     --col2 --add-text=\"Lorem<br />ipsum<br />dolor<br />sit<br />amet\"")) <<
         Help("", "") <<
         
         // --add-calendar
@@ -1293,8 +1345,8 @@ void Guid::printHelp(const QString &category)
         Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
         Help("", "") <<
         
-        // --add-spacer
-        Help("--add-spacer=HEIGHT", "GUID ONLY! " + tr("Add vertical spacer.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        // --add-vspacer
+        Help("--add-vspacer=HEIGHT", "GUID ONLY! " + tr("Add vertical spacer.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
         Help("", "") <<
         
         // --add-text-info
@@ -2598,6 +2650,10 @@ char Guid::showForms(const QStringList &args)
     QHBoxLayout *colsHBoxLayout = NULL;
     QWidget *colsContainer = NULL;
     QString lastColumn = NULL;
+    Qt::AlignmentFlag col1VAlignFlag = Qt::AlignTop;
+    Qt::AlignmentFlag col2VAlignFlag = Qt::AlignTop;
+    QString col1HSpacer = "";
+    QString col2HSpacer = "";
     
     QCheckBox *lastCheckbox = NULL;
     
@@ -2614,8 +2670,8 @@ char Guid::showForms(const QStringList &args)
     QLabel *lastHRule = NULL;
     QString lastHRuleCss = NULL;
     
-    QLabel *lastSpacer = NULL;
-    int lastSpacerHeight = 0;
+    QLabel *lastVSpacer = NULL;
+    int lastVSpacerHeight = 0;
     
     QComboBox *lastCombo = NULL;
     GList lastComboGList = GList();
@@ -2721,11 +2777,11 @@ char Guid::showForms(const QStringList &args)
             lastCheckbox = new QCheckBox(NEXT_ARG, dlg);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastCheckbox)
+                SET_FORMS_COL1_NO_LABEL(lastCheckbox)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastCheckbox)
+                SET_FORMS_COL2_NO_LABEL(lastCheckbox)
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(new QLabel(), lastCheckbox);
+                lastTabLayout->addRow(lastCheckbox);
             } else {
                 fl->addRow(lastCheckbox);
             }
@@ -2862,9 +2918,9 @@ char Guid::showForms(const QStringList &args)
             }
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastMenu)
+                SET_FORMS_COL1_NO_LABEL(lastMenu)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastMenu)
+                SET_FORMS_COL2_NO_LABEL(lastMenu)
             } else if (!lastTabName.isEmpty()) {
                 lastTabLayout->addRow(lastMenu);
             } else if (topMenu) {
@@ -2938,10 +2994,9 @@ char Guid::showForms(const QStringList &args)
             lastText->setContentsMargins(0, 3, 0, 0);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastText)
+                SET_FORMS_COL1_NO_LABEL(lastText)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastText)
-                colsHBoxLayout->setSpacing(0);
+                SET_FORMS_COL2_NO_LABEL(lastText)
             } else if (!lastTabName.isEmpty()) {
                 lastTabLayout->addRow(lastText);
             } else {
@@ -2967,10 +3022,9 @@ char Guid::showForms(const QStringList &args)
             lastImageText->setContentsMargins(0, 3, 0, 0);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastImageText)
+                SET_FORMS_COL1_NO_LABEL(lastImageText)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastImageText)
-                colsHBoxLayout->setSpacing(0);
+                SET_FORMS_COL2_NO_LABEL(lastImageText)
             } else if (!lastTabName.isEmpty()) {
                 lastTabLayout->addRow(lastImageText);
             } else {
@@ -2988,10 +3042,9 @@ char Guid::showForms(const QStringList &args)
             lastHRule->setStyleSheet(lastHRuleCss);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastHRule)
+                SET_FORMS_COL1_NO_LABEL(lastHRule)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastHRule)
-                colsHBoxLayout->setSpacing(0);
+                SET_FORMS_COL2_NO_LABEL(lastHRule)
             } else if (!lastTabName.isEmpty()) {
                 lastTabLayout->addRow(lastHRule);
             } else {
@@ -2999,26 +3052,26 @@ char Guid::showForms(const QStringList &args)
             }
         }
         
-        // QLabel: --add-spacer
-        else if (args.at(i) == "--add-spacer") {
-            SWITCH_FORMS_WIDGET("spacer")
-            lastSpacer = new QLabel();
-            lastSpacerHeight = NEXT_ARG.toInt();
-            lastSpacerHeight -= formsWidgetSpacing;
-            if (lastSpacerHeight < 0)
-                lastSpacerHeight = 0;
-            lastSpacer->setFixedHeight(lastSpacerHeight);
-            lastSpacer->setContentsMargins(0, 0, 0, 0);
+        // QLabel: --add-vspacer
+        else if (args.at(i) == "--add-vspacer") {
+            SWITCH_FORMS_WIDGET("vspacer")
+            lastVSpacer = new QLabel();
+            lastVSpacerHeight = NEXT_ARG.toInt();
+            lastVSpacerHeight -= formsWidgetSpacing;
+            if (lastVSpacerHeight < 0)
+                lastVSpacerHeight = 0;
+            lastVSpacer->setFixedHeight(lastVSpacerHeight);
+            lastVSpacer->setContentsMargins(0, 0, 0, 0);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(new QLabel(), lastSpacer)
+                SET_FORMS_COL1_NO_LABEL(lastVSpacer)
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(new QLabel(), lastSpacer)
+                SET_FORMS_COL2_NO_LABEL(lastVSpacer)
                 colsHBoxLayout->setSpacing(0);
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(lastSpacer);
+                lastTabLayout->addRow(lastVSpacer);
             } else {
-                fl->addRow(lastSpacer);
+                fl->addRow(lastVSpacer);
             }
         }
         
@@ -3199,6 +3252,49 @@ char Guid::showForms(const QStringList &args)
         /********************************************************************************
          * CONTAINER SETTINGS
          ********************************************************************************/
+        
+        /******************************
+         * col1 || col2
+         ******************************/
+        
+        // --add-hspacer
+        else if (args.at(i) == "--add-hspacer") {
+            QString hSpacer = NEXT_ARG;
+            if (lastColumn == "col1") {
+                col1HSpacer = hSpacer;
+            } else if (lastColumn == "col2") {
+                col2HSpacer = hSpacer;
+            } else {
+                WARN_UNKNOWN_ARG("--col1");
+            }
+        }
+        
+        // --valign
+        else if (args.at(i) == "--valign") {
+            if (lastColumn == "col1" || lastColumn == "col2") {
+                QString alignment = NEXT_ARG;
+                Qt::AlignmentFlag colVAlignFlag;
+                if (alignment == "top") {
+                    colVAlignFlag = Qt::AlignTop;
+                } else if (alignment == "center") {
+                    colVAlignFlag = Qt::AlignVCenter;
+                } else if (alignment == "bottom") {
+                    colVAlignFlag = Qt::AlignBottom;
+                } else if (alignment == "baseline") {
+                    colVAlignFlag = Qt::AlignBaseline;
+                } else {
+                    qOutErr << m_prefixErr + "argument --valign: unknown value " << alignment;
+                }
+                
+                if (lastColumn == "col1") {
+                    col1VAlignFlag = colVAlignFlag;
+                } else if (lastColumn == "col2") {
+                    col2VAlignFlag = colVAlignFlag;
+                }
+            } else {
+                WARN_UNKNOWN_ARG("--col1");
+            }
+        }
         
         /******************************
          * tab
