@@ -1387,6 +1387,7 @@ void Guid::printHelp(const QString &category)
         Help("--win-max-button", tr("Add a \"Maximize\" button to the dialog window")) <<
         Help("--close-to-systray", tr("Hide the dialog when clicking on the window \"Close\" button instead of exiting.\nThe system tray must be enabled with \"--systray-icon=ICON\".")) <<
         Help("--systray-icon=ICON", tr("Add the icon specified in the system tray.\nClicking on the \"Close\" window button will minimize the dialog in the systray,\nand a menu will be displayed with a right-click on the systray icon.")) <<
+        Help("--no-cancel", tr("Hide Cancel button")) <<
         Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
         Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
         Help("--separator=SEPARATOR", tr("Set output separator character")));
@@ -2618,6 +2619,8 @@ char Guid::showForms(const QStringList &args)
     NEW_DIALOG
     dlg->setProperty("guid_separator", "|");
     dlg->setProperty("guid_list_row_separator", "~");
+    
+    bool noCancelButton = false;
     
     QString sysTrayIconPath = "";
     
@@ -3916,6 +3919,11 @@ char Guid::showForms(const QStringList &args)
             sysTrayIconPath = NEXT_ARG;
         }
         
+        // --no-cancel
+        else if (args.at(i) == "--no-cancel") {
+            noCancelButton = true;
+        }
+        
         // --forms-date-format
         else if (args.at(i) == "--forms-date-format") {
             dlg->setProperty("guid_date_format", NEXT_ARG);
@@ -3970,6 +3978,9 @@ char Guid::showForms(const QStringList &args)
     }
     
     FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
+    
+    if (noCancelButton)
+        btns->button(QDialogButtonBox::Cancel)->hide();
     
     if (topMenu) {
         fl->setContentsMargins(10, 0, 10, 10);
