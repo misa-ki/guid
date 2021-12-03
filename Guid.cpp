@@ -1233,7 +1233,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         // --add-combo
-        Help("--add-combo=Combo box field name", tr("Add a new combo box in forms dialog")) <<
+        Help("--add-combo=[hideLabel=1//]Combo label", tr("Add a new combo box in forms dialog.\nTo hide the label, add \"hideLabel=1\" followed by \"//\". Example:\nguid --forms --add-combo=\"hideLabel=1//Label hidden\" --combo-values=\"v1|v2\"")) <<
         Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
         Help("--combo-values-from-file=[monitor=VALUE//]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-combo=\"Combo description\"\n     --combo-values-from-file=\"monitor=1//C:\\Users\\name\\Desktop\\file.txt\"")) <<
         Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
@@ -1250,7 +1250,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         // --add-list
-        Help("--add-list=[addNewRowButton=1//]List label", tr("Add a new List in forms dialog.\nTo add a button allowing to add new rows when clicked, start the list label\nwith \"addNewRowButton=1\" followed by \"//\". Example:\nguid --forms --add-list=\"addNewRowButton=1//My list\" --column-values=\"C1|C2\"\n     --show-header --list-values=\"v1|v2|v3|v4\"")) <<
+        Help("--add-list=[addNewRowButton=1//][hideLabel=1//]List label", tr("Add a new List in forms dialog.\nTo add a button allowing to add new rows when clicked, start the list label\nwith \"addNewRowButton=1\" followed by \"//\". Example:\nguid --forms --add-list=\"addNewRowButton=1//My list\" --column-values=\"C1|C2\"\n     --show-header --list-values=\"v1|v2|v3|v4\"\nTo hide the label, add \"hideLabel=1\" followed by \"//\". Example:\nguid --forms --add-list=\"addNewRowButton=1//hideLabel=1//Label hidden\"\n     --column-values=\"C1|C2\" --show-header --list-values=\"v1|v2|v3|v4\"")) <<
         Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
         Help("--list-values=List of values separated by |", tr("List of values for List")) <<
         Help("--list-values-from-file=[addValue=VALUE//][monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo add automatically a value at the beginning of each row (for example\nthe value \"false\" in combination with \"--checklist\"), add \"addValue=VALUE\"\nfollowed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Delete|Column 1|Column 2\"\n     --show-header --list-values-from-file=\"addValue=false///path/to/file\" --checklist\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
@@ -3138,18 +3138,40 @@ char Guid::showForms(const QStringList &args)
         // QComboBox: --add-combo
         else if (args.at(i) == "--add-combo") {
             SWITCH_FORMS_WIDGET("combo")
-            QLabel *labelCombo = new QLabel(NEXT_ARG);
+            
+            int lastComboHideLabel = 0;
+            QString textLabelCombo = NEXT_ARG;
+            if (textLabelCombo.contains(QRegExp("^hideLabel=.//"))) {
+                lastComboHideLabel = textLabelCombo.section("//", 0, 0).replace("hideLabel=", "").toInt();
+                textLabelCombo = textLabelCombo.section("//", 1, -1);
+            }
+            QLabel *labelCombo = new QLabel(textLabelCombo);
+            
             lastCombo = new QComboBox(dlg);
             lastCombo->setProperty("guid_file_sep", "");
             lastCombo->setProperty("guid_file_path", "");
             lastCombo->setProperty("guid_monitor_file", false);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(labelCombo, lastCombo)
+                if (lastComboHideLabel) {
+                    SET_FORMS_COL1_NO_LABEL(lastCombo)
+                } else {
+                    SET_FORMS_COL1(labelCombo, lastCombo)
+                }
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(labelCombo, lastCombo)
+                if (lastComboHideLabel) {
+                    SET_FORMS_COL2_NO_LABEL(lastCombo)
+                } else {
+                    SET_FORMS_COL2(labelCombo, lastCombo)
+                }
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(labelCombo, lastCombo);
+                if (lastComboHideLabel) {
+                    lastTabLayout->addRow(lastCombo);
+                } else {
+                    lastTabLayout->addRow(labelCombo, lastCombo);
+                }
+            } else if (lastComboHideLabel) {
+                fl->addRow(lastCombo);
             } else {
                 fl->addRow(labelCombo, lastCombo);
             }
@@ -3167,6 +3189,13 @@ char Guid::showForms(const QStringList &args)
                 lastListAddNewRowButton = textLabelList.section("//", 0, 0).replace("addNewRowButton=", "").toInt();
                 textLabelList = textLabelList.section("//", 1, -1);
             }
+            
+            int lastListHideLabel = 0;
+            if (textLabelList.contains(QRegExp("^hideLabel=.//"))) {
+                lastListHideLabel = textLabelList.section("//", 0, 0).replace("hideLabel=", "").toInt();
+                textLabelList = textLabelList.section("//", 1, -1);
+            }
+            
             QLabel *labelList = new QLabel(textLabelList);
             
             buildFormsList(&lastList, lastListGList, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
@@ -3202,11 +3231,25 @@ char Guid::showForms(const QStringList &args)
             lastListContainer->setProperty("guid_list_container", true);
             
             if (lastColumn == "col1") {
-                SET_FORMS_COL1(labelList, lastListContainer)
+                if (lastListHideLabel) {
+                    SET_FORMS_COL1_NO_LABEL(lastListContainer)
+                } else {
+                    SET_FORMS_COL1(labelList, lastListContainer)
+                }
             } else if (lastColumn == "col2") {
-                SET_FORMS_COL2(labelList, lastListContainer)
+                if (lastListHideLabel) {
+                    SET_FORMS_COL2_NO_LABEL(lastListContainer)
+                } else {
+                    SET_FORMS_COL2(labelList, lastListContainer)
+                }
             } else if (!lastTabName.isEmpty()) {
-                lastTabLayout->addRow(labelList, lastListContainer);
+                if (lastListHideLabel) {
+                    lastTabLayout->addRow(lastListContainer);
+                } else {
+                    lastTabLayout->addRow(labelList, lastListContainer);
+                }
+            } else if (lastListHideLabel) {
+                fl->addRow(lastListContainer);
             } else {
                 fl->addRow(labelList, lastListContainer);
             }
