@@ -1229,6 +1229,7 @@ void Guid::printHelp(const QString &category)
         
         // --add-checkbox
         Help("--add-checkbox=Checkbox label", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
+        Help("--checked", "GUID ONLY! " + tr("Make the checkbox checked by default")) <<
         Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
         Help("", "") <<
         
@@ -3357,6 +3358,19 @@ char Guid::showForms(const QStringList &args)
         /********************************************************************************
          * WIDGET SETTINGS
          ********************************************************************************/
+        
+        /******************************
+         * checkbox
+         ******************************/
+        
+        // --checked
+        else if (args.at(i) == "--checked") {
+            if (lastWidget == "checkbox") {
+                lastCheckbox->setCheckState(Qt::Checked);
+            } else {
+                WARN_UNKNOWN_ARG("--add-checkbox");
+            }
+        }
         
         /******************************
          * calendar || checkbox || entry || password || spin-box || double-spin-box || scale || combo || list || text-info
