@@ -206,15 +206,16 @@
     col1VAlignFlag = Qt::AlignTop; \
     col2VAlignFlag = Qt::AlignTop; \
     setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
-    if (!lastTabName.isEmpty()) \
+    if (!lastTabName.isEmpty()) { \
         if (labelCol1) \
             lastTabLayout->addRow(labelCol1, colsContainer); \
         else \
             lastTabLayout->addRow(colsContainer); \
-    else if (labelCol1) \
+    } else if (labelCol1) { \
         fl->addRow(labelCol1, colsContainer); \
-    else \
-        fl->addRow(colsContainer);
+    } else { \
+        fl->addRow(colsContainer); \
+    }
 
 #define SET_FORMS_COL2_NO_LABEL(WIDGET_COL2) \
     if (col2HSpacer == "before") \
@@ -227,15 +228,16 @@
     col1VAlignFlag = Qt::AlignTop; \
     col2VAlignFlag = Qt::AlignTop; \
     setFormsColumns(colsContainer, colsHBoxLayout, dlg->property("guid_separator").toString(), columnsAreSet); \
-    if (!lastTabName.isEmpty()) \
+    if (!lastTabName.isEmpty()) { \
         if (labelCol1) \
             lastTabLayout->addRow(labelCol1, colsContainer); \
         else \
             lastTabLayout->addRow(colsContainer); \
-    else if (labelCol1) \
+    } else if (labelCol1) { \
         fl->addRow(labelCol1, colsContainer); \
-    else \
-        fl->addRow(colsContainer);
+    } else { \
+        fl->addRow(colsContainer); \
+    }
 
 // End of "define"
 
