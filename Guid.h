@@ -37,6 +37,44 @@ struct GList {
     QStringList val;
 };
 
+struct FormsSettings {
+    bool hasLabel = false;
+    bool hasTopMenu = false;
+    bool hasHeader = false;
+};
+
+struct WidgetSettings {
+    QString addLabel = "";
+    bool addNewRowButton = false;
+    QString backgroundColor = "";
+    QString buttonText = "";
+    QString color = "";
+    QString defVarVal1 = "";
+    QString defVarVal2 = "";
+    QString defVarVal3 = "";
+    QString defVarVal4 = "";
+    QString defVarVal5 = "";
+    QString defVarVal6 = "";
+    QString defVarVal7 = "";
+    QString defVarVal8 = "";
+    QString defVarVal9 = "";
+    QString foregroundColor = "";
+    bool hideLabel = false;
+    QString image = "";
+    bool monitorFile = false;
+    QString monitorVarFile1 = "";
+    QString monitorVarFile2 = "";
+    QString monitorVarFile3 = "";
+    QString monitorVarFile4 = "";
+    QString monitorVarFile5 = "";
+    QString monitorVarFile6 = "";
+    QString monitorVarFile7 = "";
+    QString monitorVarFile8 = "";
+    QString monitorVarFile9 = "";
+    QString sep = "";
+    bool stop = false;
+};
+
 class Guid : public QApplication
 {
     Q_OBJECT
@@ -57,6 +95,7 @@ private:
     QString labelText(const QString &s) const; // m_zenity requires \n and \t interpretation in html.
     void listenToStdIn();
     void notify(const QString message, bool noClose = false);
+    QString printForms();
     bool readGeneral(QStringList &args);
     void setSysTrayAction(QString actionId, bool valueToSet);
     
@@ -83,6 +122,7 @@ private slots:
     void exitGuid(int exitCode = 0, bool minimize = false);
     void finishProgress();
     void minimizeDialog();
+    void printFormsAfterOKClick();
     void printInteger(int v);
     void quitDialog();
     void readStdIn();
@@ -91,6 +131,8 @@ private slots:
     void toggleItems(QTreeWidgetItem *item, int column);
     void updateCombo(QString filePath);
     void updateList(QString filePath);
+    void updateText(QString filePath);
+    void updateTextInfo(QString filePath);
 
 private:
     QString          m_cancel;
@@ -103,6 +145,7 @@ private:
     QString          m_notificationHints;
     uint             m_notificationId;
     QString          m_ok;
+    QString          m_ok_command;
     int              m_parentWindow;
     QString          m_prefixErr;
     QString          m_prefixOk;
