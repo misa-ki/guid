@@ -131,22 +131,24 @@
     m_dialog = dlg; \
     connect(dlg, SIGNAL(finished(int)), SLOT(dialogFinished(int))); \
     if (!m_size.isNull()) { \
-        m_dialog->adjustSize(); \
-        QSize sz = m_dialog->size(); \
+        dlg->adjustSize(); \
+        QSize sz = dlg->size(); \
         if (m_size.width() > 0) \
             sz.setWidth(m_size.width()); \
         if (m_size.height() > 0) \
             sz.setHeight(m_size.height()); \
-        m_dialog->resize(sz); \
+        dlg->resize(sz); \
     } \
     dlg->show();
 
-#define FINISH_DIALOG(_BTNS_, _KEEP_FORMS_OPEN_AFTER_OK_CLICK_) \
+#define FINISH_DIALOG(_BTNS_) \
     QDialogButtonBox *btns = new QDialogButtonBox(_BTNS_, Qt::Horizontal, dlg); \
     tll->addWidget(btns); \
     btns->setStyleSheet("QPushButton {padding: 8px 12px;}"); \
-    if   (_KEEP_FORMS_OPEN_AFTER_OK_CLICK_) connect(btns, SIGNAL(accepted()), this, SLOT(printFormsAfterOKClick())); \
-    else connect(btns, SIGNAL(accepted()), dlg, SLOT(accept())); \
+    if (!m_okCommand.isEmpty() || m_okKeepOpen) \
+        connect(btns, SIGNAL(accepted()), this, SLOT(printFormsAfterOKClick())); \
+    else \
+        connect(btns, SIGNAL(accepted()), dlg, SLOT(accept())); \
     connect(btns, SIGNAL(rejected()), this, SLOT(afterCloseButtonClick()));
 
 #define QTREEWIDGET_STYLE \
@@ -164,6 +166,8 @@
         else if (setting.startsWith("addNewRowButton=")) ws.addNewRowButton = getWidgetSettingBool(setting); \
         else if (setting.startsWith("backgroundColor=")) ws.backgroundColor = getWidgetSettingQString(setting); \
         else if (setting.startsWith("buttonText=")) ws.buttonText = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("command=")) ws.command = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("commandToFooter=")) ws.commandToFooter = getWidgetSettingBool(setting); \
         else if (setting.startsWith("foregroundColor=")) ws.foregroundColor = getWidgetSettingQString(setting); \
         else if (setting.startsWith("hideLabel=")) ws.hideLabel = getWidgetSettingBool(setting); \
         else if (setting.startsWith("image=")) ws.image = getWidgetSettingQString(setting); \
@@ -177,6 +181,7 @@
         else if (setting.startsWith("defVarVal7=")) ws.defVarVal7 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal8=")) ws.defVarVal8 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal9=")) ws.defVarVal9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("keepOpen=")) ws.keepOpen = getWidgetSettingBool(setting); \
         else if (setting.startsWith("monitorVarFile1=")) ws.monitorVarFile1 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile2=")) ws.monitorVarFile2 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile3=")) ws.monitorVarFile3 = getWidgetSettingQString(setting); \
@@ -186,8 +191,10 @@
         else if (setting.startsWith("monitorVarFile7=")) ws.monitorVarFile7 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile8=")) ws.monitorVarFile8 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile9=")) ws.monitorVarFile9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("footerName=")) ws.footerName = getWidgetSettingQString(setting); \
         else if (setting.startsWith("sep=")) ws.sep = getWidgetSettingQString(setting); \
         else if (setting.startsWith("stop=")) ws.stop = getWidgetSettingBool(setting); \
+        else if (setting.startsWith("valuesToFooter=")) ws.valuesToFooter = getWidgetSettingBool(setting); \
         else    next_arg_join << setting; \
     } \
     next_arg = next_arg_join.join('@'); \
@@ -249,8 +256,8 @@
             } \
             lastTabLayout->setAlignment(columnsContainer, Qt::AlignTop); \
         } else if (addingToHeader) { \
-            if (!hideCol1Label) hl->addRow(labelCol1, columnsContainer); \
-            else hl->addRow(columnsContainer); \
+            if (!hideCol1Label) headerLayout->addRow(labelCol1, columnsContainer); \
+            else headerLayout->addRow(columnsContainer); \
         } else if (!hideCol1Label) { \
             fl->addRow(labelCol1, columnsContainer); \
         } else { \
@@ -279,7 +286,7 @@
         tml->addRow(WIDGET); \
         WIDGET->setStyleSheet("QMenuBar {padding-top: 7px; padding-bottom: 7px;}"); \
     } else if (addingToHeader) { \
-        hl->addRow(WIDGET); \
+        headerLayout->addRow(WIDGET); \
     } else if (!ws.hideLabel) { \
         fl->addRow(LABEL, WIDGET); \
     } else { \
@@ -948,7 +955,10 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
     m_dialog(NULL),
     m_modal(false),
     m_notificationId(0),
-    m_ok_command(""),
+    m_okCommand(""),
+    m_okCommandToFooter(false),
+    m_okKeepOpen(false),
+    m_okValuesToFooter(false),
     m_parentWindow(0),
     m_prefixErr(""),
     m_prefixOk(""),
@@ -1113,14 +1123,14 @@ void Guid::printHelp(const QString &category)
         "             a click on the menu item. If the value is >=0 and <= 255, the dialog\n"
         "             will be closed with the exit code sent by the command \"exit()\".\n"
         "- Command to run: the executable name/path and all arguments must be separated\n"
-        "                  with \"@@\". For example, if the command to run is the following\n:"
+        "                  with \"<>\". For example, if the command to run is the following\n:"
         "                  explorer.exe /separate, \"C:\\Users\\My Name\\Desktop\"\n"
         "                  it must be set like this:\n"
-        "                  explorer.exe@@/separate,@@\"C:\\Users\\My Name\\Desktop\"\n"
+        "                  explorer.exe<>/separate,<>\"C:\\Users\\My Name\\Desktop\"\n"
         "                  It's also possible to specify one of these internal commands:\n"
-        "                  guidInfo@@Information to display\n"
-        "                  guidWarning@@Warning to display\n"
-        "                  guidError@@Error to display\n"
+        "                  guidInfo<>Information to display\n"
+        "                  guidWarning<>Warning to display\n"
+        "                  guidError<>Error to display\n"
         "- Print command output: 0 or 1. If the value is 1, the command output will be\n"
         "                        printed on the console.\n"
         "- Icon: for now, the only valid value is 0. If the value is 0, the default icon\n"
@@ -1128,10 +1138,10 @@ void Guid::printHelp(const QString &category)
         "No matter if the dialog is closed or not after a click on the menu item, all\n"
         "settings (menu name, exit code, etc.) are printed on the console after a click,\n"
         "so it can be parsed by a script. Here's an example:\n"
-        "guid --forms --add-menu=\"File#Profile;-1;explorer.exe@@%UserProfile%;0|Exit;10\"\n"
+        "guid --forms --add-menu=\"File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10\"\n"
         "To add separators between first level menu items, add \"sep=SEP//\" at the\n"
         "beginning of the menu settings. Example:\n"
-        "guid --forms --add-menu=\"sep=|//File#Profile;-1;explorer.exe@@%UserProfile%;0|Exit;10\"\n"
+        "guid --forms --add-menu=\"sep=|//File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10\"\n"
         "If a menu is the first widget added to the form and the form doesn't have a main\n"
         "label added with \"--text=TEXT\", special settings are applied to the menu to have it\n"
         "look like a main application menu. If we want a menu on top of the dialog but still\n"
@@ -1519,7 +1529,7 @@ void Guid::printHelp(const QString &category)
         // misc.
         Help("--win-min-button", tr("Add a \"Minimize\" button to the dialog window")) <<
         Help("--win-max-button", tr("Add a \"Maximize\" button to the dialog window")) <<
-        Help("--action-after-ok-click=exit|print|command=command name[@@command argument][@@another command argument]", tr("Action after a click on the OK button.\nDefault is \"exit\" (forms dialog is closed and values are printed to the console).\nSet \"print\" to keep the forms dialog open and only print values to the console (forms dialog fields will be cleared).\nSet \"command\" to run a command with values as input (the forms dialog won't close but fields will be cleared).\nArguments must be separated with \"@@\". Actual values will be put where the marker \"GUID_VALUES\" is set. If there's no marker, values will be added at the end of the command. Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"command=explorer.exe@@/separate,@@GUID_VALUES\"\nTo convert values to base64, use the marker \"GUID_VALUES_BASE64\". Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"command=myCommand@@myCommandArg1@@myCommandArg2@@GUID_VALUES_BASE64@@myCommandArg3\"\nTo convert values to base64 in a format suitable for URL, use the marker \"GUID_VALUES_BASE64_URL\".")) <<
+        Help("--action-after-ok-click=[keepOpen=true@][valuesToFooter=true@][commandToFooter=true@][footerName=Footer name@][command=command name[<>command argument][<>another command argument]", tr("Action after a click on the OK button.\nNo matter options specified, values are always printed to the console.\nDefault is to exit.\nSet \"keepOpen=true\" to keep the forms dialog open (forms dialog fields will be cleared).\nSet \"valuesToFooter=true\" to print values to the dialog footer.\nSet \"commandToFooter=true\" to add command output to the dialog footer.\nSet \"command\" to run a command with values as input (values will also be printed to the console and forms dialog fields will be cleared).\nArguments must be separated with \"<>\". Actual values will be put where the marker \"GUID_VALUES\" is set. If there's no marker, values will be added at the end of the command. Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"command=explorer.exe<>/separate,<>GUID_VALUES\"\nTo convert values to base64, use the marker \"GUID_VALUES_BASE64\". Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"keepOpen=true@commandToFooter=true@footerName=Results@command=myCommand<>myCommandArg1<>myCommandArg2<>GUID_VALUES_BASE64<>myCommandArg3\"\nTo convert values to base64 in a format suitable for URL, use the marker \"GUID_VALUES_BASE64_URL\".")) <<
         Help("--close-to-systray", tr("Hide the dialog when clicking on the window \"Close\" button instead of exiting.\nThe system tray must be enabled with \"--systray-icon=ICON\".")) <<
         Help("--systray-icon=ICON", tr("Add the icon specified in the system tray.\nClicking on the \"Close\" window button will minimize the dialog in the systray,\nand a menu will be displayed with a right-click on the systray icon.")) <<
         Help("--no-cancel", tr("Hide Cancel button")) <<
@@ -1797,7 +1807,7 @@ void Guid::afterMenuClick()
     }
     
     if (!menuItemCommand.isEmpty()) {
-        QStringList commandArgs = menuItemCommand.split("@@");
+        QStringList commandArgs = menuItemCommand.split("<>");
         QString commandExec = commandArgs[0];
         commandArgs.removeFirst();
         QProcess *process = new QProcess;
@@ -2103,12 +2113,20 @@ void Guid::minimizeDialog()
 
 void Guid::printFormsAfterOKClick()
 {
+    QFileDialog *dialog = static_cast<QFileDialog*>(m_dialog);
+    QGroupBox *footer = dialog->findChild<QGroupBox*>("dialogFooter", Qt::FindDirectChildrenOnly);
+    QLabel *footerText = NULL;
+    if (footer && (m_okCommandToFooter || m_okValuesToFooter))
+        footerText = footer->findChild<QLabel*>("dialogFooterText", Qt::FindDirectChildrenOnly);
+    
     // Print current forms values
     QString values = printForms();
+    if (m_okValuesToFooter && footer && footerText) {
+        footer->setVisible(true);
+        footerText->setText(values);
+    }
     
     // Clear forms values
-    
-    QFileDialog *dialog = static_cast<QFileDialog*>(m_dialog);
     
     QList<QCheckBox*> cb = dialog->findChildren<QCheckBox*>();
     foreach(QCheckBox *cbi, cb) {
@@ -2137,8 +2155,8 @@ void Guid::printFormsAfterOKClick()
     }
     
     // Run command
-    if (!m_ok_command.isEmpty()) {
-        QString command = m_ok_command;
+    if (!m_okCommand.isEmpty()) {
+        QString command = m_okCommand;
         if (command.contains("GUID_VALUES_BASE64_URL")) {
             values = values.toUtf8().toBase64(QByteArray::Base64UrlEncoding|QByteArray::OmitTrailingEquals);
             command.replace("GUID_VALUES_BASE64_URL", values);
@@ -2149,14 +2167,29 @@ void Guid::printFormsAfterOKClick()
             command.replace("GUID_VALUES", values);
         }
         
-        QStringList commandArgs = command.split("@@");
+        QStringList commandArgs = command.split("<>");
         
         QString commandExec = commandArgs.at(0);
         commandArgs.removeAt(0);
-        
         QProcess *process = new QProcess;
-        process->startDetached(commandExec, commandArgs);
+        
+        if (m_okCommandToFooter && footer && footerText) {
+            connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=]() {
+                QString commandOutput = QString::fromLocal8Bit(process->readAllStandardOutput());
+                
+                footer->setVisible(true);
+                footerText->setText(commandOutput.trimmed());
+                
+                delete process;
+            });
+            process->start(commandExec, commandArgs);
+        } else {
+            process->startDetached(commandExec, commandArgs);
+        }
     }
+    
+    if (!m_okKeepOpen)
+        exitGuid();
 }
 
 void Guid::printInteger(int v)
@@ -2703,7 +2736,7 @@ char Guid::showCalendar(const QStringList &args)
     tll->addWidget(cal);
     connect(cal, SIGNAL(activated(const QDate&)), dlg, SLOT(accept()));
 
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, false);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
     return 0;
 }
@@ -2885,9 +2918,6 @@ char Guid::showForms(const QStringList &args)
     
     const int wSpacing = 12; // Form widget spacing
     
-    QString actionAfterOKClick = "";
-    bool keepOpenAfterOKClick = false;
-    
     bool noCancelButton = false;
     
     QString sysTrayIconPath = "";
@@ -2921,21 +2951,21 @@ char Guid::showForms(const QStringList &args)
     
     // 3. Header
     
-    QWidget *hc = new QWidget();
-    hc->setVisible(false);
-    hc->setContentsMargins(0, 0, 0, 0);
-    hc->setProperty("guid_header_container", true);
+    QWidget *header = new QWidget();
+    header->setVisible(false);
+    header->setContentsMargins(0, 0, 0, 0);
+    header->setProperty("guid_header_container", true);
     
-    QFormLayout *hl = new QFormLayout();
-    hl->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
-    hl->setSpacing(wSpacing);
+    QFormLayout *headerLayout = new QFormLayout();
+    headerLayout->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
+    headerLayout->setSpacing(wSpacing);
     
-    hc->setLayout(hl);
+    header->setLayout(headerLayout);
     
     QLabel *headerLabel = NULL;
     bool addingToHeader = false;
     
-    tll->addWidget(hc);
+    tll->addWidget(header);
     
     // 4. Form layout
     
@@ -2945,7 +2975,31 @@ char Guid::showForms(const QStringList &args)
     
     tll->addLayout(fl);
     
-    // 5. Stretch
+    // 5. Footer
+    
+    QFormLayout *footerContainerLayout = new QFormLayout();
+    footerContainerLayout->setContentsMargins(wSpacing, 0, wSpacing, wSpacing);
+    footerContainerLayout->setSpacing(wSpacing);
+    
+    QGroupBox *footer = new QGroupBox(tr("Recent activity"));
+    footer->setObjectName("dialogFooter");
+    footer->setVisible(false);
+    
+    QFormLayout *footerLayout = new QFormLayout();
+    footerLayout->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
+    footerLayout->setSpacing(wSpacing);
+    footer->setLayout(footerLayout);
+    
+    QLabel *footerText = new QLabel();
+    footerText->setObjectName("dialogFooterText");
+    footerText->setWordWrap(true);
+    footerText->setTextInteractionFlags(footerText->textInteractionFlags()|Qt::TextSelectableByMouse);
+    footerLayout->addRow(footerText);
+    
+    footerContainerLayout->addRow(footer);
+    tll->addLayout(footerContainerLayout);
+    
+    // 6. Stretch
     
     tll->addStretch();
     
@@ -3107,11 +3161,11 @@ char Guid::showForms(const QStringList &args)
             if (!ws.stop) {
                 addingToHeader = true;
                 formsSettings.hasHeader = true;
-                hc->setVisible(true);
+                header->setVisible(true);
                 
                 if (!ws.hideLabel && !headerLabel) {
                     headerLabel = new QLabel(next_arg);
-                    hl->addRow(headerLabel);
+                    headerLayout->addRow(headerLabel);
                 }
                 
                 QString hcCssRules;
@@ -3120,7 +3174,7 @@ char Guid::showForms(const QStringList &args)
                 if (!ws.foregroundColor.isEmpty())
                     hcCssRules += "color: " + ws.foregroundColor + ";";
                 if (!hcCssRules.isEmpty())
-                    hc->setStyleSheet(hcCssRules);
+                    header->setStyleSheet(hcCssRules);
             } else {
                 addingToHeader = false;
             }
@@ -4620,17 +4674,28 @@ char Guid::showForms(const QStringList &args)
         // --action-after-ok-click
         else if (args.at(i) == "--action-after-ok-click") {
             next_arg = NEXT_ARG;
-            actionAfterOKClick = next_arg;
+            SET_WIDGET_SETTINGS(next_arg)
             
-            if (actionAfterOKClick == "print" || actionAfterOKClick.startsWith("command="))
-                keepOpenAfterOKClick = true;
+            m_okCommand = ws.command;
+            m_okCommandToFooter = ws.commandToFooter;
+            m_okKeepOpen = ws.keepOpen;
+            m_okValuesToFooter = ws.valuesToFooter;
             
-            if (actionAfterOKClick.startsWith("command=")) {
-                m_ok_command = actionAfterOKClick.section('=', 1);
-                if (!m_ok_command.contains(QRegExp("\bGUID_VALUES(_BASE64)?\b")))
-                    m_ok_command += "@@GUID_VALUES";
-                actionAfterOKClick = "command";
+            if (m_okCommand.isEmpty())
+                m_okCommandToFooter = false;
+            else if (!m_okCommand.contains(QRegExp("\bGUID_VALUES(_BASE64)?\b")))
+                m_okCommand += "<>GUID_VALUES";
+            
+            if (m_okCommandToFooter)
+                m_okValuesToFooter = false;
+            
+            if (!m_okKeepOpen) {
+                m_okCommandToFooter = false;
+                m_okValuesToFooter = false;
             }
+            
+            if (!ws.footerName.isEmpty())
+                footer->setTitle(ws.footerName);
         }
         
         // --close-to-systray
@@ -4707,7 +4772,7 @@ char Guid::showForms(const QStringList &args)
         formLabel->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
     }
     
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, keepOpenAfterOKClick);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     btns->setContentsMargins(wSpacing, 0, wSpacing, wSpacing);
     
     if (noCancelButton)
@@ -4899,7 +4964,7 @@ char Guid::showList(const QStringList &args)
     if (heightToSet >= 0 && heightToSet < getQTreeWidgetSize(&tw).height())
         tw->setMaximumHeight(heightToSet);
 
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, false);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
     return 0;
 }
@@ -4998,7 +5063,7 @@ char Guid::showPassword(const QStringList &args)
     else
         password->setFocus(Qt::OtherFocusReason);
 
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, false);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
     SHOW_DIALOG
     return 0;
 }
@@ -5054,7 +5119,7 @@ char Guid::showScale(const QStringList &args)
     hl->addWidget(val = new QLabel(dlg));
     connect (sld, SIGNAL(valueChanged(int)), val, SLOT(setNum(int)));
 
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, false);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
 
     sld->setRange(0,100);
     val->setNum(0);
@@ -5184,7 +5249,7 @@ char Guid::showText(const QStringList &args)
         }
     }
 
-    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, false);
+    FINISH_DIALOG(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
 
     if (cb) {
         QPushButton *btn = btns->button(QDialogButtonBox::Ok);

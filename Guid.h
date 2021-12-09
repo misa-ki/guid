@@ -49,6 +49,8 @@ struct WidgetSettings {
     QString backgroundColor = "";
     QString buttonText = "";
     QString color = "";
+    QString command = "";
+    bool commandToFooter = false;
     QString defVarVal1 = "";
     QString defVarVal2 = "";
     QString defVarVal3 = "";
@@ -61,6 +63,7 @@ struct WidgetSettings {
     QString foregroundColor = "";
     bool hideLabel = false;
     QString image = "";
+    bool keepOpen = false;
     bool monitorFile = false;
     QString monitorVarFile1 = "";
     QString monitorVarFile2 = "";
@@ -71,8 +74,10 @@ struct WidgetSettings {
     QString monitorVarFile7 = "";
     QString monitorVarFile8 = "";
     QString monitorVarFile9 = "";
+    QString footerName = "";
     QString sep = "";
     bool stop = false;
+    bool valuesToFooter = false;
 };
 
 class Guid : public QApplication
@@ -144,7 +149,10 @@ private:
     QString          m_notificationHints;
     uint             m_notificationId;
     QString          m_ok;
-    QString          m_ok_command;
+    QString          m_okCommand;
+    bool             m_okCommandToFooter;
+    bool             m_okKeepOpen;
+    bool             m_okValuesToFooter;
     int              m_parentWindow;
     QString          m_prefixErr;
     QString          m_prefixOk;
