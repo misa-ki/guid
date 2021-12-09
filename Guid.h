@@ -90,7 +90,6 @@ public:
 
 private:
     // Misc.
-    void centerWidget(QWidget *widget, QWidget *host = Q_NULLPTR);
     bool error(const QString message);
     QString labelText(const QString &s) const; // m_zenity requires \n and \t interpretation in html.
     void listenToStdIn();

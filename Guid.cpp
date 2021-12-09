@@ -129,7 +129,15 @@
 #define SHOW_DIALOG \
     m_dialog = dlg; \
     connect(dlg, SIGNAL(finished(int)), SLOT(dialogFinished(int))); \
-    centerWidget(dlg); \
+    if (!m_size.isNull()) { \
+        m_dialog->adjustSize(); \
+        QSize sz = m_dialog->size(); \
+        if (m_size.width() > 0) \
+            sz.setWidth(m_size.width()); \
+        if (m_size.height() > 0) \
+            sz.setHeight(m_size.height()); \
+        m_dialog->resize(sz); \
+    } \
     dlg->show();
 
 #define FINISH_DIALOG(_BTNS_, _KEEP_FORMS_OPEN_AFTER_OK_CLICK_) \
@@ -1023,16 +1031,7 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
         m_dialog->addAction(shortReject);
         shortReject->setShortcut(QKeySequence(Qt::Key_Escape));
         connect (shortReject, SIGNAL(triggered()), m_dialog, SLOT(reject()));
-
-        if (!m_size.isNull()) {
-            m_dialog->adjustSize();
-            QSize sz = m_dialog->size();
-            if (m_size.width() > 0)
-                sz.setWidth(m_size.width());
-            if (m_size.height() > 0)
-                sz.setHeight(m_size.height());
-            m_dialog->resize(sz);
-        }
+        
         m_dialog->setWindowModality(m_modal ? Qt::ApplicationModal : Qt::NonModal);
         if (!m_caption.isNull())
             m_dialog->setWindowTitle(m_caption);
@@ -2439,21 +2438,6 @@ void Guid::updateTextInfo(QString filePath)
 /******************************************************************************
  * private (1 of 2): misc.
  ******************************************************************************/
-
-void Guid::centerWidget(QWidget *widget, QWidget *host) {
-    if (!host)
-        host = widget->parentWidget();
-    
-    if (host) {
-        auto hostRect = host->geometry();
-        widget->move(hostRect.center() - widget->rect().center());
-    } else {
-        QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
-        int x = (screenGeometry.width() - widget->width()) / 2;
-        int y = (screenGeometry.height() - widget->height()) / 2;
-        widget->move(x, y);
-    }
-}
 
 bool Guid::error(const QString message)
 {
