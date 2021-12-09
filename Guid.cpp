@@ -37,6 +37,7 @@
 #include <QFileSystemWatcher>
 #include <QFontDialog>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QHeaderView>
 #include <QIcon>
 #include <QInputDialog>
@@ -233,7 +234,14 @@
         columnsContainer->setProperty("guid_separator", dlg->property("guid_separator").toString()); \
         columnsLayout->setContentsMargins(0, 1, 0, 0); \
         columnsContainer->setLayout(columnsLayout); \
-        if (!lastTabName.isEmpty()) { \
+        if (!lastGroupName.isEmpty()) { \
+            if (!hideCol1Label) { \
+                lastGroupLayout->addRow(labelCol1, columnsContainer); \
+            } else { \
+                lastGroupLayout->addRow(columnsContainer); \
+            } \
+            lastGroupLayout->setAlignment(columnsContainer, Qt::AlignTop); \
+        } else if (!lastTabName.isEmpty()) { \
             if (!hideCol1Label) { \
                 lastTabLayout->addRow(labelCol1, columnsContainer); \
             } else { \
@@ -253,6 +261,13 @@
         lastColumn = ""; \
         labelCol1 = new QLabel(); \
         hideCol1Label = false; \
+    } else if (!lastGroupName.isEmpty()) { \
+        if (!ws.hideLabel) { \
+            lastGroupLayout->addRow(LABEL, WIDGET); \
+        } else { \
+            lastGroupLayout->addRow(WIDGET); \
+        } \
+        lastGroupLayout->setAlignment(WIDGET, Qt::AlignTop); \
     } else if (!lastTabName.isEmpty()) { \
         if (!ws.hideLabel) { \
             lastTabLayout->addRow(LABEL, WIDGET); \
@@ -712,7 +727,8 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
         if (t->property("guid_list_container").toBool() ||
             t->property("guid_cols_container").toBool() ||
             t->property("guid_file_sel_container").toBool() ||
-            t->property("guid_scale_container").toBool()) {
+            t->property("guid_scale_container").toBool() ||
+            qstrcmp(t->metaObject()->className(), "QGroupBox") == 0) {
             int nbResults = 0;
             QList<QWidget*> wChildren = t->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             foreach(QWidget *widget, wChildren) {
@@ -774,6 +790,17 @@ static GList listValuesFromFile(QString data)
         file.close();
     }
     return list;
+}
+
+static void setGroup(QGroupBox* &group, QFormLayout* &layout, QLabel* groupLabel, QString &lastGroupName)
+{
+    if (groupLabel)
+        layout->addRow(groupLabel, group);
+    else
+        layout->addRow(group);
+    
+    group = nullptr;
+    lastGroupName = "";
 }
 
 static void setTabBar(QTabWidget* &tabBar, QFormLayout* &layout, QLabel* tabBarLabel, QString &tabName, int &tabIndex)
@@ -1312,11 +1339,14 @@ void Guid::printHelp(const QString &category)
         
         // --header
         Help("--header=\"[backgroundColor=COLOR@][foregroundColor=COLOR@][hideLabel=true@][stop=true@]Header label\"", "GUID ONLY! " + tr("Add a header to the form.\nThe header is a section without margins (so the background color fills the entire dialog width)\nunder the top menu but over form fields. It's useful to display\ninformation (input fields added in the header are not parsed for user input).\nNext fields will be added to the header unless a new \"--header\" is added with \"stop=true\".\nExample:\nguid --forms --header=\"backgroundColor=#CECECE@hideLabel=true\" --add-text=\"Text added in the header\"\n     --add-text=\"More text\" --header=\"stop=true\"\n     --add-entry=\"Field outside the header\"")) <<
-        Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
+        Help("", "") <<
+        
+        // --group
+        Help("--group=\"[addLabel=Group label@][stop=true@]Group name\"", "GUID ONLY! " + tr("Add a group box (fieldset).\nNext fields will be added to the group. Stop adding fields in the group with \"stop=true\".\nExample:\nguid --forms --text=\"Form with a group box\" --group=\"Group description\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --group=\"stop=true\"")) <<
         Help("", "") <<
         
         // --tab
-        Help("--tab=\"[stop=true@]Tab name\"", "GUID ONLY! " + tr("Create a tab bar.\nNext fields will be added to the tab NAME unless another one is specified with\n \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with \"stop=true\".\nExample:\nguid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"\n     --add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop=true\"\n     --add-scale=\"Field outside tabs\" --step=5")) <<
+        Help("--tab=\"[addLabel=Tab bar label@][stop=true@]Tab name\"", "GUID ONLY! " + tr("Create a tab bar.\nNext fields will be added to the tab NAME unless another one is specified with\n \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with \"stop=true\".\nExample:\nguid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"\n     --add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop=true\"\n     --add-scale=\"Field outside tabs\" --step=5")) <<
         Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
         Help("", "") <<
         
@@ -2920,6 +2950,15 @@ char Guid::showForms(const QStringList &args)
     tll->addStretch();
     
     /**************************************
+     * Container: Group
+     **************************************/
+    
+    QGroupBox *lastGroup = NULL;
+    QLabel *lastGroupLabel = NULL;
+    QFormLayout *lastGroupLayout = NULL;
+    QString lastGroupName = "";
+    
+    /**************************************
      * Container: Tabs
      **************************************/
     
@@ -3084,6 +3123,31 @@ char Guid::showForms(const QStringList &args)
                     hc->setStyleSheet(hcCssRules);
             } else {
                 addingToHeader = false;
+            }
+            
+            lastWidgetVar = "";
+        }
+        
+        // --group
+        else if (args.at(i) == "--group") {
+            next_arg = NEXT_ARG;
+            SET_WIDGET_SETTINGS(next_arg)
+            
+            if (ws.stop) {
+                setGroup(lastGroup, fl, lastGroupLabel, lastGroupName);
+            } else {
+                lastGroupName = next_arg;
+                lastGroup = new QGroupBox(lastGroupName);
+                
+                if (!ws.addLabel.isEmpty()) {
+                    lastGroupLabel = new QLabel(ws.addLabel);
+                } else {
+                    lastGroupLabel = nullptr;
+                }
+                
+                lastGroupLayout = new QFormLayout();
+                lastGroupLayout->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
+                lastGroup->setLayout(lastGroupLayout);
             }
             
             lastWidgetVar = "";
@@ -4627,6 +4691,8 @@ char Guid::showForms(const QStringList &args)
     }
     
     SWITCH_FORM_WIDGET(lastWidgetId)
+    if (!lastGroupName.isEmpty())
+        setGroup(lastGroup, fl, lastGroupLabel, lastGroupName);
     if (!lastTabName.isEmpty())
         setTabBar(lastTabBar, fl, lastTabBarLabel, lastTabName, lastTabIndex);
     buildFormsList(&lastList, lastListGList, lastListColumns, lastListHeader, lastListFlags, lastListHeight);
