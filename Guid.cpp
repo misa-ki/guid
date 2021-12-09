@@ -168,10 +168,7 @@
         else if (setting.startsWith("buttonText=")) ws.buttonText = getWidgetSettingQString(setting); \
         else if (setting.startsWith("command=")) ws.command = getWidgetSettingQString(setting); \
         else if (setting.startsWith("commandToFooter=")) ws.commandToFooter = getWidgetSettingBool(setting); \
-        else if (setting.startsWith("foregroundColor=")) ws.foregroundColor = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("hideLabel=")) ws.hideLabel = getWidgetSettingBool(setting); \
-        else if (setting.startsWith("image=")) ws.image = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitor=")) ws.monitorFile = getWidgetSettingBool(setting); \
+        else if (setting.startsWith("defaultIndex=")) ws.defaultIndex = getWidgetSettingInt(setting); \
         else if (setting.startsWith("defVarVal1=")) ws.defVarVal1 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal2=")) ws.defVarVal2 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal3=")) ws.defVarVal3 = getWidgetSettingQString(setting); \
@@ -181,7 +178,12 @@
         else if (setting.startsWith("defVarVal7=")) ws.defVarVal7 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal8=")) ws.defVarVal8 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal9=")) ws.defVarVal9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("footerName=")) ws.footerName = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("foregroundColor=")) ws.foregroundColor = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("hideLabel=")) ws.hideLabel = getWidgetSettingBool(setting); \
+        else if (setting.startsWith("image=")) ws.image = getWidgetSettingQString(setting); \
         else if (setting.startsWith("keepOpen=")) ws.keepOpen = getWidgetSettingBool(setting); \
+        else if (setting.startsWith("monitor=")) ws.monitorFile = getWidgetSettingBool(setting); \
         else if (setting.startsWith("monitorVarFile1=")) ws.monitorVarFile1 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile2=")) ws.monitorVarFile2 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile3=")) ws.monitorVarFile3 = getWidgetSettingQString(setting); \
@@ -191,7 +193,6 @@
         else if (setting.startsWith("monitorVarFile7=")) ws.monitorVarFile7 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile8=")) ws.monitorVarFile8 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("monitorVarFile9=")) ws.monitorVarFile9 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("footerName=")) ws.footerName = getWidgetSettingQString(setting); \
         else if (setting.startsWith("sep=")) ws.sep = getWidgetSettingQString(setting); \
         else if (setting.startsWith("stop=")) ws.stop = getWidgetSettingBool(setting); \
         else if (setting.startsWith("valuesToFooter=")) ws.valuesToFooter = getWidgetSettingBool(setting); \
@@ -765,6 +766,15 @@ static bool getWidgetSettingBool(QString setting)
 {
     QString value = setting.toLower().section('=', 1);
     return (value == "1" || value == "true") ? true : false;
+}
+
+static int getWidgetSettingInt(QString setting)
+{
+    bool ok;
+    int value = setting.section('=', 1).toInt(&ok);
+    if (!ok)
+        value = -100;
+    return value;
 }
 
 static QString getWidgetSettingQString(QString setting)
@@ -1380,8 +1390,8 @@ void Guid::printHelp(const QString &category)
         
         // --add-combo
         Help("--add-combo=\"[hideLabel=true@]Combo label\"", tr("Add a new combo box in forms dialog")) <<
-        Help("--combo-values=List of values separated by |", tr("List of values for combo box")) <<
-        Help("--combo-values-from-file=[monitor=VALUE@]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.\nTo monitor file changes, add \"monitor=true@\". Example:\nguid --forms --add-combo=\"Combo description\"\n     --combo-values-from-file=\"monitor=true@C:\\Users\\name\\Desktop\\file.txt\"")) <<
+        Help("--combo-values=[defaultIndex=Index number@]List of values separated by |", tr("List of values for combo box.\nTo select a specific index by default, add \"defaultIndex=Index number\".")) <<
+        Help("--combo-values-from-file=[defaultIndex=Index number@][monitor=VALUE@]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.\nTo select a specific index by default, add \"defaultIndex=Index number\".\nTo monitor file changes, add \"monitor=true@\". Example:\nguid --forms --add-combo=\"Combo description\"\n     --combo-values-from-file=\"defaultIndex=1@monitor=true@C:\\Users\\name\\Desktop\\file.txt\"")) <<
         Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
         Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
         Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
@@ -2382,6 +2392,11 @@ void Guid::updateCombo(QString filePath)
             combo->clear();
             GList list = listValuesFromFile(filePath);
             combo->addItems(list.val);
+            bool ok;
+            int currentIndex = combo->property("guid_combo_default_index").toInt(&ok);
+            if (ok && currentIndex > 0 && currentIndex < combo->count()) {
+                combo->setCurrentIndex(currentIndex);
+            }
         }
     }
 }
@@ -3776,6 +3791,7 @@ char Guid::showForms(const QStringList &args)
             lastCombo->setProperty("guid_file_sep", "");
             lastCombo->setProperty("guid_file_path", "");
             lastCombo->setProperty("guid_monitor_file", false);
+            lastCombo->setProperty("guid_combo_default_index", 0);
             
             ADD_WIDGET_TO_FORM(lastComboLabel, lastCombo)
             
@@ -4150,9 +4166,14 @@ char Guid::showForms(const QStringList &args)
         // --combo-values
         else if (args.at(i) == "--combo-values") {
             next_arg = NEXT_ARG;
+            SET_WIDGET_SETTINGS(next_arg)
+            
             if (lastWidgetId == "combo") {
                 lastComboGList.val = next_arg.split('|');
                 lastCombo->addItems(lastComboGList.val);
+                if (ws.defaultIndex > 0 && ws.defaultIndex < lastCombo->count()) {
+                    lastCombo->setCurrentIndex(ws.defaultIndex);
+                }
             } else {
                 WARN_UNKNOWN_ARG("--add-combo");
             }
@@ -4161,6 +4182,8 @@ char Guid::showForms(const QStringList &args)
         // --combo-values-from-file
         else if (args.at(i) == "--combo-values-from-file") {
             next_arg = NEXT_ARG;
+            SET_WIDGET_SETTINGS(next_arg)
+            
             if (lastWidgetId == "combo") {
                 lastComboGList = listValuesFromFile(next_arg);
                 
@@ -4174,6 +4197,10 @@ char Guid::showForms(const QStringList &args)
                 }
                 
                 lastCombo->addItems(lastComboGList.val);
+                if (ws.defaultIndex > 0 && ws.defaultIndex < lastCombo->count()) {
+                    lastCombo->setCurrentIndex(ws.defaultIndex);
+                    lastCombo->setProperty("guid_combo_default_index", ws.defaultIndex);
+                }
             } else {
                 WARN_UNKNOWN_ARG("--add-combo");
             }

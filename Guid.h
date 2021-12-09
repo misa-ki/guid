@@ -51,6 +51,7 @@ struct WidgetSettings {
     QString color = "";
     QString command = "";
     bool commandToFooter = false;
+    int defaultIndex = 0;
     QString defVarVal1 = "";
     QString defVarVal2 = "";
     QString defVarVal3 = "";
