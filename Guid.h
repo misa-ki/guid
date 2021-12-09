@@ -126,6 +126,7 @@ private slots:
     void dialogFinished(int status);
     void exitGuid(int exitCode = 0, bool minimize = false);
     void finishProgress();
+    void listMenu(const QPoint &pos);
     void minimizeDialog();
     void printFormsAfterOKClick();
     void printInteger(int v);
@@ -140,6 +141,7 @@ private slots:
     void updateTextInfo(QString filePath);
 
 private:
+    bool             m_alwaysOnTop;
     QString          m_cancel;
     QString          m_caption;
     bool             m_closeToSysTray;

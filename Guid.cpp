@@ -23,6 +23,7 @@
 #include <QBoxLayout>
 #include <QCalendarWidget>
 #include <QCheckBox>
+#include <QClipboard>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDate>
@@ -138,6 +139,11 @@
         if (m_size.height() > 0) \
             sz.setHeight(m_size.height()); \
         dlg->resize(sz); \
+    } \
+    if (m_alwaysOnTop) { \
+        Qt::WindowFlags allDialogFlags = dlg->windowFlags(); \
+        allDialogFlags |= Qt::WindowStaysOnTopHint; \
+        dlg->setWindowFlags(allDialogFlags); \
     } \
     dlg->show();
 
@@ -809,6 +815,25 @@ static GList listValuesFromFile(QString data)
     return list;
 }
 
+static bool pathTester(QString filePath)
+{
+    bool fileExists = false;
+    int timer = 500;
+    
+    while (timer > 0) {
+        if (QFile::exists(filePath)) {
+            fileExists = true;
+            
+            break;
+        }
+        
+        timer = timer - 20;
+        QThread::msleep(20);
+    }
+    
+    return fileExists;
+}
+
 static void setGroup(QGroupBox* &group, QFormLayout* &layout, QLabel* groupLabel, QString &lastGroupName)
 {
     if (groupLabel)
@@ -961,6 +986,7 @@ static void setTextInfo(QTextEdit *textInfo)
  ******************************************************************************/
 
 Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
+    m_alwaysOnTop(false),
     m_closeToSysTray(false),
     m_dialog(NULL),
     m_modal(false),
@@ -1220,6 +1246,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
+        Help("--always-on-top", tr("Force the dialog to be always on top of other windows")) <<
         Help("--modal", tr("Set the modal hint")) <<
         Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
         Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
@@ -1824,12 +1851,15 @@ void Guid::afterMenuClick()
         
         bool guidShowMsg = false;
         QMessageBox *guidMsgBox = new QMessageBox();
+        Qt::WindowFlags flags = guidMsgBox->windowFlags(); \
+        flags |= Qt::WindowStaysOnTopHint; \
+        guidMsgBox->setWindowFlags(flags);
         QString guidMsg = "";
         
         if (commandExec == "guidInfo" || commandExec == "guidWarning" || commandExec == "guidError") {
             guidShowMsg = true;
             guidMsgBox->setWindowTitle(menuItemName);
-            guidMsgBox->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            guidMsgBox->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse);
             
             if (commandExec == "guidInfo")
                 guidMsgBox->setIcon(QMessageBox::Information);
@@ -2100,6 +2130,39 @@ void Guid::finishProgress()
         if (QPushButton *btn = dlg->findChild<QPushButton*>())
             btn->show();
     }
+}
+
+void Guid::listMenu(const QPoint &pos)
+{
+    QTreeWidget *tw = static_cast<QTreeWidget*>(sender());
+    if (!tw)
+        return;
+    
+    QTreeWidgetItem *twi = tw->itemAt(pos);
+    if (!twi)
+        return;
+    
+    QMenu *menu = new QMenu();
+    
+    QAction *actionCopy = new QAction(tr("Copy"), menu);
+    QIcon actionIcon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
+    actionCopy->setIcon(actionIcon);
+    connect(actionCopy, &QAction::triggered, [=]() {
+        QString newClipContent = "";
+        for (int i = 0; i < twi->columnCount(); ++i) {
+            if (!newClipContent.isEmpty())
+                newClipContent += ",";
+            newClipContent += twi->text(i);
+        }
+        
+        if (!newClipContent.isEmpty()) {
+            QClipboard *clip = QGuiApplication::clipboard();
+            clip->setText(newClipContent);
+        }
+    });
+    
+    menu->addAction(actionCopy);
+    menu->exec(tw->viewport()->mapToGlobal(pos));
 }
 
 void Guid::minimizeDialog()
@@ -2407,8 +2470,8 @@ void Guid::updateList(QString filePath)
     // Some editors delete the file (event "IN_DELETE_SELF") to replace it with new content, so the
     // watcher will stop monitoring the file. Here's the workaround: wait some time before testing if
     // the file exists, then add it again to the watcher.
-    QThread::msleep(400);
-    if (!QFile::exists(filePath))
+    bool pathExists = pathTester(filePath);
+    if (!pathExists)
         return;
     QFileSystemWatcher *watcher = static_cast<QFileSystemWatcher*>(sender());
     watcher->addPath(filePath);
@@ -2480,8 +2543,8 @@ void Guid::updateList(QString filePath)
 
 void Guid::updateText(QString filePath)
 {
-    QThread::msleep(400);
-    if (!QFile::exists(filePath))
+    bool pathExists = pathTester(filePath);
+    if (!pathExists)
         return;
     QFileSystemWatcher *watcher = static_cast<QFileSystemWatcher*>(sender());
     watcher->addPath(filePath);
@@ -2498,8 +2561,8 @@ void Guid::updateText(QString filePath)
 
 void Guid::updateTextInfo(QString filePath)
 {
-    QThread::msleep(400);
-    if (!QFile::exists(filePath))
+    bool pathExists = pathTester(filePath);
+    if (!pathExists)
         return;
     QFileSystemWatcher *watcher = static_cast<QFileSystemWatcher*>(sender());
     watcher->addPath(filePath);
@@ -2663,6 +2726,8 @@ bool Guid::readGeneral(QStringList &args) {
             m_cancel = NEXT_ARG;
         } else if (args.at(i) == "--modal") {
             m_modal = true;
+        } else if (args.at(i) == "--always-on-top") {
+            m_alwaysOnTop = true;
         } else if (args.at(i) == "--attach") {
             bool ok;
             const int w = NEXT_ARG.toUInt(&ok, 0);
@@ -3809,6 +3874,10 @@ char Guid::showForms(const QStringList &args)
             lastList = new QTreeWidget(dlg);
             lastWidget = lastList;
             lastListLabel = new QLabel(next_arg);
+            
+            lastList->setContextMenuPolicy(Qt::CustomContextMenu);
+            lastList->setAutoScroll(false);
+            connect(lastList, SIGNAL(customContextMenuRequested(const QPoint &)), SLOT(listMenu(const QPoint &)));
             
             lastListButton = new QPushButton();
             lastListLayout = new QFormLayout();
