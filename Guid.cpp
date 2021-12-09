@@ -799,7 +799,7 @@ static void setText(QLabel *text)
             QString propDefVarVal = "guid_text_def_var_val_" + QString::number(i);
             QString defVarVal = text->property(propDefVarVal.toStdString().c_str()).toString();
             if (defVarVal.isEmpty())
-                defVarVal = "?";
+                defVarVal = "(?)";
             defaultTextContent.replace("GUID_VAR_" + QString::number(i), defVarVal);
         }
         
@@ -811,7 +811,7 @@ static void setText(QLabel *text)
         QString propDefVarVal = "guid_text_def_var_val_" + QString::number(i);
         QString defVarVal = text->property(propDefVarVal.toStdString().c_str()).toString();
         if (defVarVal.isEmpty())
-                defVarVal = "?";
+                defVarVal = "(?)";
         
         QString propVarFile = "guid_text_monitor_var_file_" + QString::number(i);
         QString filePath = text->property(propVarFile.toStdString().c_str()).toString();
