@@ -585,7 +585,7 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
     IF_IS(QLineEdit) {
         return ValuePair(true, var + t->text());
     } else IF_IS(QTreeWidget) {
-        QString results;
+        QString results = "";
         QString rowValue;
         QString printColumn = t->property("guid_list_print_column").toString();
         QString printMode = t->property("guid_list_print_values_mode").toString();
