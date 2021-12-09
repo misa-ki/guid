@@ -1011,16 +1011,6 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
     }
 
     if (m_dialog) {
-        #if QT_VERSION >= 0x050000
-            // this hacks access to the --title parameter in Qt5
-            // for some reason it's not set on the dialog.
-            // since it's set on showing the first QWindow, we just create one here and copy the title
-            // TODO: remove once this is fixed in Qt5
-            QWindow *w = new QWindow;
-            w->setVisible(true);
-            m_dialog->setWindowTitle(w->title());
-            delete w;
-        #endif
         // close on ctrl+return in addition to ctrl+enter
         QAction *shortAccept = new QAction(m_dialog);
         m_dialog->addAction(shortAccept);
