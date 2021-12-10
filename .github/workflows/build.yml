@@ -1,0 +1,207 @@
+name: Build guid for Linux, macOS and Windows
+on: 
+  push:
+    tags:
+    - 'v*'
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  set-vars:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{steps.vars.outputs.tag_name}}
+    steps:
+    - id: vars
+      run: |
+        echo "::set-output name=tag_name::${GITHUB_REF##*/}"
+
+  build-linux-x86-64:
+    runs-on: ubuntu-18.04
+    needs: [set-vars]
+    env:
+      QT_V: "5.14.2"
+      QT_V_SME: "5.14.2"
+      QT_ARCHIVE: "qt5-static-linux.tgz"
+      QT_STATIC_PATH: "/usr/local/qt5-static"
+      
+      #QT_V: "5.15.2"
+      #QT_V_SME: "5.15.2"
+      #QT_ARCHIVE: "sme_deps_qt5_linux.tgz"
+      #QT_STATIC_PATH: "/opt/smelibs"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{github.ref}}
+        fetch-depth: 0
+    - name: Get dependencies
+      run: |
+        sudo apt-get install libxkbcommon-dev qtbase5-dev qttools5-dev
+        
+        # Get static libraries
+        curl -L "https://github.com/spatial-model-editor/sme_deps_qt/releases/download/$QT_V_SME/$QT_ARCHIVE" -o "$QT_ARCHIVE"
+        sudo mkdir -pv "$QT_STATIC_PATH"
+        sudo tar -xf "$QT_ARCHIVE" -C "/"
+        rm -fv "$QT_ARCHIVE"
+        
+        # Get QT source to build x11extras
+        curl -L "https://download.qt.io/archive/qt/${QT_V%.*}/$QT_V/single/qt-everywhere-src-$QT_V.tar.xz" -o "qt-everywhere-src-$QT_V.tar.xz"
+        tar -xf "qt-everywhere-src-$QT_V.tar.xz"
+        rm -fv "qt-everywhere-src-$QT_V.tar.xz"
+    - name: Build x11extras
+      run: |
+        cd "qt-everywhere-src-$QT_V"
+        "$QT_STATIC_PATH/bin/qmake" "qtx11extras"
+        make
+        sudo make install
+    - name: Build guid
+      run: |
+        "$QT_STATIC_PATH/bin/qmake" guid.pro
+        make
+    - name: Create archive
+      run: |
+        if [[ -f guid ]]; then
+          zip -9 guid-linux-x86-64.zip guid
+        else
+          echo "Can't find guid."
+        fi
+    - name: Upload files
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-x86-64-files
+        if-no-files-found: error
+        retention-days: 1
+        path: |
+          guid-linux-x86-64.zip
+
+  build-macos-x86-64:
+    runs-on: macos-10.15
+    needs: [set-vars]
+    env:
+      QT_V: "5.14.2"
+      QT_V_SME: "5.14.2"
+      QT_ARCHIVE: "qt5-static-osx.tgz"
+      QT_STATIC_PATH: "/usr/local/qt5-static"
+      
+      #QT_V: "5.15.2"
+      #QT_V_SME: "5.15.2"
+      #QT_ARCHIVE: "sme_deps_qt5_osx.tgz"
+      #QT_STATIC_PATH: "/opt/smelibs"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{github.ref}}
+        fetch-depth: 0
+    - name: Set Xcode version
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        # See <https://github.com/actions/virtual-environments/tree/main/images/macos>
+        xcode-version: 10.3
+    - name: Get dependencies
+      run: |
+        brew install coreutils binutils gnu-sed
+        
+        # Get static libraries
+        curl -L "https://github.com/spatial-model-editor/sme_deps_qt/releases/download/$QT_V_SME/$QT_ARCHIVE" -o "$QT_ARCHIVE"
+        sudo mkdir -pv "$QT_STATIC_PATH"
+        sudo tar -xf "$QT_ARCHIVE" -C "/"
+        rm -fv "$QT_ARCHIVE"
+    - name: Build guid
+      run: |
+        "$QT_STATIC_PATH/bin/qmake" guid.pro
+        make
+    - name: Create archive
+      run: |
+        if [[ -f "guid.app/Contents/MacOS/guid" ]]; then
+          zip -9 -j "guid-macos-x86-64.zip" "guid.app/Contents/MacOS/guid"
+        else
+          echo "Can't find guid."
+        fi
+    - name: Upload files
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-x86-64-files
+        if-no-files-found: error
+        retention-days: 1
+        path: |
+          guid-macos-x86-64.zip
+
+  build-windows-x86-64:
+    runs-on: windows-latest
+    needs: [set-vars]
+    defaults:
+      run:
+        shell: cmd
+    env:
+      QT_V: "5.15.0"
+      QT_V_SME: "5.15.0"
+      QT_ARCHIVE_TGZ: "qt5-static-win64.tgz"
+      QT_ARCHIVE_TAR: "qt5-static-win64.tar"
+      QT_STATIC_PATH: "C:\\libs"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{github.ref}}
+        fetch-depth: 0
+    - name: Get dependencies
+      run: |
+        :: Get static libraries
+        C:\msys64\usr\bin\curl.exe -L https://github.com/spatial-model-editor/sme_deps_qt/releases/download/%QT_V_SME%/%QT_ARCHIVE_TGZ% -o %QT_ARCHIVE_TGZ%
+        :: mkdir %QT_STATIC_PATH%
+        move %QT_ARCHIVE_TGZ% C:\
+        7z x C:\%QT_ARCHIVE_TGZ% -oC:\
+        7z x C:\%QT_ARCHIVE_TAR% -oC:\
+        move C:\c\libs C:\
+        del C:\%QT_ARCHIVE_TGZ%
+        del C:\%QT_ARCHIVE_TAR%
+    - name: Build guid
+      run: |
+        set PATH=C:\msys64\mingw64\bin;%PATH%
+        dir C:\libs
+        echo %QT_STATIC_PATH%\bin\qmake.exe guid.pro
+        echo PATH %PATH%
+        
+        %QT_STATIC_PATH%\bin\qmake.exe guid.pro
+        mingw32-make.exe
+    - name: Create archive
+      run: |
+        if exist release\guid.exe (
+          7z a guid-windows-x86-64.zip .\release\guid.exe -mx9
+        ) else (
+          echo Can't find guid.
+        )
+    - name: Upload files
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-x86-64-files
+        if-no-files-found: error
+        retention-days: 1
+        path: |
+          guid-windows-x86-64.zip
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [set-vars, build-linux-x86-64, build-macos-x86-64, build-windows-x86-64]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{github.ref}}
+        fetch-depth: 0
+    - name: Download files
+      uses: actions/download-artifact@v2
+    - name: Create a new release on GitHub
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        hub release create \
+          -a "linux-x86-64-files/guid-linux-x86-64.zip#guid for Linux 64-bit (zip)" \
+          -a "macos-x86-64-files/guid-macos-x86-64.zip#guid for macOS 64-bit (zip)" \
+          -a "windows-x86-64-files/guid-windows-x86-64.zip#guid for Windows 64-bit (zip)" \
+          -m "guid ${{needs.set-vars.outputs.tag_name}}" \
+          -m "guid ${{needs.set-vars.outputs.tag_name}}" \
+          "${{needs.set-vars.outputs.tag_name}}"
