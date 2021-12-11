@@ -220,7 +220,7 @@
     if (menuItemData.count() > 0) menuItemName = menuItemData.at(0); \
     if (menuItemData.count() > 1) menuItemExitCode = menuItemData.at(1).toInt(&ok); \
     if (menuItemData.count() > 2) menuItemCommand = menuItemData.at(2); \
-    if (menuItemData.count() > 3) menuItemCommandPrintOutput = menuItemData.at(3) == "1" ? true : false; \
+    if (menuItemData.count() > 3) menuItemCommandPrintOutput = (menuItemData.at(3) == "true" || menuItemData.at(3) == "1") ? true : false; \
     if (menuItemData.count() > 4) menuItemIcon = menuItemData.at(4);
 
 #define ADD_WIDGET_TO_FORM(LABEL, WIDGET) \
@@ -1137,59 +1137,8 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
 void Guid::printHelp(const QString &category)
 {
     static HelpDict helpDict;
-    QString main_separator      = "#####################################################################################";
-    QString secondary_separator = "-------------------------------------------------------------------------------------";
-    
-    const char *formsHelpIntro = "Widgets are added using the following syntax:\n"
-        "--add-WIDGET-TYPE=\"Label displayed\"\n"
-        "Example: guid --forms --add-entry=\"Your name\" --add-file-selection=\"Your document\"\n"
-        "Some widgets can be configured using the following syntax:\n"
-        "--add-WIDGET-TYPE=variableName=value@anotherVariableName=value@Label displayed\n"
-        "Example: guid --forms --add-file-selection=\"buttonText=Select file@Your document\"\n"
-        "The list of variables supported is displayed at the beginning of each widget section.";
-    
-    const char *addMenuHelpDescription = "Add a new Menu in forms dialog.\n"
-        "Note that this widget is not a user input field, so it doesn't have any impact\n"
-        "on the field count when parsing output printed on the console.\n"
-        "First level menu items must be separated with the symbol \"|\". Example:\n"
-        "Main Item A|Main Item B|Main Item C\n"
-        "Second level menu items must be separated with the symbol \"#\". Example:\n"
-        "Main Item A#Subitem A1#Subitem A2|Main Item B|Main Item C#Subitem C1\n"
-        "Each menu item that doesn't contain subitems can have up to 5 settings separated\n"
-        "with \";\": Menu item name;Exit code;Command to run;Print command output;Icon\n"
-        "The menu item name is mandatory. Other settings have these default values:\n"
-        "Menu item name;-1;\"\";0;\"\"\n"
-        "Possible values are as follows:\n"
-        "- Menu item name: string not containing the character \";\".\n"
-        "- Exit code: integer. If the value is < 0, the dialog will not be closed after\n"
-        "             a click on the menu item. If the value is >=0 and <= 255, the dialog\n"
-        "             will be closed with the exit code sent by the command \"exit()\".\n"
-        "- Command to run: the executable name/path and all arguments must be separated\n"
-        "                  with \"<>\". For example, if the command to run is the following\n:"
-        "                  explorer.exe /separate, \"C:\\Users\\My Name\\Desktop\"\n"
-        "                  it must be set like this:\n"
-        "                  explorer.exe<>/separate,<>\"C:\\Users\\My Name\\Desktop\"\n"
-        "                  It's also possible to specify one of these internal commands:\n"
-        "                  guidInfo<>Information to display\n"
-        "                  guidWarning<>Warning to display\n"
-        "                  guidError<>Error to display\n"
-        "- Print command output: 0 or 1. If the value is 1, the command output will be\n"
-        "                        printed on the console.\n"
-        "- Icon: for now, the only valid value is 0. If the value is 0, the default icon\n"
-        "        won't be added to the left of the menu item. TODO: set arbitrary icon.\n"
-        "No matter if the dialog is closed or not after a click on the menu item, all\n"
-        "settings (menu name, exit code, etc.) are printed on the console after a click,\n"
-        "so it can be parsed by a script. Here's an example:\n"
-        "guid --forms --add-menu=\"File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10\"\n"
-        "To add separators between first level menu items, add \"sep=SEP//\" at the\n"
-        "beginning of the menu settings. Example:\n"
-        "guid --forms --add-menu=\"sep=|//File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10\"\n"
-        "If a menu is the first widget added to the form and the form doesn't have a main\n"
-        "label added with \"--text=TEXT\", special settings are applied to the menu to have it\n"
-        "look like a main application menu. If we want a menu on top of the dialog but still\n"
-        "have a form label, we must not add the form label with \"--text=TEXT\", but with\n"
-        "\"--add-text=TEXT\" after the menu. Example:\n"
-        "guid --forms --add-menu=\"Item A;10|Item B;20\" --add-text=\"Form label\" --bold";
+    QString main_separator      = "#########################################################################################";
+    QString secondary_separator = "-----------------------------------------------------------------------------------------";
     
     if (helpDict.isEmpty()) {
         /******************************
@@ -1197,557 +1146,1113 @@ void Guid::printHelp(const QString &category)
          ******************************/
         
         helpDict["help"] = CategoryHelp(tr("Help options"), HelpList() <<
-        Help("-h, --help", tr("Show help options")) <<
-        Help("--help-all", tr("Show all help options")) <<
-        Help("--help-general", tr("Show general options")) <<
-        Help("--help-misc", tr("Show miscellaneous options")) <<
-        Help("--help-qt", tr("Show Qt Options")) <<
+        Help("-h, --help",
+             tr("Show help options")) <<
+        Help("--help-all",
+             tr("Show all help options")) <<
+        Help("--help-general",
+             tr("Show general options")) <<
+        Help("--help-misc",
+             tr("Show miscellaneous options")) <<
         Help("", "") <<
         
-        Help("--help-calendar", tr("Show calendar options")) <<
-        Help("--help-color-selection", tr("Show color selection options")) <<
-        Help("--help-entry", tr("Show text entry options")) <<
-        Help("--help-error", tr("Show error options")) <<
-        Help("--help-file-selection", tr("Show file selection options")) <<
-        Help("--help-forms", tr("Show forms dialog options")) <<
-        Help("--help-info", tr("Show info options")) <<
-        Help("--help-list", tr("Show list options")) <<
-        Help("--help-notification", tr("Show notification icon options")) <<
-        Help("--help-password", tr("Show password dialog options")) <<
-        Help("--help-progress", tr("Show progress options")) <<
-        Help("--help-question", tr("Show question options")) <<
-        Help("--help-scale", tr("Show scale options")) <<
-        Help("--help-text-info", tr("Show text information options")) <<
-        Help("--help-warning", tr("Show warning options")));
-            
+        Help("--help-calendar",
+             tr("Show calendar options")) <<
+        Help("--help-color-selection",
+             tr("Show color selection options")) <<
+        Help("--help-entry",
+             tr("Show text entry options")) <<
+        Help("--help-error",
+             tr("Show error dialog options")) <<
+        Help("--help-file-selection",
+             tr("Show file selection options")) <<
+        Help("--help-forms",
+             tr("Show forms dialog options")) <<
+        Help("--help-info",
+             tr("Show info dialog options")) <<
+        Help("--help-list",
+             tr("Show list options")) <<
+        Help("--help-notification",
+             tr("Show notification icon options")) <<
+        Help("--help-password",
+             tr("Show password dialog options")) <<
+        Help("--help-progress",
+             tr("Show progress options")) <<
+        Help("--help-question",
+             tr("Show question options")) <<
+        Help("--help-scale",
+             tr("Show scale options")) <<
+        Help("--help-text-info",
+             tr("Show text information options")) <<
+        Help("--help-warning",
+             tr("Show warning dialog options")));
+        
         /******************************
          * misc
          ******************************/
         
         helpDict["misc"] = CategoryHelp(tr("Miscellaneous options"), HelpList() <<
-        Help("--about", tr("About guid")) <<
-        Help("--version", tr("Print version")));
-            
-        /******************************
-         * qt
-         ******************************/
+        Help("--about",
+             tr("About guid")) <<
+        Help("--version",
+             tr("Print guid version")));
         
-        helpDict["qt"] = CategoryHelp(tr("Qt options"), HelpList() <<
-        Help("--foo", tr("Foo")) <<
-        Help("--bar", tr("Bar")));
-            
         /******************************
          * general
          ******************************/
         
         helpDict["general"] = CategoryHelp(tr("General options"), HelpList() <<
-        Help("--title=TITLE", tr("Set the dialog title")) <<
-        Help("--window-icon=ICONPATH", tr("Set the window icon")) <<
-        Help("--width=WIDTH", tr("Set the width")) <<
-        Help("--height=HEIGHT", tr("Set the height")) <<
+        Help("--title=TITLE",
+             tr("Set the dialog title")) <<
+        Help("--window-icon=/path/to/icon",
+             tr("Set the window icon")) <<
+        Help("--width=WIDTH",
+             tr("Set the dialog width")) <<
+        Help("--height=HEIGHT",
+             tr("Set the dialog height")) <<
         Help("", "") <<
         
-        Help("--ok-label=TEXT", tr("Sets the label of the Ok button")) <<
-        Help("--cancel-label=TEXT", tr("Sets the label of the Cancel button")) <<
+        Help("--ok-label=TEXT",
+             tr("Set the label of the Ok button")) <<
+        Help("--cancel-label=TEXT",
+             tr("Set the label of the Cancel button")) <<
         Help("", "") <<
         
-        Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
-        Help("--always-on-top", tr("Force the dialog to be always on top of other windows")) <<
-        Help("--no-taskbar", tr("Don't display the dialog in the taskbar")) <<
-        Help("--modal", tr("Set the modal hint")) <<
-        Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
-        Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
-        Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
-            
+        Help("--timeout=TIMEOUT",
+             tr("Set dialog timeout in seconds")) <<
+        Help("--always-on-top",
+             "GUID ONLY! " + tr("Force the dialog to be always on top of other windows")) <<
+        Help("--no-taskbar",
+             "GUID ONLY! " + tr("Don't display the dialog in the taskbar")) <<
+        Help("--attach=WINDOW",
+             tr("Set the parent window to attach to")) <<
+        Help("--modal",
+             tr("Set the modal hint")) <<
+        Help("--output-prefix-ok=PREFIX",
+             "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
+        Help("--output-prefix-err=PREFIX",
+             "GUID ONLY! " + tr("Set prefix for output sent to stderr")));
+        
         /******************************
          * application
          ******************************/
         
-        helpDict["application"] = CategoryHelp(tr("Application Options"), HelpList() <<
-        Help("--display=DISPLAY", tr("X display to use")) <<
+        helpDict["application"] = CategoryHelp(tr("Application options"), HelpList() <<
+        Help("--display=DISPLAY",
+             tr("X display to use")) <<
         Help("", "") <<
         
-        Help("--calendar", tr("Display calendar dialog")) <<
-        Help("--color-selection", tr("Display color selection dialog")) <<
-        Help("--entry", tr("Display text entry dialog")) <<
-        Help("--error", tr("Display error dialog")) <<
-        Help("--file-selection", tr("Display file selection dialog")) <<
-        Help("--font-selection", "GUID ONLY! " + tr("Display font selection dialog")) <<
-        Help("--forms", tr("Display forms dialog")) <<
-        Help("--info", tr("Display info dialog")) <<
-        Help("--list", tr("Display list dialog")) <<
-        Help("--notification", tr("Display notification")) <<
-        Help("--password", tr("Display password dialog")) <<
-        Help("--progress", tr("Display progress indication dialog")) <<
-        Help("--question", tr("Display question dialog")) <<
-        Help("--scale", tr("Display scale dialog")) <<
-        Help("--text-info", tr("Display text information dialog")) <<
-        Help("--warning", tr("Display warning dialog")));
-            
+        Help("--calendar",
+             tr("Display calendar dialog")) <<
+        Help("--color-selection",
+             tr("Display color selection dialog")) <<
+        Help("--entry",
+             tr("Display text entry dialog")) <<
+        Help("--error",
+             tr("Display error dialog")) <<
+        Help("--file-selection",
+             tr("Display file selection dialog")) <<
+        Help("--font-selection",
+             "GUID ONLY! " + tr("Display font selection dialog")) <<
+        Help("--forms",
+             tr("Display forms dialog")) <<
+        Help("--info",
+             tr("Display info dialog")) <<
+        Help("--list",
+             tr("Display list dialog")) <<
+        Help("--notification",
+             tr("Display notification")) <<
+        Help("--password",
+             tr("Display password dialog")) <<
+        Help("--progress",
+             tr("Display progress indication dialog")) <<
+        Help("--question",
+             tr("Display question dialog")) <<
+        Help("--scale",
+             tr("Display scale dialog")) <<
+        Help("--text-info",
+             tr("Display text information dialog")) <<
+        Help("--warning",
+             tr("Display warning dialog")));
+        
         /******************************
          * calendar
          ******************************/
         
         helpDict["calendar"] = CategoryHelp(tr("Calendar options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set text alignment")) <<
         Help("", "") <<
         
-        Help("--day=DAY", tr("Set the calendar day")) <<
-        Help("--month=MONTH", tr("Set the calendar month")) <<
-        Help("--year=YEAR", tr("Set the calendar year")) <<
-        Help("--date-format=PATTERN", tr("Set the format for the returned date")) <<
+        Help("--day=DAY",
+             tr("Set the calendar day")) <<
+        Help("--month=MONTH",
+             tr("Set the calendar month")) <<
+        Help("--year=YEAR",
+             tr("Set the calendar year")) <<
+        Help("--date-format=PATTERN",
+             tr("Set the format for the returned date")) <<
         Help("", "") <<
         
-        Help("--timeout=TIMEOUT", tr("Set dialog timeout in seconds")));
-            
+        Help("--timeout=TIMEOUT",
+             tr("Set dialog timeout in seconds")));
+        
         /******************************
          * color-selection
          ******************************/
         
         helpDict["color-selection"] = CategoryHelp(tr("Color selection options"), HelpList() <<
-        Help("--color=VALUE", tr("Set the color")) <<
-        Help("--custom-palette=path/to/some.gpl",  "GUID ONLY! " + tr("Load a custom GPL for standard colors")) <<
-        Help("--show-palette", tr("Show the palette")));
-            
+        Help("--color=VALUE",
+             tr("Set the color")) <<
+        Help("--custom-palette=/path/to/file.gpl",
+             "GUID ONLY! " + tr("Load a custom GPL file for standard colors")) <<
+        Help("--show-palette",
+             tr("Show the palette")));
+        
         /******************************
          * entry
          ******************************/
         
         helpDict["entry"] = CategoryHelp(tr("Text entry options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
         Help("", "") <<
         
-        Help("--entry-text=TEXT", tr("Set the entry text")) <<
-        Help("--hide-text", tr("Hide the entry text")) <<
+        Help("--entry-text=TEXT",
+             tr("Set the entry text")) <<
+        Help("--hide-text",
+             tr("Hide the entry text")) <<
         Help("", "") <<
         
-        Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-        Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-        Help("--values=v1|v2|v3|...", "GUID ONLY! " + tr("Offer preset values to pick from")));
-            
+        Help("--float=FLOATING_POINT",
+             "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+        Help("--int=INTEGER",
+             "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+        Help("--values=v1|v2|v3|...",
+             "GUID ONLY! " + tr("Offer preset values to pick from")));
+        
         /******************************
          * error
          ******************************/
         
         helpDict["error"] = CategoryHelp(tr("Error options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-        Help("--no-markup", tr("Do not enable html markup")) <<
-        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--ellipsize",
+             tr("Do wrap text (zenity has a rather special problem here)")) <<
+        Help("--no-markup",
+             tr("Do not enable HTML markup")) <<
+        Help("--no-wrap",
+             tr("Do not enable text wrapping")) <<
         Help("", "") <<
         
-        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("--icon-name=ICON_NAME",
+             tr("Set the dialog icon")) <<
         Help("", "") <<
         
-        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
-            
+        Help("--selectable-labels",
+             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        
         /******************************
          * file-selection
          ******************************/
         
         helpDict["file-selection"] = CategoryHelp(tr("File selection options"), HelpList() <<
-        Help("--filename=FILENAME", tr("Set the filename")) <<
-        Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
-        Help("--directory", tr("Activate directory-only selection")) <<
-        Help("--multiple", tr("Allow multiple files to be selected")) <<
+        Help("--filename=/path/to/file",
+             tr("Set the file selected by default")) <<
+        Help("--file-filter=NAME|PATTERN1 PATTERN2...",
+             tr("Set a filename filter")) <<
+        Help("--directory",
+             tr("Activate directory-only selection")) <<
+        Help("--multiple",
+             tr("Allow multiple files to be selected")) <<
         Help("", "") <<
         
-        Help("--confirm-overwrite", tr("Confirm file selection if filename already exists")) <<
-        Help("--save", tr("Activate save mode")) <<
+        Help("--confirm-overwrite",
+             tr("Confirm file selection if the file selected already exists")) <<
+        Help("--save",
+             tr("Activate save mode")) <<
         Help("", "") <<
         
-        Help("--separator=SEPARATOR", tr("Set output separator character")));
-            
+        Help("--separator=SEPARATOR",
+             tr("Set output separator character")));
+        
         /******************************
          * font-selection
          ******************************/
         
         helpDict["font-selection"] = CategoryHelp(tr("Font selection options"), HelpList() <<
-        Help("--sample=TEXT", tr("Sample text, defaults to the foxdogthing")) <<
-        Help("--pattern=%1-%2:%3:%4", tr("Output pattern, %1: Name, %2: Size, %3: weight, %4: slant")) <<
-        Help("--type=[vector][,bitmap][,fixed][,variable]", tr("Filter fonts (default: all)")));
+        Help("--sample=TEXT",
+             tr("Sample text (default is \"The quick brown fox jumps over the lazy dog.\"")) <<
+        Help("--pattern=%1-%2:%3:%4",
+             tr("Output pattern where %1 is name, %2 is size, %3 is weight, %4 is slant.")) <<
+        Help("--type=[vector][,bitmap][,fixed][,variable]",
+             tr("Filter fonts (default is all)")));
         
         /******************************
          * forms
          ******************************/
         
+        const char *formsVarHelp = R"HEREDOC(Variable name added before the field value when printed to the console.
+Spaces are removed and the character "=" is added after the variable name. Example
+without "--var":
+    guid --forms \
+         --add-calendar="Choose a date" \
+         --add-entry="Type your pseudo"
+Here's what the output printed to the console looks like:
+    2020-12-12|Little Mouse
+Example with "--var":
+    guid --forms \
+         --add-calendar="Choose a date" --var="cal" \
+         --add-entry="Type your pseudo" --var="pseudo"
+Here's what the output printed to the console looks like:
+    cal=2020-12-12|pseudo=Little Mouse)HEREDOC";
+        
         helpDict["forms"] = CategoryHelp(tr("Forms dialog options"), HelpList() <<
         
         // Widget settings
-        Help(tr(formsHelpIntro), "") <<
+        Help(tr(R"HEREDOC(Widgets are added to forms dialog using the following syntax:
+    --add-WIDGET-TYPE="Label displayed"
+Example:
+    guid --forms \
+         --add-entry="Your name" \
+         --add-file-selection="Your document"
+Several widgets can be configured with variables using a syntax like this:
+    --add-WIDGET-TYPE="variableName=Value@anotherVariableName=Value@Label displayed"
+Example:
+    guid --forms \
+         --add-text="image=:/info@Text with image" \
+         --add-entry="Your name" \
+         --add-file-selection="buttonText=Select file@Your document"
+The list of variables supported is displayed at the beginning of each widget section.)HEREDOC"), "") <<
         Help("", "") <<
         
         // --text
-        Help("--text=\"Form label\"", tr("Set the form label (always displayed on top, and bold by default")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-        Help("--no-bold", "GUID ONLY! " + tr("Remove bold for the dialog text")) <<
-        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
+        Help("--text=\"Form label (form description)\"",
+             tr("Set the form label (always displayed on top, and bold by default")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set label alignment")) <<
+        Help("--no-bold",
+             "GUID ONLY! " + tr("Remove bold for the form label")) <<
+        Help("--italics",
+             "GUID ONLY! " + tr("Set form label in italics")) <<
+        Help("--underline",
+             "GUID ONLY! " + tr("Set form label format to underline")) <<
+        Help("--small-caps",
+             "GUID ONLY! " + tr("Set form label rendering to small-caps type")) <<
+        Help("--font-family=FAMILY",
+             "GUID ONLY! " + tr("Set font family for the form label")) <<
+        Help("--font-size=SIZE",
+             "GUID ONLY! " + tr("Set font size for the form label")) <<
+        Help("--foreground-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set form label color. Example:
+    guid --forms \
+         --text="Form label (form description)" \
+             --foreground-color="#0000FF" \
+         --add-entry="Entry field not colored")HEREDOC")) <<
+        Help("--background-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC("Set form label background color. Example:
+    guid --forms \
+         --text="Form label (form description)" \
+         --background-color="#0000FF" \
+         --add-entry="Entry field not colored")HEREDOC")) <<
         Help("", "") <<
         
         // --header
-        Help("--header=\"[backgroundColor=COLOR@][foregroundColor=COLOR@][hideLabel=true@][stop=true@]Header label\"", "GUID ONLY! " + tr("Add a header to the form.\nThe header is a section without margins (so the background color fills the entire dialog width)\nunder the top menu but over form fields. It's useful to display\ninformation (input fields added in the header are not parsed for user input).\nNext fields will be added to the header unless a new \"--header\" is added with \"stop=true\".\nExample:\nguid --forms --header=\"backgroundColor=#CECECE@hideLabel=true\" --add-text=\"Text added in the header\"\n     --add-text=\"More text\" --header=\"stop=true\"\n     --add-entry=\"Field outside the header\"")) <<
+        Help(R"HEREDOC(--header="[backgroundColor=COLOR@][foregroundColor=COLOR@][hideLabel=true@]
+          [stop=true@]Header label")HEREDOC",
+             "GUID ONLY! " + tr(R"HEREDOC("Add a header to the form.
+The header is a section without margins (so the background color fills the entire
+dialog width) under the top menu but over form fields. It's useful to display
+information (input fields added in the header are not parsed for user input). Next
+fields will be added to the header unless a new "--header" is added containing the
+variable "stop=true". Example:
+    guid --forms \
+         --header="backgroundColor=#DEDEDE@hideLabel=true" \
+             --add-text="image=:/info@Text added in the header" \
+             --add-text="More text in the header" --bold --align=center \
+         --header="stop=true" \
+         --add-entry="Field outside the header")HEREDOC")) <<
         Help("", "") <<
         
         // --group
-        Help("--group=\"[addLabel=Group label@][stop=true@]Group name\"", "GUID ONLY! " + tr("Add a group box (fieldset).\nNext fields will be added to the group. Stop adding fields in the group with \"stop=true\".\nExample:\nguid --forms --text=\"Form with a group box\" --group=\"Group description\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --group=\"stop=true\"")) <<
+        Help("--group=\"[addLabel=Group label@][stop=true@]Group name\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add a group box (fieldset).
+Next fields will be added to the group unless a new "--group" is added containing
+the variable "stop=true". Example:
+    guid --forms \
+         --text="Form with a group box (fieldset)" \
+         --group="Group name" \
+             --add-entry="Text field in the group" \
+             --add-entry="Another text field in the group" \
+         --group="stop=true" \
+         --add-text="Text outside the group")HEREDOC")) <<
         Help("", "") <<
         
         // --tab
-        Help("--tab=\"[addLabel=Tab bar label@][stop=true@]Tab name\"", "GUID ONLY! " + tr("Create a tab bar.\nNext fields will be added to the tab NAME unless another one is specified with\n \"--tab=ANOTHER_NAME\". Stop adding fields in the last tab with \"stop=true\".\nExample:\nguid --forms --text=\"Form with a tab bar\" --tab=\"Tab 1\" --add-entry=\"Text field\"\n     --add-hrule=\"#e0e0e0\" --add-entry=\"Another text field\" --tab=\"Tab 2\"\n     --add-spin-box=\"Spin box field\" --min-value=10 --value=50 --tab=\"stop=true\"\n     --add-scale=\"Field outside tabs\" --step=5")) <<
-        Help("--tab-selected", "GUID ONLY! " + tr("Mark the tab as selected by default")) <<
+        Help("--tab=\"[addLabel=Tab bar label@][disableButtons=true@][stop=true@]Tab name\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Create a tab bar.
+After adding "--tab=NAME", next fields will be added to the tab NAME unless another
+one is specified with "--tab=ANOTHER_NAME". Stop adding fields in the last tab with
+the variable "stop=true". Example:
+    guid --forms \
+         --text="Form with a tab bar" \
+         --tab="Tab 1" \
+             --add-entry="Text field in the tab 1" \
+             --add-entry="Another text field in the tab 1" \
+         --tab="Tab 2" \
+             --add-spin-box="Spin box in the tab 2" --min-value=10 --value=50 \
+         --tab="stop=true" \
+         --add-scale="Field outside the tab bar" --step=5)HEREDOC")) <<
+        Help("--tab-selected",
+             "GUID ONLY! " + tr("Mark the tab as selected by default when the dialog is shown")) <<
         Help("", "") <<
         
         // --col1 || --col2
-        Help("--col1", "GUID ONLY! " + tr("Start a two-field row.\nThe next form field specified will be added in the first column.\nSee --col2 for details.")) <<
-        Help("--col2", "GUID ONLY! " + tr("Finish a two-field row.\nThe next form field specified will be added in the second column. Example:\nguid --forms --width=500 --text=\"The next row has two columns:\"\n     --col1 --add-entry=\"Left label\" --int=5 --col2 --add-entry=\"Right label\"\n     --field-width=100 --add-entry=\"Full-width row\"")) <<
-        Help("--add-hspacer=before|after", "GUID ONLY! " + tr("Add horizontal expanding spacer before or after the current column content")) <<
-        Help("--valign=top|center|bottom|baseline", "GUID ONLY! " + tr("Set vertical alignment of the current column. Example:\nguid --forms --width=500 --text=\"The next row has two columns:\"\n     --col1 --valign=bottom --add-text=\"Lorem ipsum\"\n     --col2 --add-text=\"Lorem<br />ipsum<br />dolor<br />sit<br />amet\"")) <<
+        Help("--col1",
+             "GUID ONLY! " + tr(R"HEREDOC(Start a two-field row.
+The next form field specified will be added in the first column. See "--col2" for
+details.)HEREDOC")) <<
+        Help("--col2",
+             "GUID ONLY! " + tr(R"HEREDOC(Finish a two-field row.
+The next form field specified will be added in the second column. Example:
+    guid --forms --width=500 \
+         --text="The next row has two columns:" \
+         --col1 \
+             --add-entry="Left entry (column 1)" --int=5 \
+         --col2 \
+             --add-entry="Right entry (column 2)" --field-width=100 \
+         --add-entry="Outside columns")HEREDOC")) <<
+        Help("--add-hspacer=before|after",
+             "GUID ONLY! " + tr(R"HEREDOC(Add horizontal expanding spacer before or after the current
+column content)HEREDOC")) <<
+        Help("--valign=top|center|bottom|baseline",
+             "GUID ONLY! " + tr(R"HEREDOC(Set vertical alignment of the current column. Example:
+    guid --forms --width=500 \
+         --text="The next row has two columns:" \
+         --col1 --valign=bottom \
+             --add-text="Aligned to the bottom" \
+         --col2 \
+             --add-text="Lorem<br />ipsum<br />dolor<br />sit<br />amet" \
+         --add-entry="Outside columns")HEREDOC")) <<
         Help("", "") <<
         
         // --add-calendar
-        Help("--add-calendar=\"[hideLabel=true@]Calendar label\"", tr("Add a new Calendar in forms dialog")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-calendar=\"[hideLabel=true@]Calendar label\"",
+             tr("Add a calendar in forms dialog")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-checkbox
-        Help("--add-checkbox=\"[addLabel=Checkbox label@]Checkbox text\"", "GUID ONLY! " + tr("Add a new Checkbox forms dialog")) <<
-        Help("--checked", "GUID ONLY! " + tr("Make the checkbox checked by default")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-checkbox=\"[addLabel=Checkbox label@]Checkbox text\"",
+             "GUID ONLY! " + tr("Add a checkbox in forms dialog")) <<
+        Help("--checked",
+             "GUID ONLY! " + tr("Make the checkbox checked by default")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-combo
-        Help("--add-combo=\"[hideLabel=true@]Combo label\"", tr("Add a new combo box in forms dialog")) <<
-        Help("--combo-values=[defaultIndex=Index number@]List of values separated by |", tr("List of values for combo box.\nTo select a specific index by default, add \"defaultIndex=Index number\".")) <<
-        Help("--combo-values-from-file=[defaultIndex=Index number@][monitor=VALUE@]FILENAME", "GUID ONLY! " + tr("Open file and use content as combo values.\nTo select a specific index by default, add \"defaultIndex=Index number\".\nTo monitor file changes, add \"monitor=true@\". Example:\nguid --forms --add-combo=\"Combo description\"\n     --combo-values-from-file=\"defaultIndex=1@monitor=true@C:\\Users\\name\\Desktop\\file.txt\"")) <<
-        Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-combo=\"[hideLabel=true@]Combo label\"",
+             tr("Add a combo box in forms dialog")) <<
+        Help("--combo-values=[defaultIndex=Index number@]List of values separated by |",
+             tr(R"HEREDOC(List of values for the combo box.
+To select a specific index by default, add the variable "defaultIndex=Index number".)HEREDOC")) <<
+        Help("--combo-values-from-file=[defaultIndex=Index number@][monitor=VALUE@]Path to file",
+             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as combo values (one value per line).
+To select a specific index by default, add the variable "defaultIndex=Index number".
+To monitor file changes, add "monitor=true". Example:
+    guid --forms \
+         --add-combo="Combo label" \
+         --combo-values-from-file="defaultIndex=1@monitor=true@C:\\Path\\to\\file.txt")HEREDOC")) <<
+        Help("--editable",
+             "GUID ONLY! " + tr("Allow the user to edit combo values")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-entry
-        Help("--add-entry=\"[hideLabel=true@]Entry label\"", tr("Add a new Entry in forms dialog")) <<
-        Help("--float=floating_point", "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
-        Help("--int=integer", "GUID ONLY! " + tr("Integer input only, preset given value")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-entry=\"[hideLabel=true@]Entry label\"",
+             tr("Add a text entry in forms dialog")) <<
+        Help("--float=FLOATING_POINT",
+             "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+        Help("--int=INTEGER",
+             "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-file-selection
-        Help("--add-file-selection=\"[buttonText=Text@][hideLabel=true@]File selection label\"", tr("File selection options.\nThe field name is displayed in a button that opens the file selection dialog.\nThe selection is displayed in a text entry.")) <<
-        Help("--filename=FILENAME", tr("Set the filename")) <<
-        Help("--file-filter=NAME | PATTERN1 PATTERN2 ...", tr("Sets a filename filter")) <<
-        Help("--directory", tr("Activate directory-only selection")) <<
-        Help("--multiple", tr("Allow multiple files to be selected")) <<
-        Help("--file-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character if there are multiple files selected (default is ~)")) <<
+        Help("--add-file-selection=\"[buttonText=Text@][hideLabel=true@]File selection label\"",
+             tr(R"HEREDOC(File selection options.
+The field name is displayed in a button that opens the file selection dialog.
+The selection is added and displayed in a text entry.)HEREDOC")) <<
+        Help("--filename=/path/to/file",
+             tr("Set the file selected by default")) <<
+        Help("--file-filter=NAME|PATTERN1 PATTERN2...",
+             tr("Set a filename filter")) <<
+        Help("--directory",
+             tr("Activate directory-only selection")) <<
+        Help("--multiple",
+             tr("Allow multiple files to be selected")) <<
+        Help("--file-separator=SEPARATOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set output separator character if there are multiple files selected
+(default is "~"))HEREDOC")) <<
         Help("", "") <<
         
         // --add-list
-        Help("--add-list=\"[addNewRowButton=true@][hideLabel=true@]List label\"", tr("Add a new List in forms dialog.\nTo add a button allowing to add new rows when clicked, start the list label\nwith \"addNewRowButton=true@\". Example:\nguid --forms --add-list=\"addNewRowButton=true@My list\" --column-values=\"C1|C2\"\n     --show-header --list-values=\"v1|v2|v3|v4\"\nTo hide the label, add \"hideLabel=1\" followed by \"//\". Example:\nguid --forms --add-list=\"addNewRowButton=1//hideLabel=1//Label hidden\"\n     --column-values=\"C1|C2\" --show-header --list-values=\"v1|v2|v3|v4\"")) <<
-        Help("--column-values=List of values separated by |", tr("List of values for columns")) <<
-        Help("--list-values=List of values separated by |", tr("List of values for List")) <<
-        Help("--list-values-from-file=\"[addValue=Value@][monitor=true@][sep=Separator@]Filename\"", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo add automatically a value at the beginning of each row (for example\nthe value \"false\" in combination with \"--checklist\"), add \"addValue=Value@\".\n For example, to add the word \"false\":\nguid --forms --add-list=\"List description\" --column-values=\"Delete|Column 1|Column 2\"\n     --show-header --list-values-from-file=\"addValue=false@/path/to/file\" --checklist\nTo monitor file changes, add \"monitor=true@\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=true@/path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=Separator@\". Example\nwith \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"sep=,@/path/to/file\"\nExample with file monitored and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n--show-header --list-values-from-file=\"monitor=true@sep=,@/path/to/file\"")) <<
-        Help("--checklist", tr("Use check boxes for first column.\nMultiple rows will be selectable.")) <<
-        Help("--radiolist", tr("Use radio buttons for first column.\nOnly one row will be selectable.")) <<
-        Help("--editable", "GUID ONLY! " + tr("Allow changes to text")) <<
-        Help("--read-only-column=Column number", "GUID ONLY! " + tr("If editable, set a specific column as read only")) <<
-        Help("--multiple", "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
-        Help("--no-selection", "GUID ONLY! " + tr("Prevent row selection (useful to display information in a structured way\nwithout user interaction)")) <<
-        Help("--print-column=NUMBER|all", tr("Print a specific column.\nDefault is 1. The value \"all\" can be used to print all columns.")) <<
-        Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
-        Help("--list-row-separator=SEPARATOR", "GUID ONLY! " + tr("Set output separator character for list rows (default is ~)")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-        Help("--show-header", tr("Show the columns header")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-list=\"[addNewRowButton=true@][hideLabel=true@]List label\"",
+             tr(R"HEREDOC(Add a list in forms dialog.
+To include a button allowing to add new rows when clicked, add the variable
+"addNewRowButton=true". Example:
+    guid --forms \
+         --add-list="addNewRowButton=true@My list" \
+            --column-values="C1|C2" --show-header \
+            --list-values="v1|v2|v3|v4" --editable
+To hide the list label, add the variable "hideLabel=true". Example:
+    guid --forms \
+         --add-list="addNewRowButton=true@hideLabel=true@Label hidden" \
+             --column-values="C1|C2" --show-header \
+             --list-values="v1|v2|v3|v4" --editable)HEREDOC")) <<
+        Help("--column-values=Column names separated by |",
+             tr("List of column names")) <<
+        Help("--list-values=List values separated by |",
+             tr("List values")) <<
+        Help("--list-values-from-file=\"[addValue=Value@][monitor=true@][sep=Separator@]Path to file\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as list values. Example:
+    guid --forms \
+         --add-list="List label" \
+             --column-values="Column 1|Column 2" --show-header \
+             --list-values-from-file="/path/to/file"
+To add automatically a value at the beginning of each row (for example the
+value "false" in combination with "--checklist"), add the variable "addValue=Value".
+For example, to add the word "false", so checkboxes won't be checked by default:
+    guid --forms \
+         --add-list="List label" --checklist \
+             --column-values="Delete|Column 1|Column 2" --show-header \
+             --list-values-from-file="addValue=false@/path/to/file"
+To monitor file changes, add the variable "monitor=true". Example:
+    guid --forms \
+         --add-list="List label" \
+             --column-values="Column 1|Column 2" --show-header \
+             --list-values-from-file="monitor=true@/path/to/file"
+By default, the character "|" is used as separator between values. To use another
+separator, specify it with the variable "sep=Separator". Example with "," as
+separator:
+    guid --forms \
+         --add-list="List label" \
+             --column-values="Column 1|Column 2" --show-header \
+             --list-values-from-file="sep=,@/path/to/file"
+Example with file changes monitored and with a custom separator:
+    guid --forms \
+         --add-list="List label" \
+             --column-values="Column 1|Column 2" --show-header \
+             --list-values-from-file="monitor=true@sep=,@/path/to/file")HEREDOC")) <<
+        Help("--checklist",
+             tr("Add checkboxes in the first column (multiple rows will be selectable)")) <<
+        Help("--radiolist",
+             tr("Add radio buttons in the first column (only one row will be selectable)")) <<
+        Help("--editable",
+             "GUID ONLY! " + tr("Allow the user to edit list values")) <<
+        Help("--read-only-column=Column number",
+             "GUID ONLY! " + tr("If editable, set a specific column as read only")) <<
+        Help("--multiple",
+             "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+        Help("--no-selection",
+             "GUID ONLY! " + tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
+without user interaction))HEREDOC")) <<
+        Help("--print-column=NUMBER|all",
+             tr(R"HEREDOC(Print a specific column to the console.
+Default is "1" (print only the first column). The value "all" can be used to print
+all columns.)HEREDOC")) <<
+        Help("--print-values=selected|all",
+             "GUID ONLY! " + tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
+with "--editable" to get updated values).)HEREDOC")) <<
+        Help("--list-row-separator=SEPARATOR",
+             "GUID ONLY! " + tr("Set output separator character for list rows (default is \"~\")")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--show-header",
+             tr("Show the columns header")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-menu
-        Help("--add-menu=\"addLabel=Menu label@Menu settings\"", "GUID ONLY! " + tr(addMenuHelpDescription)) <<
+        Help("--add-menu=\"addLabel=Menu label@Menu settings\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add a menu in forms dialog.
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.
+First level menu items must be separated with the character "|". Example:
+    Main Item A|Main Item B|Main Item C
+Second level menu items must be separated with the character "#". Example:
+    Main Item A#Subitem A1#Subitem A2|Main Item B|Main Item C#Subitem C1
+A click on a first level menu item will initiate an action if it doesn't contain
+subitems. However, a click on a first level menu item containing subitems will only
+display the second level menu.
+A click on a second level menu item will always initiate an action since they can't
+contain subitems.
+Each menu item without subitems can have up to 5 settings separated with the
+character ";", as follows:
+    1              2         3              4                    5
+    Menu item name;Exit code;Command to run;Print command output;Icon
+The menu item name is mandatory. Other settings have these default values:
+    1              2  3  4 5
+    Menu item name;-1;"";0;""
+Allowed values are as follows:
+  1) Menu item name: Any string not containing the character ";".
+  2) Exit code: Integer. If the value is < 0, the dialog will not be closed after
+     a click on the menu item. If the value is >=0 and <= 255, the dialog will be
+     closed with the exit code sent by the command "exit()".
+  3) Command to run: The executable name or the executable path and its arguments.
+     Arguments must be separated with "<>". For example, if the command to run is
+     the following:
+         explorer.exe /separate, "C:\\Users\\My Name\\Desktop"
+     it must be set like this:
+         explorer.exe<>/separate,<>"C:\\Users\\My Name\\Desktop"
+     It's also possible to specify one of these internal commands:
+         guidInfo<>Information to display
+         guidWarning<>Warning to display
+         guidError<>Error to display
+  4) Print command output: true|false. If the value is "true", the command output
+     will be printed to the console.
+  5) Icon: For now, the only valid value is "false". If the value is "false", the
+     default icon won't be added to the left of the menu item.
+     TODO: Set arbitrary icon.
+No matter if the dialog is closed or not after a click on the menu item, all
+settings (menu name, exit code, etc.) are printed to the console after a click,
+so it can be parsed by an external script. Here's an example:
+    guid --forms \
+         --add-menu="File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10"
+To add separators between first level menu items, add the variable "sep=SEP".
+Example:
+    guid --forms \
+         --add-menu="sep=|@File#Profile;-1;explorer.exe<>%UserProfile%;0|Exit;10"
+If a menu is the first widget added to the form and the form doesn't have a main
+label added with --text="Form label (form description)", special settings are
+applied to the menu to have it look like a main application menu. If we want a menu
+on top of the dialog but still have a form label (form description), we can't add
+the form label with --text="Form label", but with --add-text="Form label" after the
+menu. Example:
+    guid --forms \
+         --add-menu="Item A;10|Item B;20" \
+         --add-text="Form label" --bold)HEREDOC")) <<
         Help("", "") <<
         
         // --add-password
-        Help("--add-password=\"[hideLabel=true@]Password label\"", tr("Add a new Password Entry in forms dialog")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-password=\"[hideLabel=true@]Password label\"",
+             tr("Add a password nntry in forms dialog")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-scale
-        Help("--add-scale=\"[hideLabel=true@]Scale label\"", tr("Add a new Scale/Slider in forms dialog")) <<
-        Help("--value=VALUE", tr("Set initial value")) <<
-        Help("--min-value=VALUE", tr("Set minimum value")) <<
-        Help("--max-value=VALUE", tr("Set maximum value")) <<
-        Help("--step=VALUE", tr("Set step size")) <<
-        Help("--hide-value", tr("Hide value")) <<
-        Help("--print-partial", tr("Print partial values")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-scale=\"[hideLabel=true@]Scale label\"",
+             tr("Add a scale (slider) in forms dialog")) <<
+        Help("--value=VALUE",
+             tr("Set initial value")) <<
+        Help("--min-value=VALUE",
+             tr("Set minimum value")) <<
+        Help("--max-value=VALUE",
+             tr("Set maximum value")) <<
+        Help("--step=VALUE",
+             tr("Set step size")) <<
+        Help("--hide-value",
+             tr("Hide value")) <<
+        Help("--print-partial",
+             tr("Print the value to the console each time it's changed by the user")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-spin-box
-        Help("--add-spin-box=\"[hideLabel=true@]Spin box label\"", "GUID ONLY! " + tr("Add a new spin box in forms dialog")) <<
-        Help("--value=VALUE", tr("Set initial value")) <<
-        Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-        Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-        Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-        Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-spin-box=\"[hideLabel=true@]Spin box label\"",
+             "GUID ONLY! " + tr("Add a spin box in forms dialog")) <<
+        Help("--value=VALUE",
+             tr("Set initial value")) <<
+        Help("--min-value=VALUE",
+             "GUID ONLY! " + tr("Set minimum value")) <<
+        Help("--max-value=VALUE",
+             "GUID ONLY! " + tr("Set maximum value")) <<
+        Help("--prefix=PREFIX",
+             "GUID ONLY! " + tr("Set prefix")) <<
+        Help("--suffix=SUFFIX",
+             "GUID ONLY! " + tr("Set suffix")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-double-spin-box
-        Help("--add-double-spin-box=\"[hideLabel=true@]Double spin box label\"", "GUID ONLY! " + tr("Add a new double spin box in forms dialog")) <<
-        Help("--value=VALUE", tr("Set initial value")) <<
-        Help("--decimals=VALUE", "GUID ONLY! " + tr("Set the number of decimals")) <<
-        Help("--min-value=VALUE", "GUID ONLY! " + tr("Set minimum value")) <<
-        Help("--max-value=VALUE", "GUID ONLY! " + tr("Set maximum value")) <<
-        Help("--prefix=PREFIX", "GUID ONLY! " + tr("Set prefix")) <<
-        Help("--suffix=SUFFIX", "GUID ONLY! " + tr("Set suffix")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output.\nSpaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-double-spin-box=\"[hideLabel=true@]Double spin box label\"",
+             "GUID ONLY! " + tr("Add a double spin box in forms dialog")) <<
+        Help("--value=VALUE",
+             tr("Set initial value")) <<
+        Help("--decimals=VALUE",
+             "GUID ONLY! " + tr("Set the number of decimals")) <<
+        Help("--min-value=VALUE",
+             "GUID ONLY! " + tr("Set minimum value")) <<
+        Help("--max-value=VALUE",
+             "GUID ONLY! " + tr("Set maximum value")) <<
+        Help("--prefix=PREFIX",
+             "GUID ONLY! " + tr("Set prefix")) <<
+        Help("--suffix=SUFFIX",
+             "GUID ONLY! " + tr("Set suffix")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-text
-        Help("--add-text=\"[addLabel=Text label@][defVarVal1=Value@][image=Path to image@][monitorVarFile1=Path to file@]Text\"", "GUID ONLY! " + tr("Add text without field.\nTo add an image to the left, set the path to the image with the syntax \"image=Path@\", then the text that will be\ndisplayed to the right of the image. Example:\nguid --forms --add-text=\"image=/path/to/image.png@Text displayed\"\nDefault resources shipped with guid can be used. To do so, start the image path\nwith \":/\" followed by the name of the resource. Example to use an icon\ndisplaying the number 5:\nguid --forms --add-text=\"image=:/5@Text displayed\"\nA variable named \"GUID_VAR_1\" can be used in the text and it will be replaced by the file content\nspecified with \"monitorVarFile1=Path to file@\". Up to 9 variables can be used (from GUID_VAR_1 to GUID_VAR_9).\nIf the file content is empty, a default value can be set with \"defVarVal1=Value@\", \"defVarVal2=Value@\", etc. Example:\nguid --forms --add-text=\"defVarVal1=?@defVarVal2=Lorem ipsum@\n     monitorVarFile1=/path/to/file1.txt@monitorVarFile2=/path/to/file2.txt@Text with\n     GUID_VAR_1 and GUID_VAR_2 replaced.\"\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
-        Help("--tooltip=Tooltip text", "GUID ONLY! " + tr("Set tooltip displayed when the cursor is over")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-        Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help(R"HEREDOC(--add-text="[addLabel=Text label@][defVarVal1=Value@][image=Path to image@]
+            [monitorVarFile1=Path to file@]Text")HEREDOC",
+             "GUID ONLY! " + tr(R"HEREDOC(Add text without field.
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.
+To add an image to the left, add the variable "image=Path to the image". Example:
+    guid --forms \
+         --add-text="image=/path/to/image.png@Text displayed"
+Default resources shipped with guid can be used. To do so, start the image path
+with ":/" followed by the resource name. For example, to use a "warning" icon:
+    guid --forms \
+         --add-text="image=:/warning@Text displayed"
+A variable/marker named "GUID_VAR_1" can be added in the text and it will be replaced
+by the file content specified with the variable "monitorVarFile1=Path to file".
+Up to 9 variables can be used (from GUID_VAR_1 to GUID_VAR_9). If the file content
+is empty, a default value can be specified with the variable "defVarVal1=Value"
+(and "defVarVal2=Value", "defVarVal3=Value", etc.). Example:
+    guid --forms \
+         --add-text="defVarVal1=?monitorVarFile1=/to/file.txt@Lorem GUID_VAR_1 amet.")HEREDOC")) <<
+        Help("--tooltip=Tooltip text",
+             "GUID ONLY! " + tr("Set tooltip displayed when the cursor is over")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--bold",
+             "GUID ONLY! " + tr("Set text in bold")) <<
+        Help("--italics",
+             "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline",
+             "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps",
+             "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY",
+             "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font-size=SIZE",
+             "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set text color. Example:
+    guid --forms \
+         --add-text="Lorem ipsum" --foreground-color="#0000FF")HEREDOC")) <<
+        Help("--background-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set text background color. Example:
+    guid --forms \
+         --add-text="Lorem ipsum" --background-color="#0000FF")HEREDOC")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
         Help("", "") <<
         
         // --add-hrule
-        Help("--add-hrule=\"[addLabel=Horizontal rule label@]Horizontal rule color", "GUID ONLY! " + tr("Add horizontal rule and set the color specified. Example:\nguid --forms --text=\"Text\" --add-hrule=\"#B1B1B1\" --add-entry=\"Text field\"\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--add-hrule=\"[addLabel=Rule label@]Rule color",
+             "GUID ONLY! " + tr(R"HEREDOC(Add a horizontal rule with the color specified. Example:
+    guid --forms \
+         --add-text="Lorem ipsum" \
+         --add-hrule="#B1B1B1" \
+         --add-entry="Text field"
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.)HEREDOC")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
         Help("", "") <<
         
         // --add-vspacer
-        Help("--add-vspacer=\"[addLabel=Vertical spacer label@]Height\"", "GUID ONLY! " + tr("Add vertical spacer.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
+        Help("--add-vspacer=\"[addLabel=Vertical spacer label@]Height\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add a vertical spacer.
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-text-info
-        Help("--add-text-info=\"[hideLabel=true@]Text info label\"", "GUID ONLY! " + tr("Add text information\nNote that this widget is a user input field only when the argument \"--editable\"\nis used.")) <<
-        Help("--filename=\"[monitor=true@]Filename\"", tr("Get content from the specified file")) <<
-        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-        Help("--editable", tr("Allow changes to text")) <<
-        Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will\ntry to guess the format")) <<
-        Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
-        Help("--newline-separator=SEPARATOR", "GUID ONLY! " + tr("Replace newlines with SEPARATOR in the text output, so everything's\noutput on one line")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
-        Help("--bold", "GUID ONLY! " + tr("Set text in bold")) <<
-        Help("--italics", "GUID ONLY! " + tr("Set text in italics")) <<
-        Help("--underline", "GUID ONLY! " + tr("Set text format to underline")) <<
-        Help("--small-caps", "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
-        Help("--font-family=FAMILY", "GUID ONLY! " + tr("Set font family")) <<
-        Help("--font=TEXT", tr("Set the text font")) <<
-        Help("--font-size=SIZE", "GUID ONLY! " + tr("Set font size")) <<
-        Help("--foreground-color=COLOR", "GUID ONLY! " + tr("Set text color. Example:\nguid --forms --text=\"Form description\" --color=\"#0000FF\"")) <<
-        Help("--background-color=COLOR", "GUID ONLY! " + tr("Set text background color. Example:\nguid --forms --text=\"Form description\" --background-color=\"#0000FF\"")) <<
-        Help("--var=NAME", "GUID ONLY! " + tr("Variable name added before the field output (when the field is\neditable). Spaces are removed and the character \"=\" is added after the\nvariable name. Example:\nguid --forms --add-calendar=\"Choose a date\" --var=\"cal\"\n     --add-entry=\"Type your pseudo\" --var=\"pseudo\"\nHere's what the output looks like: cal=2020-12-12|pseudo=Abcde\nWithout \"--var\", the output would be: 2020-12-12|Abcde")) <<
+        Help("--add-text-info=\"[hideLabel=true@]Text info label\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add text information.
+Note that this widget is a user input field only when the argument "--editable"
+is used. Otherwise, it's not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.)HEREDOC")) <<
+        Help("--filename=\"[monitor=true@]Path to file\"",
+             tr("Get content from the specified file")) <<
+        Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
+        Help("--curl-path=\"Path to curl\"",
+             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
+        Help("--editable",
+             tr("Allow the user to edit text")) <<
+        Help("--plain",
+             "GUID ONLY! " + tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
+to guess automatically the format)HEREDOC")) <<
+        Help("--html",
+             tr("Force HTML format, otherwise guid will try to guess automatically the format")) <<
+        Help("--newline-separator=SEPARATOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Replace newlines with SEPARATOR in the text printed to the console (so the
+output is only on one line))HEREDOC")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--bold",
+             "GUID ONLY! " + tr("Set text in bold")) <<
+        Help("--italics",
+             "GUID ONLY! " + tr("Set text in italics")) <<
+        Help("--underline",
+             "GUID ONLY! " + tr("Set text format to underline")) <<
+        Help("--small-caps",
+             "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+        Help("--font-family=FAMILY",
+             "GUID ONLY! " + tr("Set font family")) <<
+        Help("--font=TEXT",
+             tr("Set the text font")) <<
+        Help("--font-size=SIZE",
+             "GUID ONLY! " + tr("Set font size")) <<
+        Help("--foreground-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set text color. Example:
+guid --forms \
+     --add-text-info="Text info label" --foreground-color="#0000FF" \
+         --filename="/path/to/file.txt")HEREDOC")) <<
+        Help("--background-color=COLOR",
+             "GUID ONLY! " + tr(R"HEREDOC(Set text background color. Example:
+guid --forms \
+     --add-text-info="Text info label" --background-color="#0000FF" \
+         --filaneme="/path/to/file.txt")HEREDOC")) <<
+        Help("--var=NAME",
+             "GUID ONLY! " + tr("Only when the field is editable.") + "\n" + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-text-browser
-        Help("--add-text-browser=\"[hideLabel=true@]Text browser label\"", "GUID ONLY! " + tr("Add read-only HTML information with click on links enabled.\nNote that this widget is not a user input field, so it doesn't have any impact\non the field count when parsing output printed on the console.")) <<
-        Help("--filename=FILENAME", tr("Get content from the specified file")) <<
-        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--add-text-browser=\"[hideLabel=true@]Text browser label\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add read-only HTML information with click on links enabled.
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.)HEREDOC")) <<
+        Help("--filename=/path/to/file",
+             tr("Get content from the specified file")) <<
+        Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
+        Help("--curl-path=\"Path to curl\"",
+             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
         Help("", "") <<
         
         // misc.
-        Help("--win-min-button", tr("Add a \"Minimize\" button to the dialog window")) <<
-        Help("--win-max-button", tr("Add a \"Maximize\" button to the dialog window")) <<
-        Help("--action-after-ok-click=[keepOpen=true@][valuesToFooter=true@][commandToFooter=true@][footerName=Footer name@][command=command name[<>command argument][<>another command argument]", tr("Action after a click on the OK button.\nNo matter options specified, values are always printed to the console.\nDefault is to exit.\nSet \"keepOpen=true\" to keep the forms dialog open (forms dialog fields will be cleared).\nSet \"valuesToFooter=true\" to print values to the dialog footer.\nSet \"commandToFooter=true\" to add command output to the dialog footer.\nSet \"command\" to run a command with values as input (values will also be printed to the console and forms dialog fields will be cleared).\nArguments must be separated with \"<>\". Actual values will be put where the marker \"GUID_VALUES\" is set. If there's no marker, values will be added at the end of the command. Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"command=explorer.exe<>/separate,<>GUID_VALUES\"\nTo convert values to base64, use the marker \"GUID_VALUES_BASE64\". Example:\nguid --forms --add-entry=\"Folder\" --action-after-ok-click=\"keepOpen=true@commandToFooter=true@footerName=Results@command=myCommand<>myCommandArg1<>myCommandArg2<>GUID_VALUES_BASE64<>myCommandArg3\"\nTo convert values to base64 in a format suitable for URL, use the marker \"GUID_VALUES_BASE64_URL\".")) <<
-        Help("--close-to-systray", tr("Hide the dialog when clicking on the window \"Close\" button instead of exiting.\nThe system tray must be enabled with \"--systray-icon=ICON\".")) <<
-        Help("--systray-icon=ICON", tr("Add the icon specified in the system tray.\nClicking on the \"Close\" window button will minimize the dialog in the systray,\nand a menu will be displayed with a right-click on the systray icon.")) <<
-        Help("--no-cancel", tr("Hide Cancel button")) <<
-        Help("--forms-date-format=PATTERN", tr("Set the format for the returned date")) <<
-        Help("--forms-align=left|center|right", "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
-        Help("--separator=SEPARATOR", tr("Set output separator character")));
+        Help("--win-min-button",
+             tr("Add a \"Minimize\" button to the dialog window")) <<
+        Help("--win-max-button",
+             tr("Add a \"Maximize\" button to the dialog window")) <<
+        Help(R"HEREDOC(--action-after-ok-click="[keepOpen=true@][valuesToFooter=true@]
+                         [commandToFooter=true@][footerName=Footer name@]
+                         [command=command name[<>command argument][<>another arg]")HEREDOC",
+             tr(R"HEREDOC(Action after a click on the OK button.
+No matter the options specified, values are always printed to the console. Default is
+to exit. Variables that can be used are the following:
+  - Set "keepOpen=true" to keep the forms dialog open (fields will be cleared).
+  - Set "valuesToFooter=true" to add values to the dialog footer.
+  - Set "commandToFooter=true" to add command output to the dialog footer.
+  - Set "command" to run a command with values as input (values will also be printed
+    to the console and fields will be cleared). Arguments must be separated with
+    "<>". Actual values will be put where the variable/marker "GUID_VALUES" is added.
+    If there's no variable/marker, values will be added at the end of the command.
+    Example:
+        guid --forms \
+             --add-entry="Folder" \
+             --action-after-ok-click="command=explorer.exe<>/separate,<>GUID_VALUES"
+    To convert values to base64, use the variable/marker "GUID_VALUES_BASE64".
+    Example:
+        action="keepOpen=true"
+        action+="@commandToFooter=true"
+        action+="@footerName=Results"
+        action+="@command=myCommand"
+        action+="<>myCommandArg1<>myCommandArg2<>GUID_VALUES_BASE64<>myCommandArg3"
+        guid --forms \
+             --add-entry="Folder" \
+             --action-after-ok-click="$action"
+    To convert values to base64 in a format suitable for URL, use the variable/marker
+    "GUID_VALUES_BASE64_URL".)HEREDOC")) <<
+        Help("--close-to-systray",
+             tr(R"HEREDOC(Hide the dialog (instead of exiting) when clicking the window "Close" button.
+The system tray must be enabled with --systray-icon="Path to icon".)HEREDOC")) <<
+        Help("--systray-icon=\"Path to icon\"",
+             tr(R"HEREDOC(Add the icon specified in the system tray.
+Clicking the "Close" window button will minimize the dialog in the systray, and a
+menu will be displayed with a right-click on the systray icon.)HEREDOC")) <<
+        Help("--no-cancel",
+             tr("Hide Cancel button")) <<
+        Help("--forms-date-format=PATTERN",
+             tr("Set the format for the returned date")) <<
+        Help("--forms-align=left|center|right",
+             "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
+        Help("--separator=SEPARATOR",
+             tr("Set output separator character")));
         
         /******************************
          * info
          ******************************/
         
         helpDict["info"] = CategoryHelp(tr("Info options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-        Help("--no-markup", tr("Do not enable html markup")) <<
-        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--ellipsize",
+             tr("Do wrap text (zenity has a rather special problem here)")) <<
+        Help("--no-markup",
+             tr("Do not enable HTML markup")) <<
+        Help("--no-wrap",
+             tr("Do not enable text wrapping")) <<
         Help("", "") <<
         
-        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("--icon-name=ICON_NAME",
+             tr("Set the dialog icon")) <<
         Help("", "") <<
         
-        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        Help("--selectable-labels",
+             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
         
         /******************************
          * list
          ******************************/
         
         helpDict["list"] = CategoryHelp(tr("List options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set text alignment")) <<
         Help("", "") <<
         
-        Help("--checklist", tr("Use check boxes for first column.\nMultiple rows will be selectable.")) <<
-        Help("--imagelist", tr("Use an image for first column")) <<
-        Help("--radiolist", tr("Use radio buttons for first column.\nOnly one row will be selectable.")) <<
+        Help("--checklist",
+             tr("Add checkboxes in the first column (multiple rows will be selectable)")) <<
+        Help("--imagelist",
+             tr("Use an image in the first column")) <<
+        Help("--radiolist",
+             tr("Add radio buttons in the first column (only one row will be selectable)")) <<
         Help("", "") <<
         
-        Help("--column=COLUMN", tr("Set the column header")) <<
-        Help("--hide-column=NUMBER", tr("Hide a specific column")) <<
-        Help("--print-column=NUMBER|all", tr("Print a specific column.\nDefault is 1. The value \"all\" can be used to print all columns.")) <<
-        Help("--hide-header", tr("Hides the column headers")) <<
+        Help("--column=\"Column name\"",
+             tr("Add a column")) <<
+        Help("--hide-column=NUMBER",
+             tr("Hide a specific column")) <<
+        Help("--print-column=NUMBER|all",
+             tr(R"HEREDOC(Print a specific column to the console.
+Default is "1" (print only the first column). The value "all" can be used to print
+all columns.)HEREDOC")) <<
+        Help("--hide-header",
+             tr("Hide the column headers")) <<
         Help("", "") <<
         
-        Help("--list-values-from-file=[monitor=1//][sep=SEP//]FILENAME", "GUID ONLY! " + tr("Open file and use content as list values. Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"/path/to/file\"\nTo monitor file changes, add \"monitor=1\" followed by \"//\". Example:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1///path/to/file\"\nBy default, the symbol \"|\" is used as separator between values.\nTo use another separator, specify it with \"sep=SEP\" followed by \"//\".\nExample with \",\" as separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"sep=,///path/to/file\"\nExample with file monitord and custom separator:\nguid --forms --add-list=\"List description\" --column-values=\"Column 1|Column 2\"\n     --show-header --list-values-from-file=\"monitor=1//sep=,///path/to/file\"")) <<
+        Help("--list-values-from-file=\"[monitor=true@][sep=Separator@]Path to file\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as list values.
+To monitor file changes, add the variable "monitor=true". By default, the character
+"|" is used as separator between values. To use another separator, specify it with
+the variable "sep=Separator". Example:
+    guid --list \
+         --text="List label" \
+         --column="Column 1" --column="Column 2" \
+         --list-values-from-file="monitor=true@sep=,@/path/to/file")HEREDOC")) <<
         Help("", "") <<
         
-        Help("--editable", tr("Allow changes to text")) <<
-        Help("--multiple", tr("Allow multiple rows to be selected")) <<
-        Help("--no-selection", "GUID ONLY! " + tr("Prevent row selection (useful to display information in a structured way\nwithout user interaction)")) <<
-        Help("--print-values=selected|all", "GUID ONLY! " + tr("Print selected values (default)\nor all values (useful in combination with --editable to get updated values).")) <<
+        Help("--editable",
+             "GUID ONLY! " + tr("Allow the user to edit list values")) <<
+        Help("--multiple",
+             tr("Allow multiple rows to be selected")) <<
+        Help("--no-selection",
+             "GUID ONLY! " + tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
+without user interaction))HEREDOC")) <<
+        Help("--print-values=selected|all",
+             "GUID ONLY! " + tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
+with "--editable" to get updated values).)HEREDOC")) <<
         Help("", "") <<
         
-        Help("--mid-search", tr("Change list default search function searching for text in the middle,\nnot on the beginning")) <<
-        Help("--field-height=HEIGHT", "GUID ONLY! " + tr("Set the field height")) <<
-        Help("--separator=SEPARATOR", tr("Set output separator character")));
+        Help("--mid-search",
+             tr(R"HEREDOC(Change list default search function searching for text in the middle, not at the
+beginning)HEREDOC")) <<
+        Help("--field-height=HEIGHT",
+             "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--separator=SEPARATOR",
+             tr("Set output separator character")));
         
         /******************************
          * notification
          ******************************/
         
         helpDict["notification"] = CategoryHelp(tr("Notification icon options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
         Help("", "") <<
         
-        Help("--hint=TEXT", tr("Set the notification hints")) <<
+        Help("--hint=TEXT",
+             tr("Set the notification hints")) <<
         Help("", "") <<
         
-        Help("--listen", tr("Listen for commands on stdin")) <<
-        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        Help("--listen",
+             tr("Listen for commands on stdin")) <<
+        Help("--selectable-labels",
+             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
         
         /******************************
          * password
          ******************************/
         
         helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
-        Help("--prompt=TEXT", "GUID ONLY! " + tr("The prompt for the user")) <<
-        Help("--username", tr("Display the username option")) <<
-        Help("--field-width=WIDTH", "GUID ONLY! " + tr("Set the field width")));
+        Help("--prompt=TEXT",
+             "GUID ONLY! " + tr("The prompt for the user (field label)")) <<
+        Help("--username",
+             tr("Add a username field")) <<
+        Help("--field-width=WIDTH",
+             "GUID ONLY! " + tr("Set the field width")));
         
         /******************************
          * progress
          ******************************/
         
         helpDict["progress"] = CategoryHelp(tr("Progress options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
         Help("", "") <<
         
-        Help("--percentage=PERCENTAGE", tr("Set initial percentage")) <<
-        Help("--pulsate", tr("Pulsate progress bar")) <<
+        Help("--percentage=PERCENTAGE",
+             tr("Set initial percentage")) <<
+        Help("--pulsate",
+             tr("Pulsate progress bar")) <<
         Help("", "") <<
         
-        Help("--auto-close", tr("Dismiss the dialog when 100% has been reached")) <<
-        Help("--auto-kill", tr("Kill parent process if Cancel button is pressed")) <<
-        Help("--no-cancel", tr("Hide Cancel button")));
+        Help("--auto-close",
+             tr(R"HEREDOC(Dismiss the dialog when 100% has been reached)HEREDOC")) <<
+        Help("--auto-kill",
+             tr("Kill parent process if Cancel button is pressed")) <<
+        Help("--no-cancel",
+             tr("Hide Cancel button")));
         
         /******************************
          * question
          ******************************/
         
         helpDict["question"] = CategoryHelp(tr("Question options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-        Help("--no-markup", tr("Do not enable html markup")) <<
-        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--ellipsize",
+             tr("Do wrap text (zenity has a rather special problem here)")) <<
+        Help("--no-markup",
+             tr("Do not enable HTML markup")) <<
+        Help("--no-wrap",
+             tr("Do not enable text wrapping")) <<
         Help("", "") <<
         
-        Help("--default-cancel", tr("Give cancel button focus by default")) <<
+        Help("--default-cancel",
+             tr("Give Cancel button focus by default")) <<
         Help("", "") <<
         
-        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("--icon-name=ICON_NAME",
+             tr("Set the dialog icon")) <<
         Help("", "") <<
         
-        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        Help("--selectable-labels",
+             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
         
         /******************************
          * scale
          ******************************/
         
-        helpDict["scale"] = CategoryHelp(tr("Scale options"), HelpList() <<
-        Help("--text=TEXT", tr("Set the dialog text")) <<
-        Help("--align=left|center|right", "GUID ONLY! " + tr("Set text alignment")) <<
+        helpDict["scale"] = CategoryHelp(tr("Scale (slider) options"), HelpList() <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set text alignment")) <<
         Help("", "") <<
         
-        Help("--value=VALUE", tr("Set initial value")) <<
-        Help("--min-value=VALUE", tr("Set minimum value")) <<
-        Help("--max-value=VALUE", tr("Set maximum value")) <<
-        Help("--step=VALUE", tr("Set step size")) <<
+        Help("--value=VALUE",
+             tr("Set initial value")) <<
+        Help("--min-value=VALUE",
+             tr("Set minimum value")) <<
+        Help("--max-value=VALUE",
+             tr("Set maximum value")) <<
+        Help("--step=VALUE",
+             tr("Set step size")) <<
         Help("", "") <<
         
-        Help("--hide-value", tr("Hide value")) <<
-        Help("--print-partial", tr("Print partial values")));
+        Help("--hide-value",
+             tr("Hide value")) <<
+        Help("--print-partial",
+             tr("Print the value to the console each time it's changed by the user")));
         
         /******************************
          * text-info
          ******************************/
         
         helpDict["text-info"] = CategoryHelp(tr("Text information options"), HelpList() <<
-        Help("--filename=FILENAME", tr("Open file")) <<
+        Help("--filename=Path to file",
+             tr("Get content from the specified file")) <<
         Help("", "") <<
         
-        Help("--url=URL", "REQUIRES CURL BINARY! " + tr("Set an URL instead of a file.")) <<
-        Help("--curl-path=PATH", "GUID ONLY! " + tr("Set the path to the curl binary. Default is \"curl\".")) <<
+        Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
+        Help("--curl-path=\"Path to curl\"",
+             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
         Help("", "") <<
         
-        Help("--checkbox=TEXT", tr("Enable an I read and agree checkbox")) <<
+        Help("--checkbox=TEXT",
+             tr("Enable an I read and agree checkbox")) <<
         Help("", "") <<
         
-        Help("--editable", tr("Allow changes to text")) <<
-        Help("--font=TEXT", tr("Set the text font")) <<
-        Help("--plain", "GUID ONLY! " + tr("Force plain text (zenity default limitation), otherwise guid will\ntry to guess the format")) <<
-        Help("--html", tr("Force HTML format, otherwise guid will try to guess the format")) <<
+        Help("--editable",
+             tr("Allow the user to edit text")) <<
+        Help("--font=TEXT",
+             tr("Set the text font")) <<
+        Help("--plain",
+             "GUID ONLY! " + tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
+to guess automatically the format)HEREDOC")) <<
+        Help("--html",
+             tr("Force HTML format, otherwise guid will try to guess automatically the format")) <<
         Help("", "") <<
         
-        Help("--auto-scroll", tr("Auto scroll the text to the end. Only when text is captured from stdin")) <<
-        Help("--no-interaction", tr("Do not enable user interaction with the WebView.\nOnly works if you use --html option.")));
+        Help("--auto-scroll",
+             tr("Auto scroll the text to the end (only when text is captured from stdin)")) <<
+        Help("--no-interaction",
+             tr("Do not enable user interaction with the WebView (only when \"--html\" is used)")));
         
         /******************************
          * warning
          ******************************/
         
         helpDict["warning"] = CategoryHelp(tr("Warning options"), HelpList() <<
-        Help("--text=TEXT", tr("Set\nthe dialog text")) <<
-        Help("--ellipsize", tr("Do wrap text, zenity has a rather special problem here")) <<
-        Help("--no-markup", tr("Do not enable html markup")) <<
-        Help("--no-wrap", tr("Do not enable text wrapping")) <<
+        Help("--text=TEXT",
+             tr("Set the dialog text")) <<
+        Help("--ellipsize",
+             tr("Do wrap text (zenity has a rather special problem here)")) <<
+        Help("--no-markup",
+             tr("Do not enable HTML markup")) <<
+        Help("--no-wrap",
+             tr("Do not enable text wrapping")) <<
         Help("", "") <<
         
-        Help("--icon-name=ICON-NAME", tr("Set the dialog icon")) <<
+        Help("--icon-name=ICON_NAME",
+             tr("Set the dialog icon")) <<
         Help("", "") <<
         
-        Help("--selectable-labels", "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+        Help("--selectable-labels",
+             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
     }
     
-    QStringList helpGeneralCats = {"help", "misc", "qt", "general", "application"}; 
+    QStringList helpGeneralCats = {"help", "misc", "general", "application"}; 
     QStringList helpWidgetCats  = {"calendar", "color-selection", "entry", "error", "file-selection",
                                    "font-selection", "forms", "info", "list", "notification", "password",
                                    "progress", "scale", "text-info", "warning"};
@@ -1775,8 +2280,8 @@ void Guid::printHelp(const QString &category)
             if (helpArgument.isEmpty() && helpDescription.isEmpty()) {
                 printf("%s\n", qPrintable(secondary_separator));
             } else {
-                helpDescription = "      " + helpDescription;
-                helpDescription.replace("\n", "\n      ");
+                helpDescription = "    " + helpDescription;
+                helpDescription.replace("\n", "\n    ");
                 printf("%s\n%s\n", qPrintable(help.first), qPrintable(helpDescription));
             }
         }
@@ -2962,7 +3467,7 @@ char Guid::showFontSelection(const QStringList &args)
     QOUT_ERR
     QFontDialog *dlg = new QFontDialog;
     QString pattern = "%1-%2:%3:%4";
-    QString sample = "The quick brown fox jumps over the lazy dog";
+    QString sample = "The quick brown fox jumps over the lazy dog.";
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i) == "--type") {
             QStringList types = NEXT_ARG.split(',');
@@ -3526,7 +4031,7 @@ char Guid::showForms(const QStringList &args)
                         
                         QAction *menuAction = new QAction(menuItemName, this);
                         
-                        if (menuItemIcon != "false")
+                        if (menuItemIcon != "false" || menuItemIcon != "0")
                             menuAction->setIcon(menuActionIcon);
                         
                         menuAction->setProperty("guid_menu_item_name", menuItemName);
