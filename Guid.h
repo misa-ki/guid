@@ -149,6 +149,7 @@ private:
     bool             m_helpMission;
     QString          m_icon;
     bool             m_modal;
+    bool             m_noTaskbar;
     QString          m_notificationHints;
     uint             m_notificationId;
     QString          m_ok;

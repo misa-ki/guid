@@ -140,12 +140,14 @@
             sz.setHeight(m_size.height()); \
         dlg->resize(sz); \
     } \
-    if (m_alwaysOnTop) { \
+    if (m_alwaysOnTop || m_noTaskbar) { \
         Qt::WindowFlags allDialogFlags = dlg->windowFlags(); \
-        allDialogFlags |= Qt::WindowStaysOnTopHint; \
+        if (m_alwaysOnTop) allDialogFlags |= Qt::WindowStaysOnTopHint; \
+        if (m_noTaskbar) allDialogFlags |= Qt::Tool; \
         dlg->setWindowFlags(allDialogFlags); \
     } \
-    dlg->show();
+    dlg->show(); \
+    if (m_noTaskbar) dlg->activateWindow();
 
 #define FINISH_DIALOG(_BTNS_) \
     QDialogButtonBox *btns = new QDialogButtonBox(_BTNS_, Qt::Horizontal, dlg); \
@@ -586,7 +588,7 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
     tw->setStyleSheet(QTREEWIDGET_STYLE);
 
     if (height >= 0 && height < getQTreeWidgetSize(&tw).height())
-        tw->setMaximumHeight(height);
+        tw->setFixedHeight(height);
 
     int roColumnNumber = tw->property("guid_list_read_only_column").toInt();
     roColumnNumber = roColumnNumber - 1;
@@ -614,6 +616,9 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
     IF_IS(QLineEdit) {
         return ValuePair(true, var + t->text());
     } else IF_IS(QTreeWidget) {
+        if (t->selectionMode() == QAbstractItemView::NoSelection)
+            return ValuePair(false, QString());
+        
         QString results = "";
         QString rowValue;
         QString printColumn = t->property("guid_list_print_column").toString();
@@ -990,6 +995,7 @@ Guid::Guid(int &argc, char **argv) : QApplication(argc, argv),
     m_closeToSysTray(false),
     m_dialog(NULL),
     m_modal(false),
+    m_noTaskbar(false),
     m_notificationId(0),
     m_okCommand(""),
     m_okCommandToFooter(false),
@@ -1247,6 +1253,7 @@ void Guid::printHelp(const QString &category)
         
         Help("--attach=WINDOW", tr("Set the parent window to attach to")) <<
         Help("--always-on-top", tr("Force the dialog to be always on top of other windows")) <<
+        Help("--no-taskbar", tr("Don't display the dialog in the taskbar")) <<
         Help("--modal", tr("Set the modal hint")) <<
         Help("--output-prefix-ok=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
         Help("--output-prefix-err=PREFIX", "GUID ONLY! " + tr("Set prefix for output sent to stderr")) <<
@@ -2024,6 +2031,9 @@ void Guid::dialogFinished(int status)
             QTreeWidget *tw = sender()->findChild<QTreeWidget*>();
             QStringList result;
             if (tw) {
+                if (tw->selectionMode() == QAbstractItemView::NoSelection)
+                    break;
+                
                 QString rowValue;
                 QString printColumn = tw->property("guid_list_print_column").toString();
                 QString printMode = tw->property("guid_list_print_values_mode").toString();
@@ -2728,6 +2738,8 @@ bool Guid::readGeneral(QStringList &args) {
             m_modal = true;
         } else if (args.at(i) == "--always-on-top") {
             m_alwaysOnTop = true;
+        } else if (args.at(i) == "--no-taskbar") {
+            m_noTaskbar = true;
         } else if (args.at(i) == "--attach") {
             bool ok;
             const int w = NEXT_ARG.toUInt(&ok, 0);
@@ -3405,6 +3417,7 @@ char Guid::showForms(const QStringList &args)
                                      QFileDialog::Detail : QFileDialog::List);
             lastFileSel->setFileMode(QFileDialog::ExistingFile);
             lastFileSel->setOption(QFileDialog::DontUseNativeDialog);
+            lastFileSel->setFilter(QDir::AllDirs|QDir::AllEntries|QDir::Hidden|QDir::System);
             lastFileSel->setProperty("guid_file_sel_separator", dlg->property("guid_separator").toString());
             
             QVariantList guidBookmarksList = guidQSsettings.value("Bookmarks").toList();
@@ -3626,6 +3639,7 @@ char Guid::showForms(const QStringList &args)
             lastText->setProperty("guid_text_var_set", false);
             
             lastText->setContentsMargins(0, 3, 0, 0);
+            lastText->setTextInteractionFlags(lastText->textInteractionFlags()|Qt::TextSelectableByMouse);
             
             if (ws.addLabel.isEmpty())
                 ws.hideLabel = true;
