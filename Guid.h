@@ -61,6 +61,7 @@ struct WidgetSettings {
     QString defVarVal7 = "";
     QString defVarVal8 = "";
     QString defVarVal9 = "";
+    bool disableButtons = false;
     QString foregroundColor = "";
     bool hideLabel = false;
     QString image = "";
@@ -121,6 +122,7 @@ private:
 
 private slots:
     void addListRow();
+    void afterTabBarClick(int i);
     void afterCloseButtonClick();
     void afterMenuClick();
     void dialogFinished(int status);
@@ -170,3 +172,5 @@ private:
 };
 
 #endif //GUID_H
+
+// vim:set et sw=4 ts=4

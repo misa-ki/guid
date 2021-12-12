@@ -186,6 +186,7 @@
         else if (setting.startsWith("defVarVal7=")) ws.defVarVal7 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal8=")) ws.defVarVal8 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("defVarVal9=")) ws.defVarVal9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("disableButtons=")) ws.disableButtons = getWidgetSettingBool(setting); \
         else if (setting.startsWith("footerName=")) ws.footerName = getWidgetSettingQString(setting); \
         else if (setting.startsWith("foregroundColor=")) ws.foregroundColor = getWidgetSettingQString(setting); \
         else if (setting.startsWith("hideLabel=")) ws.hideLabel = getWidgetSettingBool(setting); \
@@ -1505,6 +1506,17 @@ the variable "stop=true". Example:
          --tab="Tab 2" \
              --add-spin-box="Spin box in the tab 2" --min-value=10 --value=50 \
          --tab="stop=true" \
+         --add-scale="Field outside the tab bar" --step=5
+To disable dialog buttons when the tab is displayed, add the variable
+"disableButtons=true". Example:
+    guid --forms \
+         --text="Form with a tab bar" \
+         --tab="Tab 1" \
+             --add-entry="Text field in the tab 1" \
+             --add-entry="Another text field in the tab 1" \
+         --tab="disableButtons=true@Tab 2" \
+             --add-spin-box="Spin box in the tab 2" --min-value=10 --value=50 \
+         --tab="stop=true" \
          --add-scale="Field outside the tab bar" --step=5)HEREDOC")) <<
         Help("--tab-selected",
              "GUID ONLY! " + tr("Mark the tab as selected by default when the dialog is shown")) <<
@@ -2324,6 +2336,22 @@ void Guid::addListRow()
                 rb->setStyleSheet("QRadioButton::indicator {subcontrol-position: center center;}");
                 list->setItemWidget(newItem, 0, rb);
             }
+        }
+    }
+}
+
+void Guid::afterTabBarClick(int i)
+{
+    QDialog *dlg = static_cast<QDialog*>(m_dialog);
+    if (dlg) {
+        QPushButton *buttons = dlg->findChild<QPushButton*>();
+        if (buttons) {
+            bool disableButtons = false;
+            QTabWidget *tabBar = static_cast<QTabWidget*>(sender());
+            if (tabBar) {
+                disableButtons = tabBar->widget(i)->property("guid_tab_disable_buttons").toBool();
+            }
+            buttons->setEnabled(!disableButtons);
         }
     }
 }
@@ -3826,8 +3854,12 @@ char Guid::showForms(const QStringList &args)
                     lastTabName = QString("Tab %1").arg(lastTabIndex);
                 lastTab = new QWidget();
                 lastTabLayout = new QFormLayout();
+                
                 lastTab->setLayout(lastTabLayout);
+                lastTab->setProperty("guid_tab_disable_buttons", ws.disableButtons);
+                
                 lastTabBar->addTab(lastTab, lastTabName);
+                connect(lastTabBar, SIGNAL(currentChanged(int)), this, SLOT(afterTabBarClick(int)), Qt::UniqueConnection);
             }
             
             lastWidgetVar = "";
@@ -4143,6 +4175,7 @@ char Guid::showForms(const QStringList &args)
             
             lastText->setProperty("guid_text_var_set", false);
             
+            lastText->setWordWrap(true);
             lastText->setContentsMargins(0, 3, 0, 0);
             lastText->setTextInteractionFlags(lastText->textInteractionFlags()|Qt::TextSelectableByMouse);
             
@@ -4528,10 +4561,11 @@ char Guid::showForms(const QStringList &args)
         
         // --tab-visible
         else if (args.at(i) == "--tab-visible") {
-            if (!lastTabName.isEmpty())
+            if (!lastTabName.isEmpty()) {
                 lastTabBar->setCurrentIndex(lastTabIndex);
-            else
+            } else {
                 WARN_UNKNOWN_ARG("--tab");
+            }
         }
         
         /********************************************************************************
@@ -4610,7 +4644,6 @@ char Guid::showForms(const QStringList &args)
             if (lastWidgetId == "entry") {
                 lastEntry->setMaximumWidth(next_arg.toInt());
             } else if (lastWidgetId == "text") {
-                lastText->setWordWrap(true);
                 lastText->setMaximumWidth(next_arg.toInt());
             } else if (lastWidgetId == "hrule") {
                 lastHRule->setMaximumWidth(next_arg.toInt());
@@ -5915,3 +5948,5 @@ int main(int argc, char **argv)
 }
 
 // End of "main"
+
+// vim:set et sw=4 ts=4
