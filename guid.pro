@@ -1,5 +1,5 @@
-HEADERS = Guid.h
-SOURCES = Guid.cpp
+HEADERS = Guid.h qrcodegen/qrcodegen.hpp
+SOURCES = Guid.cpp qrcodegen/qrcodegen.cpp
 RESOURCES = guid.qrc
 QT += dbus gui widgets
 unix:!macx:QT += x11extras

@@ -24,6 +24,8 @@ class QDialog;
 class QTreeWidgetItem;
 
 #include <QApplication>
+#include <QGroupBox>
+#include <QLabel>
 #include <QPair>
 #include <QSystemTrayIcon>
 #include <QTreeWidget>
@@ -52,34 +54,44 @@ struct WidgetSettings {
     QString command = "";
     bool commandToFooter = false;
     int defaultIndex = 0;
-    QString defVarVal1 = "";
-    QString defVarVal2 = "";
-    QString defVarVal3 = "";
-    QString defVarVal4 = "";
-    QString defVarVal5 = "";
-    QString defVarVal6 = "";
-    QString defVarVal7 = "";
-    QString defVarVal8 = "";
-    QString defVarVal9 = "";
+    QString defMarkerVal1 = "";
+    QString defMarkerVal2 = "";
+    QString defMarkerVal3 = "";
+    QString defMarkerVal4 = "";
+    QString defMarkerVal5 = "";
+    QString defMarkerVal6 = "";
+    QString defMarkerVal7 = "";
+    QString defMarkerVal8 = "";
+    QString defMarkerVal9 = "";
     bool disableButtons = false;
+    bool excludeFromOutput = false;
     QString foregroundColor = "";
     bool hideLabel = false;
     QString image = "";
     bool keepOpen = false;
     bool monitorFile = false;
-    QString monitorVarFile1 = "";
-    QString monitorVarFile2 = "";
-    QString monitorVarFile3 = "";
-    QString monitorVarFile4 = "";
-    QString monitorVarFile5 = "";
-    QString monitorVarFile6 = "";
-    QString monitorVarFile7 = "";
-    QString monitorVarFile8 = "";
-    QString monitorVarFile9 = "";
-    QString footerName = "";
+    QString monitorMarkerFile1 = "";
+    QString monitorMarkerFile2 = "";
+    QString monitorMarkerFile3 = "";
+    QString monitorMarkerFile4 = "";
+    QString monitorMarkerFile5 = "";
+    QString monitorMarkerFile6 = "";
+    QString monitorMarkerFile7 = "";
+    QString monitorMarkerFile8 = "";
+    QString monitorMarkerFile9 = "";
+    QString monitorVarName1 = "";
+    QString monitorVarName2 = "";
+    QString monitorVarName3 = "";
+    QString monitorVarName4 = "";
+    QString monitorVarName5 = "";
+    QString monitorVarName6 = "";
+    QString monitorVarName7 = "";
+    QString monitorVarName8 = "";
+    QString monitorVarName9 = "";
     QString sep = "";
     bool stop = false;
     bool valuesToFooter = false;
+    bool verboseTabBar = false;
 };
 
 class Guid : public QApplication
@@ -97,6 +109,7 @@ public:
 
 private:
     // Misc.
+    void createQRCode(QLabel *label, QString text);
     bool error(const QString message);
     QString labelText(const QString &s) const; // m_zenity requires \n and \t interpretation in html.
     void listenToStdIn();
@@ -104,6 +117,8 @@ private:
     QString printForms();
     bool readGeneral(QStringList &args);
     void setSysTrayAction(QString actionId, bool valueToSet);
+    void updateFooterContent(QGroupBox *footer, QString newEntry);
+    void updateFooterContentFromFile(QGroupBox *footer, QString filePath);
     
     // Show dialogs
     char showCalendar(const QStringList &args);
@@ -138,6 +153,7 @@ private slots:
     void showSysTrayMenu(QSystemTrayIcon::ActivationReason reason);
     void toggleItems(QTreeWidgetItem *item, int column);
     void updateCombo(QString filePath);
+    void updateFooter(QString filePath);
     void updateList(QString filePath);
     void updateText(QString filePath);
     void updateTextInfo(QString filePath);

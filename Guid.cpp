@@ -38,11 +38,9 @@
 #include <QFileSystemWatcher>
 #include <QFontDialog>
 #include <QFormLayout>
-#include <QGroupBox>
 #include <QHeaderView>
 #include <QIcon>
 #include <QInputDialog>
-#include <QLabel>
 #include <QLocale>
 #include <QLineEdit>
 #include <QMenuBar>
@@ -83,6 +81,8 @@
     #include <signal.h>
     #include <unistd.h>
 #endif
+
+#include "qrcodegen/qrcodegen.hpp"
 
 /******************************************************************************
  * define
@@ -159,6 +159,12 @@
         connect(btns, SIGNAL(accepted()), dlg, SLOT(accept())); \
     connect(btns, SIGNAL(rejected()), this, SLOT(afterCloseButtonClick()));
 
+// We can't just set the selected tab name as bold because the tab width won't adjust,
+// hence the workaround to set bold by default. This bug was solved in Qt 6.2.2:
+// https://bugreports.qt.io/browse/QTBUG-6905
+#define QTABBAR_STYLE \
+    "QTabBar {font-weight: bold;} QTabBar::tab:!selected {font-weight: normal;}"
+
 #define QTREEWIDGET_STYLE \
     "QHeaderView::section {border: 1px solid #E0E0E0; background: #F7F7F7; padding-left: 3px; font-weight: bold;}"
 
@@ -177,34 +183,44 @@
         else if (setting.startsWith("command=")) ws.command = getWidgetSettingQString(setting); \
         else if (setting.startsWith("commandToFooter=")) ws.commandToFooter = getWidgetSettingBool(setting); \
         else if (setting.startsWith("defaultIndex=")) ws.defaultIndex = getWidgetSettingInt(setting); \
-        else if (setting.startsWith("defVarVal1=")) ws.defVarVal1 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal2=")) ws.defVarVal2 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal3=")) ws.defVarVal3 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal4=")) ws.defVarVal4 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal5=")) ws.defVarVal5 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal6=")) ws.defVarVal6 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal7=")) ws.defVarVal7 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal8=")) ws.defVarVal8 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("defVarVal9=")) ws.defVarVal9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal1=")) ws.defMarkerVal1 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal2=")) ws.defMarkerVal2 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal3=")) ws.defMarkerVal3 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal4=")) ws.defMarkerVal4 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal5=")) ws.defMarkerVal5 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal6=")) ws.defMarkerVal6 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal7=")) ws.defMarkerVal7 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal8=")) ws.defMarkerVal8 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("defMarkerVal9=")) ws.defMarkerVal9 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("disableButtons=")) ws.disableButtons = getWidgetSettingBool(setting); \
-        else if (setting.startsWith("footerName=")) ws.footerName = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("excludeFromOutput=")) ws.excludeFromOutput = getWidgetSettingBool(setting); \
         else if (setting.startsWith("foregroundColor=")) ws.foregroundColor = getWidgetSettingQString(setting); \
         else if (setting.startsWith("hideLabel=")) ws.hideLabel = getWidgetSettingBool(setting); \
         else if (setting.startsWith("image=")) ws.image = getWidgetSettingQString(setting); \
         else if (setting.startsWith("keepOpen=")) ws.keepOpen = getWidgetSettingBool(setting); \
         else if (setting.startsWith("monitor=")) ws.monitorFile = getWidgetSettingBool(setting); \
-        else if (setting.startsWith("monitorVarFile1=")) ws.monitorVarFile1 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile2=")) ws.monitorVarFile2 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile3=")) ws.monitorVarFile3 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile4=")) ws.monitorVarFile4 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile5=")) ws.monitorVarFile5 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile6=")) ws.monitorVarFile6 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile7=")) ws.monitorVarFile7 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile8=")) ws.monitorVarFile8 = getWidgetSettingQString(setting); \
-        else if (setting.startsWith("monitorVarFile9=")) ws.monitorVarFile9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile1=")) ws.monitorMarkerFile1 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile2=")) ws.monitorMarkerFile2 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile3=")) ws.monitorMarkerFile3 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile4=")) ws.monitorMarkerFile4 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile5=")) ws.monitorMarkerFile5 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile6=")) ws.monitorMarkerFile6 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile7=")) ws.monitorMarkerFile7 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile8=")) ws.monitorMarkerFile8 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorMarkerFile9=")) ws.monitorMarkerFile9 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName1=")) ws.monitorVarName1 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName2=")) ws.monitorVarName2 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName3=")) ws.monitorVarName3 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName4=")) ws.monitorVarName4 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName5=")) ws.monitorVarName5 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName6=")) ws.monitorVarName6 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName7=")) ws.monitorVarName7 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName8=")) ws.monitorVarName8 = getWidgetSettingQString(setting); \
+        else if (setting.startsWith("monitorVarName9=")) ws.monitorVarName9 = getWidgetSettingQString(setting); \
         else if (setting.startsWith("sep=")) ws.sep = getWidgetSettingQString(setting); \
         else if (setting.startsWith("stop=")) ws.stop = getWidgetSettingBool(setting); \
         else if (setting.startsWith("valuesToFooter=")) ws.valuesToFooter = getWidgetSettingBool(setting); \
+        else if (setting.startsWith("verboseTabBar=")) ws.verboseTabBar = getWidgetSettingBool(setting); \
         else    next_arg_join << setting; \
     } \
     next_arg = next_arg_join.join('@'); \
@@ -588,9 +604,14 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
 
     tw->setStyleSheet(QTREEWIDGET_STYLE);
 
-    if (height >= 0 && height < getQTreeWidgetSize(&tw).height())
-        tw->setFixedHeight(height);
-
+    if (height >= 0) {
+        QSizePolicy twSizePolicy = tw->sizePolicy();
+        twSizePolicy.setVerticalPolicy(QSizePolicy::Fixed);
+        tw->setSizePolicy(twSizePolicy);
+        if (height < getQTreeWidgetSize(&tw).height())
+            tw->setFixedHeight(height);
+    }
+    
     int roColumnNumber = tw->property("guid_list_read_only_column").toInt();
     roColumnNumber = roColumnNumber - 1;
     if (roColumnNumber >= 0 && roColumnNumber < columns.count())
@@ -607,7 +628,7 @@ static void buildFormsList(QTreeWidget **tree, GList &list, QStringList &columns
 static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat,
                                      const QString &separator, const QString &listRowSeparator)
 {
-    if (!w)
+    if (!w || w->property("guid_hide").toBool())
         return ValuePair(false, QString());
     
     QString var = w->property("guid_var").toString().simplified().replace(" ", "");
@@ -617,7 +638,8 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
     IF_IS(QLineEdit) {
         return ValuePair(true, var + t->text());
     } else IF_IS(QTreeWidget) {
-        if (t->selectionMode() == QAbstractItemView::NoSelection)
+        if (t->selectionMode() == QAbstractItemView::NoSelection ||
+            t->property("guid_list_exclude_from_output").toBool())
             return ValuePair(false, QString());
         
         QString results = "";
@@ -707,28 +729,58 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
         QString tabsValue = NULL;
         ValuePair resultPair;
         ValuePair tabPair;
-        int nbResults = 0;
+        
+        bool verboseMode = t->property("guid_tab_bar_verbose").toBool();
+        QString tabValue = "";
+        QString tabValuePrefix = "";
+        QString tabValueSuffix = "";
+        QString tabSelectionMarker = "";
+        bool addTabValue = false;
+        
         for (int i = 0; i < t->count(); ++i) {
+            tabValue = "";
+            tabValuePrefix = "";
+            tabValueSuffix = "";
+            tabSelectionMarker = "";
+            addTabValue = false;
+            
             QWidget *tab = t->widget(i);
+            
+            if (tab && verboseMode) {
+                if (i == t->currentIndex())
+                    tabSelectionMarker = "*";
+                tabValuePrefix = "<TAB_START" + tabSelectionMarker + ">" +
+                                 t->tabText(i) + "</TAB_START" + tabSelectionMarker + ">";
+                tabValueSuffix = "<TAB_END" + tabSelectionMarker + ">" +
+                                 t->tabText(i) + "</TAB_END" + tabSelectionMarker + ">";
+            }
+            
             QList<QWidget*> tabChildren = tab->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             foreach(QWidget *tabChild, tabChildren) {
                 if (qstrcmp(tabChild->metaObject()->className(), "QLabel") == 0)
                     continue;
                 tabPair = getFormsWidgetValue(tabChild, dateFormat, separator, listRowSeparator);
                 if (tabPair.first) {
-                    if (nbResults > 0) {
-                        tabsValue += separator;
-                    }
-                    tabsValue += tabPair.second;
-                    nbResults++;
+                    addTabValue = true;
+                    if (!tabValue.isEmpty())
+                        tabValue += separator;
+                    tabValue += tabPair.second;
                 }
             }
+            
+            if (addTabValue) {
+                if (!tabsValue.isEmpty())
+                    tabsValue += separator;
+                tabsValue += tabValuePrefix + tabValue + tabValueSuffix;
+            }
         }
+        
         resultPair = ValuePair(true, tabsValue);
         if (tabsValue.isNull())
             resultPair.first = false;
         else
             resultPair.second = var + resultPair.second;
+        
         return resultPair;
     } else IF_IS(QTextEdit) {
         if (!t->isReadOnly()) {
@@ -776,14 +828,14 @@ static ValuePair getFormsWidgetValue(const QWidget *w, const QString &dateFormat
 
 static bool getWidgetSettingBool(QString setting)
 {
-    QString value = setting.toLower().section('=', 1);
+    QString value = setting.toLower().section('=', 1, 1);
     return (value == "1" || value == "true") ? true : false;
 }
 
 static int getWidgetSettingInt(QString setting)
 {
     bool ok;
-    int value = setting.section('=', 1).toInt(&ok);
+    int value = setting.section('=', 1, 1).toInt(&ok);
     if (!ok)
         value = -100;
     return value;
@@ -791,7 +843,9 @@ static int getWidgetSettingInt(QString setting)
 
 static QString getWidgetSettingQString(QString setting)
 {
-    return setting.section('=', 1);
+    QStringList results = setting.split("=");
+    results.removeAt(0);
+    return results.join("=");
 }
 
 static GList listValuesFromFile(QString data)
@@ -804,9 +858,9 @@ static GList listValuesFromFile(QString data)
             list.addValue = getWidgetSettingQString(setting);
         else if (setting.startsWith("monitor="))
             list.monitorFile = getWidgetSettingBool(setting);
-        else if (setting.startsWith("sep="))
+        else if (setting.startsWith("sep=")) {
             list.fileSep = getWidgetSettingQString(setting);
-        else
+        } else
             data_join << setting;
     }
     if (list.fileSep.isEmpty())
@@ -859,6 +913,8 @@ static void setTabBar(QTabWidget* &tabBar, QFormLayout* &layout, QLabel* tabBarL
         layout->addRow(tabBar);
     
     tabBar = new QTabWidget();
+    tabBar->setProperty("guid_tab_bar_verbose", false);
+    tabBar->setStyleSheet(QTABBAR_STYLE);
     tabName = "";
     tabIndex = -1;
 }
@@ -869,42 +925,60 @@ static void setText(QLabel *text)
     QString textContent = textTemplate;
     QString defaultTextContent = textTemplate;
     
-    if (!text->property("guid_text_var_set").toBool()) {
+    if (!text->property("guid_text_markers_set").toBool()) {
         for (int i = 1; i < 10; ++i) {
-            QString propDefVarVal = "guid_text_def_var_val_" + QString::number(i);
-            QString defVarVal = text->property(propDefVarVal.toStdString().c_str()).toString();
-            if (defVarVal.isEmpty())
-                defVarVal = "(?)";
-            defaultTextContent.replace("GUID_VAR_" + QString::number(i), defVarVal);
+            QString propDefMarkerVal = "guid_text_def_marker_val_" + QString::number(i);
+            QString defMarkerVal = text->property(propDefMarkerVal.toStdString().c_str()).toString();
+            if (defMarkerVal.isEmpty())
+                defMarkerVal = "(?)";
+            defaultTextContent.replace("GUID_MARKER_" + QString::number(i), defMarkerVal);
         }
         
         text->setText(defaultTextContent);
-        text->setProperty("guid_text_var_set", true);
+        text->setProperty("guid_text_markers_set", true);
     }
     
     for (int i = 1; i < 10; ++i) {
-        QString propDefVarVal = "guid_text_def_var_val_" + QString::number(i);
-        QString defVarVal = text->property(propDefVarVal.toStdString().c_str()).toString();
-        if (defVarVal.isEmpty())
-                defVarVal = "(?)";
+        QString propDefMarkerVal = "guid_text_def_marker_val_" + QString::number(i);
+        QString defMarkerVal = text->property(propDefMarkerVal.toStdString().c_str()).toString();
+        if (defMarkerVal.isEmpty())
+                defMarkerVal = "(?)";
         
-        QString propVarFile = "guid_text_monitor_var_file_" + QString::number(i);
-        QString filePath = text->property(propVarFile.toStdString().c_str()).toString();
+        QString propMarkerFile = "guid_text_monitor_marker_file_" + QString::number(i);
+        QString filePath = text->property(propMarkerFile.toStdString().c_str()).toString();
         
         if (!filePath.isEmpty()) {
             QFile file(filePath);
             QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
             
             if (file.open(QIODevice::ReadOnly)) {
-                QByteArray varValue = file.readAll();
-                while (varValue.right(1) == "\n")
-                    varValue.chop(1);
+                QByteArray markerValue = file.readAll();
+                while (markerValue.right(1) == "\n")
+                    markerValue.chop(1);
                 
-                QString newValue = QString(varValue);
+                QString newValue = QString(markerValue);
+                QString propMonitorVarName = "guid_text_monitor_var_name_" + QString::number(i);
+                QString monitorVarName = text->property(propMonitorVarName.toStdString().c_str()).toString();
+                bool varFound = false;
+                if (!monitorVarName.isEmpty()) {
+                    newValue.replace(QRegExp("[\r\n]+"), "\n");
+                    QStringList newValueLines = newValue.split("\n");
+                    foreach(QString line, newValueLines) {
+                        QString varName = line.section('=', 0, 0);
+                        if (varName == monitorVarName) {
+                            varFound = true;
+                            newValue = line.section('=', 1, 1);
+                            break;
+                        }
+                    }
+                    if (!varFound)
+                        newValue = "";
+                }
+                
                 if (newValue.isEmpty())
-                    newValue = defVarVal;
+                    newValue = defMarkerVal;
                 
-                textContent.replace("GUID_VAR_" + QString::number(i), newValue);
+                textContent.replace("GUID_MARKER_" + QString::number(i), newValue);
                 
                 file.close();
             }
@@ -1493,7 +1567,8 @@ the variable "stop=true". Example:
         Help("", "") <<
         
         // --tab
-        Help("--tab=\"[addLabel=Tab bar label@][disableButtons=true@][stop=true@]Tab name\"",
+        Help(R"HEREDOC(--tab="[addLabel=Tab bar label@][disableButtons=true@][stop=true@]
+       [verboseTabBar=true@]Tab name")HEREDOC",
              "GUID ONLY! " + tr(R"HEREDOC(Create a tab bar.
 After adding "--tab=NAME", next fields will be added to the tab NAME unless another
 one is specified with "--tab=ANOTHER_NAME". Stop adding fields in the last tab with
@@ -1517,7 +1592,10 @@ To disable dialog buttons when the tab is displayed, add the variable
          --tab="disableButtons=true@Tab 2" \
              --add-spin-box="Spin box in the tab 2" --min-value=10 --value=50 \
          --tab="stop=true" \
-         --add-scale="Field outside the tab bar" --step=5)HEREDOC")) <<
+         --add-scale="Field outside the tab bar" --step=5
+To include information about the tab bar in values printed to the console, add the
+variable "verboseTabBar=true". Separators will be added in the output between tab
+fields and the selected tab will be marked with "*".)HEREDOC")) <<
         Help("--tab-selected",
              "GUID ONLY! " + tr("Mark the tab as selected by default when the dialog is shown")) <<
         Help("", "") <<
@@ -1554,6 +1632,10 @@ column content)HEREDOC")) <<
         // --add-calendar
         Help("--add-calendar=\"[hideLabel=true@]Calendar label\"",
              tr("Add a calendar in forms dialog")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1563,6 +1645,10 @@ column content)HEREDOC")) <<
              "GUID ONLY! " + tr("Add a checkbox in forms dialog")) <<
         Help("--checked",
              "GUID ONLY! " + tr("Make the checkbox checked by default")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1584,6 +1670,10 @@ To monitor file changes, add "monitor=true". Example:
              "GUID ONLY! " + tr("Allow the user to edit combo values")) <<
         Help("--field-width=WIDTH",
              "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1597,6 +1687,10 @@ To monitor file changes, add "monitor=true". Example:
              "GUID ONLY! " + tr("Integer input only, preset given value")) <<
         Help("--field-width=WIDTH",
              "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1617,10 +1711,15 @@ The selection is added and displayed in a text entry.)HEREDOC")) <<
         Help("--file-separator=SEPARATOR",
              "GUID ONLY! " + tr(R"HEREDOC(Set output separator character if there are multiple files selected
 (default is "~"))HEREDOC")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-list
-        Help("--add-list=\"[addNewRowButton=true@][hideLabel=true@]List label\"",
+        Help(R"HEREDOC(--add-list="[addNewRowButton=true@][excludeFromOutput=true@]
+            [hideLabel=true@]List label")HEREDOC",
              tr(R"HEREDOC(Add a list in forms dialog.
 To include a button allowing to add new rows when clicked, add the variable
 "addNewRowButton=true". Example:
@@ -1628,6 +1727,9 @@ To include a button allowing to add new rows when clicked, add the variable
          --add-list="addNewRowButton=true@My list" \
             --column-values="C1|C2" --show-header \
             --list-values="v1|v2|v3|v4" --editable
+To exclude the list from the output printed to the console, add the variable
+"excludeFromOutput=true". It's useful when using lists for displaying data instead of
+asking users to make a selection.
 To hide the list label, add the variable "hideLabel=true". Example:
     guid --forms \
          --add-list="addNewRowButton=true@hideLabel=true@Label hidden" \
@@ -1695,6 +1797,10 @@ with "--editable" to get updated values).)HEREDOC")) <<
              "GUID ONLY! " + tr("Set the field height")) <<
         Help("--show-header",
              tr("Show the columns header")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1758,13 +1864,32 @@ menu. Example:
     guid --forms \
          --add-menu="Item A;10|Item B;20" \
          --add-text="Form label" --bold)HEREDOC")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-password
         Help("--add-password=\"[hideLabel=true@]Password label\"",
-             tr("Add a password nntry in forms dialog")) <<
+             tr("Add a password entry in forms dialog")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
+        Help("", "") <<
+        
+        // --add-qr-code
+        Help("--add-qr-code=\"[addLabel=QR code label@]QR Code text\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Add a QR code in forms dialog.
+Note that this widget is not a user input field, so it doesn't appear in the console
+(no even as empty value) when user input is printed.)HEREDOC")) <<
+        Help("--align=left|center|right",
+             "GUID ONLY! " + tr("Set QR code alignment")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-scale
@@ -1782,6 +1907,10 @@ menu. Example:
              tr("Hide value")) <<
         Help("--print-partial",
              tr("Print the value to the console each time it's changed by the user")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1801,6 +1930,10 @@ menu. Example:
              "GUID ONLY! " + tr("Set suffix")) <<
         Help("--field-width=WIDTH",
              "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1822,13 +1955,17 @@ menu. Example:
              "GUID ONLY! " + tr("Set suffix")) <<
         Help("--field-width=WIDTH",
              "GUID ONLY! " + tr("Set the field width")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
+so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-text
-        Help(R"HEREDOC(--add-text="[addLabel=Text label@][defVarVal1=Value@][image=Path to image@]
-            [monitorVarFile1=Path to file@]Text")HEREDOC",
+        Help(R"HEREDOC(--add-text="[addLabel=Text label@][defMarkerVal1=Value@][image=Path to image@]
+            [monitorMarkerFile1=Path to file@][monitorVarName1=Variable name@]Text")HEREDOC",
              "GUID ONLY! " + tr(R"HEREDOC(Add text without field.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.
@@ -1839,15 +1976,26 @@ Default resources shipped with guid can be used. To do so, start the image path
 with ":/" followed by the resource name. For example, to use a "warning" icon:
     guid --forms \
          --add-text="image=:/warning@Text displayed"
-A variable/marker named "GUID_VAR_1" can be added in the text and it will be replaced
-by the file content specified with the variable "monitorVarFile1=Path to file".
-Up to 9 variables can be used (from GUID_VAR_1 to GUID_VAR_9). If the file content
-is empty, a default value can be specified with the variable "defVarVal1=Value"
-(and "defVarVal2=Value", "defVarVal3=Value", etc.). Example:
+A marker named "GUID_MARKER_1" can be added in the text and it will be replaced by the file
+content specified with the variable "monitorMarkerFile1=Path to file". Up to 9 markers can
+be used (from GUID_MARKER_1 to GUID_MARKER_9). If the file content is empty, a default value
+can be specified with the variable "defMarkerVal1=Value" (and "defMarkerVal2=Value",
+"defMarkerVal3=Value", etc.). Example:
     guid --forms \
-         --add-text="defVarVal1=?monitorVarFile1=/to/file.txt@Lorem GUID_VAR_1 amet.")HEREDOC")) <<
+         --add-text="defMarkerVal1=?monitorMarkerFile1=/to/file.txt@Lorem GUID_MARKER_1 amet."
+It's possible to monitor only part of the file. To do so, add the variable
+"monitorVarName=Variable name", and only the value of the variable specified will be used
+as content. For example, let's say we have a file "/to/settings.sh" with this content:
+    name=Little Mouse
+    age=2
+    color=grey
+We can replace the marker GUID_MARKER_1 with only the value of the variable "age" like this:
+    guid --forms \
+         --add-text="monitorMarkerFile1=/to/settings.sh@monitorVarName1=age@Age is GUID_MARKER_1.")HEREDOC")) <<
         Help("--tooltip=Tooltip text",
              "GUID ONLY! " + tr("Set tooltip displayed when the cursor is over")) <<
+        Help("--wrap",
+             tr("Enable text wrapping")) <<
         Help("--align=left|center|right",
              "GUID ONLY! " + tr("Set text alignment")) <<
         Help("--bold",
@@ -1874,6 +2022,9 @@ is empty, a default value can be specified with the variable "defVarVal1=Value"
              "GUID ONLY! " + tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
              "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-hrule
@@ -1889,6 +2040,9 @@ Note that this widget is not a user input field, so it doesn't appear in the con
              "GUID ONLY! " + tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
              "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-vspacer
@@ -1941,14 +2095,17 @@ output is only on one line))HEREDOC")) <<
              "GUID ONLY! " + tr("Set font size")) <<
         Help("--foreground-color=COLOR",
              "GUID ONLY! " + tr(R"HEREDOC(Set text color. Example:
-guid --forms \
-     --add-text-info="Text info label" --foreground-color="#0000FF" \
-         --filename="/path/to/file.txt")HEREDOC")) <<
+    guid --forms \
+         --add-text-info="Text info label" --foreground-color="#0000FF" \
+             --filename="/path/to/file.txt")HEREDOC")) <<
         Help("--background-color=COLOR",
              "GUID ONLY! " + tr(R"HEREDOC(Set text background color. Example:
-guid --forms \
-     --add-text-info="Text info label" --background-color="#0000FF" \
-         --filaneme="/path/to/file.txt")HEREDOC")) <<
+    guid --forms \
+         --add-text-info="Text info label" --background-color="#0000FF" \
+             --filaneme="/path/to/file.txt")HEREDOC")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("--var=NAME",
              "GUID ONLY! " + tr("Only when the field is editable.") + "\n" + tr(formsVarHelp)) <<
         Help("", "") <<
@@ -1967,15 +2124,31 @@ Note that this widget is not a user input field, so it doesn't appear in the con
              "GUID ONLY! " + tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
              "GUID ONLY! " + tr("Set the field height")) <<
+        Help("--hide",
+             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
-        // misc.
+        // Window buttons
         Help("--win-min-button",
              tr("Add a \"Minimize\" button to the dialog window")) <<
         Help("--win-max-button",
              tr("Add a \"Maximize\" button to the dialog window")) <<
-        Help(R"HEREDOC(--action-after-ok-click="[keepOpen=true@][valuesToFooter=true@]
-                         [commandToFooter=true@][footerName=Footer name@]
+        Help("", "") <<
+        
+        // System tray
+        Help("--close-to-systray",
+             tr(R"HEREDOC(Hide the dialog (instead of exiting) when clicking the window "Close" button.
+The system tray must be enabled with --systray-icon="Path to icon".)HEREDOC")) <<
+        Help("--systray-icon=\"Path to icon\"",
+             tr(R"HEREDOC(Add the icon specified in the system tray.
+Clicking the "Close" window button will minimize the dialog in the systray, and a
+menu will be displayed with a right-click on the systray icon.)HEREDOC")) <<
+        Help("", "") <<
+        
+        // Dialog buttons
+        Help(R"HEREDOC(--action-after-ok-click="[keepOpen=true@]
+                         [valuesToFooter=true@][commandToFooter=true@]
                          [command=command name[<>command argument][<>another arg]")HEREDOC",
              tr(R"HEREDOC(Action after a click on the OK button.
 No matter the options specified, values are always printed to the console. Default is
@@ -1995,7 +2168,6 @@ to exit. Variables that can be used are the following:
     Example:
         action="keepOpen=true"
         action+="@commandToFooter=true"
-        action+="@footerName=Results"
         action+="@command=myCommand"
         action+="<>myCommandArg1<>myCommandArg2<>GUID_VALUES_BASE64<>myCommandArg3"
         guid --forms \
@@ -2003,21 +2175,43 @@ to exit. Variables that can be used are the following:
              --action-after-ok-click="$action"
     To convert values to base64 in a format suitable for URL, use the variable/marker
     "GUID_VALUES_BASE64_URL".)HEREDOC")) <<
-        Help("--close-to-systray",
-             tr(R"HEREDOC(Hide the dialog (instead of exiting) when clicking the window "Close" button.
-The system tray must be enabled with --systray-icon="Path to icon".)HEREDOC")) <<
-        Help("--systray-icon=\"Path to icon\"",
-             tr(R"HEREDOC(Add the icon specified in the system tray.
-Clicking the "Close" window button will minimize the dialog in the systray, and a
-menu will be displayed with a right-click on the systray icon.)HEREDOC")) <<
         Help("--no-cancel",
              tr("Hide Cancel button")) <<
+        Help("", "") <<
+        
+        // Footer
+        Help("--footer-name=\"Footer name\"",
+             tr("Name of the footer fieldset")) <<
+        Help("--footer-entries=\"Number of entries\"",
+             tr(R"HEREDOC(Number of entries to display in the footer (most recent entries are always displayed first).
+Default is 3.)HEREDOC")) <<
+        Help("--footer-from-file=\"[monitor=true@]Path to file\"",
+             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as a source of footer entries.
+To monitor file changes, add the variable "monitor=true".)HEREDOC")) <<
+        Help("", "") <<
+        
+        // Misc.
         Help("--forms-date-format=PATTERN",
              tr("Set the format for the returned date")) <<
         Help("--forms-align=left|center|right",
              "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
         Help("--separator=SEPARATOR",
-             tr("Set output separator character")));
+             tr("Set output separator character")) <<
+        Help("--comment=COMMENT",
+             tr(R"HEREDOC(Add comment for convenience in the command line arguments.
+It'll be ignored when parsing arguments. Example:
+    guid --forms \
+         --text="Form with a tab bar" \
+         --comment="--------------- TAB 1 ---------------" \
+         --tab="Tab 1" \
+             --add-entry="Text field in the tab 1" \
+             --add-entry="Another text field in the tab 1" \
+         --comment="--------------- TAB 2 ---------------" \
+         --tab="Tab 2" \
+             --add-spin-box="Spin box in the tab 2" --min-value=10 --value=50 \
+         --tab="stop=true" \
+         --comment="--------------- SCALE ---------------" \
+         --add-scale="Field outside the tab bar" --step=5)HEREDOC")));
         
         /******************************
          * info
@@ -2731,23 +2925,14 @@ void Guid::printFormsAfterOKClick()
 {
     QFileDialog *dialog = static_cast<QFileDialog*>(m_dialog);
     QGroupBox *footer = dialog->findChild<QGroupBox*>("dialogFooter", Qt::FindDirectChildrenOnly);
-    QLabel *footerText = NULL;
-    if (footer && (m_okCommandToFooter || m_okValuesToFooter))
-        footerText = footer->findChild<QLabel*>("dialogFooterText", Qt::FindDirectChildrenOnly);
+    bool ok;
     
     // Print current forms values
     QString values = printForms();
-    if (m_okValuesToFooter && footer && footerText) {
-        footer->setVisible(true);
-        footerText->setText(values);
-    }
+    if (m_okValuesToFooter && footer)
+        updateFooterContent(footer, values);
     
     // Clear forms values
-    
-    QList<QCheckBox*> cb = dialog->findChildren<QCheckBox*>();
-    foreach(QCheckBox *cbi, cb) {
-        cbi->setCheckState(Qt::Unchecked);
-    }
     
     QList<QLineEdit*> entries = dialog->findChildren<QLineEdit*>();
     foreach(QLineEdit *entry, entries) {
@@ -2760,9 +2945,48 @@ void Guid::printFormsAfterOKClick()
             textEntry->clear();
     }
     
+    QList<QCheckBox*> cb = dialog->findChildren<QCheckBox*>();
+    foreach(QCheckBox *cbi, cb) {
+        if (cbi->property("guid_checkbox_default").toString() == "checked")
+            cbi->setCheckState(Qt::Checked);
+        else
+            cbi->setCheckState(Qt::Unchecked);
+    }
+    
     QList<QComboBox*> combos = dialog->findChildren<QComboBox*>();
     foreach(QComboBox *combo, combos) {
-        combo->setCurrentIndex(-1);
+        int defaultComboIndex = combo->property("guid_combo_default_index").toInt(&ok);
+        if (ok && defaultComboIndex >= 0 && defaultComboIndex < combo->count())
+            combo->setCurrentIndex(defaultComboIndex);
+        else
+            combo->setCurrentIndex(-1);
+    }
+    
+    QList<QSlider*> scales = dialog->findChildren<QSlider*>();
+    foreach(QSlider *scale, scales) {
+        int defaultScaleValue = scale->property("guid_scale_default").toInt(&ok);
+        if (ok && defaultScaleValue != INT_MIN)
+            scale->setValue(defaultScaleValue);
+        else
+            scale->setValue(scale->minimum());
+    }
+    
+    QList<QSpinBox*> spinBoxes = dialog->findChildren<QSpinBox*>();
+    foreach(QSpinBox *spinBox, spinBoxes) {
+        int defaultSpinBoxValue = spinBox->property("guid_spin_box_default").toInt(&ok);
+        if (ok && defaultSpinBoxValue != INT_MIN)
+            spinBox->setValue(defaultSpinBoxValue);
+        else
+            spinBox->setValue(spinBox->minimum());
+    }
+    
+    QList<QDoubleSpinBox*> doubleSpinBoxes = dialog->findChildren<QDoubleSpinBox*>();
+    foreach(QDoubleSpinBox *doubleSpinBox, doubleSpinBoxes) {
+        int defaultDoubleSpinBoxValue = doubleSpinBox->property("guid_double_spin_box_default").toDouble(&ok);
+        if (ok && defaultDoubleSpinBoxValue != -DBL_MAX)
+            doubleSpinBox->setValue(defaultDoubleSpinBoxValue);
+        else
+            doubleSpinBox->setValue(doubleSpinBox->minimum());
     }
     
     QList<QTreeWidget*> tw = dialog->findChildren<QTreeWidget*>();
@@ -2789,12 +3013,10 @@ void Guid::printFormsAfterOKClick()
         commandArgs.removeAt(0);
         QProcess *process = new QProcess;
         
-        if (m_okCommandToFooter && footer && footerText) {
+        if (m_okCommandToFooter && footer) {
             connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=]() {
                 QString commandOutput = QString::fromLocal8Bit(process->readAllStandardOutput());
-                
-                footer->setVisible(true);
-                footerText->setText(commandOutput.trimmed());
+                updateFooterContent(footer, commandOutput.trimmed());
                 
                 delete process;
             });
@@ -3007,6 +3229,22 @@ void Guid::updateCombo(QString filePath)
     }
 }
 
+void Guid::updateFooter(QString filePath)
+{
+    if (!QFile::exists(filePath))
+        return;
+    
+    QDialog *dlg = static_cast<QDialog*>(m_dialog);
+    if (!dlg)
+        return;
+    
+    QGroupBox *footer = dlg->findChild<QGroupBox*>("dialogFooter", Qt::FindDirectChildrenOnly);
+    if (!footer)
+        return;
+    
+    updateFooterContentFromFile(footer, filePath);
+}
+
 void Guid::updateList(QString filePath)
 {
     // The file containing list values has been updated. However, the way it was edited is not known.
@@ -3094,8 +3332,8 @@ void Guid::updateText(QString filePath)
     
     foreach (QLabel *l, watcher->parent()->findChildren<QLabel*>()) {
         for (int i = 1; i < 10; ++i) {
-            QString propVarFile = "guid_text_monitor_var_file_" + QString::number(i);
-            if (l->property(propVarFile.toStdString().c_str()).toString() == filePath) {
+            QString propMarkerFile = "guid_text_monitor_marker_file_" + QString::number(i);
+            if (l->property(propMarkerFile.toStdString().c_str()).toString() == filePath) {
                 setText(l);
             }
         }
@@ -3122,6 +3360,21 @@ void Guid::updateTextInfo(QString filePath)
 /******************************************************************************
  * private (1 of 2): misc.
  ******************************************************************************/
+
+void Guid::createQRCode(QLabel *label, QString text)
+{
+    qrcodegen::QrCode qrCode = qrcodegen::QrCode::encodeText(text.toUtf8().data(), qrcodegen::QrCode::Ecc::HIGH);
+    qint32 qrCodeSize = qrCode.getSize();
+    QImage qrCodeImage(qrCodeSize, qrCodeSize, QImage::Format_RGB32);
+    QRgb colorBlack = qRgb(0, 0, 0);
+    QRgb colorWhite = qRgb(255, 255, 255);
+    for (int y = 0; y < qrCodeSize; ++y) {
+        for (int x = 0; x < qrCodeSize; ++x) {
+            qrCodeImage.setPixel(x, y, qrCode.getModule(x, y) ? colorBlack : colorWhite);
+        }
+    }
+    label->setPixmap(QPixmap::fromImage(qrCodeImage.scaled(256, 256, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
+}
 
 bool Guid::error(const QString message)
 {
@@ -3302,6 +3555,64 @@ void Guid::setSysTrayAction(QString actionId, bool valueToSet)
                 break;
             }
         }
+    }
+}
+
+void Guid::updateFooterContent(QGroupBox *footer, QString newEntry)
+{
+    if (!footer || !(m_okCommandToFooter || m_okValuesToFooter))
+        return;
+    
+    QFormLayout *footerLayout = static_cast<QFormLayout*>(footer->layout());
+    if (!footerLayout)
+        return;
+    
+    int nbEntriesToDisplay = footer->property("guid_footer_nb_entries").toInt();
+    int footerHeight = footer->height();
+    footer->setVisible(true);
+    
+    QLabel *newLabel = new QLabel();
+    newLabel->setText(newEntry);
+    newLabel->setWordWrap(true);
+    newLabel->setTextInteractionFlags(newLabel->textInteractionFlags()|Qt::TextSelectableByMouse);
+    
+    footerLayout->insertRow(0, newLabel);
+    
+    int nbEntries = 0;
+    for (int i = 0; i < footerLayout->count(); ++i) {
+        nbEntries++;
+        if (nbEntries <= nbEntriesToDisplay)
+            continue;
+        footerLayout->removeRow(nbEntries - 1);
+    }
+    
+    int newFooterHeight = footer->height();
+    if (newFooterHeight > footerHeight) {
+        QFileDialog *dialog = static_cast<QFileDialog*>(m_dialog);
+        if (dialog) {
+            QSize dialogSize = dialog->size();
+            dialogSize.setHeight(newFooterHeight - footerHeight);
+            dialog->resize(dialogSize);
+        }
+    }
+}
+
+void Guid::updateFooterContentFromFile(QGroupBox *footer, QString filePath)
+{
+    if (!QFile::exists(filePath))
+        return;
+    
+    QStringList newEntries;
+    QFile file(filePath);
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+    if (file.open(QIODevice::ReadOnly)) {
+        newEntries = QString::fromLocal8Bit(file.readAll()).trimmed().replace(QRegExp("[\r\n]+"), "\n").split("\n");
+        file.close();
+    }
+    
+    int nbNewEntries = newEntries.count();
+    for (int i = nbNewEntries - 1; i >= 0; --i) {
+        updateFooterContent(footer, newEntries.at(i));
     }
 }
 
@@ -3608,18 +3919,17 @@ char Guid::showForms(const QStringList &args)
     
     QGroupBox *footer = new QGroupBox(tr("Recent activity"));
     footer->setObjectName("dialogFooter");
+    footer->setProperty("guid_footer_nb_entries", 3);
+    footer->setProperty("guid_footer_file_path", "");
+    footer->setProperty("guid_footer_monitor_file", false);
     footer->setVisible(false);
+    
+    QFileSystemWatcher *footerWatcher = new QFileSystemWatcher(dlg);
     
     QFormLayout *footerLayout = new QFormLayout();
     footerLayout->setContentsMargins(wSpacing, wSpacing, wSpacing, wSpacing);
     footerLayout->setSpacing(wSpacing);
     footer->setLayout(footerLayout);
-    
-    QLabel *footerText = new QLabel();
-    footerText->setObjectName("dialogFooterText");
-    footerText->setWordWrap(true);
-    footerText->setTextInteractionFlags(footerText->textInteractionFlags()|Qt::TextSelectableByMouse);
-    footerLayout->addRow(footerText);
     
     footerContainerLayout->addRow(footer);
     tll->addLayout(footerContainerLayout);
@@ -3642,6 +3952,9 @@ char Guid::showForms(const QStringList &args)
      **************************************/
     
     QTabWidget *lastTabBar = new QTabWidget();
+    lastTabBar->setProperty("guid_tab_bar_verbose", false);
+    lastTabBar->setStyleSheet(QTABBAR_STYLE);
+    
     QLabel *lastTabBarLabel = NULL;
     QFormLayout *lastTabLayout = NULL;
     QWidget *lastTab = NULL;
@@ -3728,6 +4041,11 @@ char Guid::showForms(const QStringList &args)
     // password
     QLineEdit *lastPassword = NULL;
     QLabel *lastPasswordLabel = NULL;
+    
+    // qr-code
+    
+    QLabel *lastQRCodeContainer = NULL;
+    QLabel *lastQRCodeLabel = NULL;
     
     // scale
     
@@ -3858,6 +4176,9 @@ char Guid::showForms(const QStringList &args)
                 lastTab->setLayout(lastTabLayout);
                 lastTab->setProperty("guid_tab_disable_buttons", ws.disableButtons);
                 
+                if (ws.verboseTabBar)
+                    lastTabBar->setProperty("guid_tab_bar_verbose", ws.verboseTabBar);
+                
                 lastTabBar->addTab(lastTab, lastTabName);
                 connect(lastTabBar, SIGNAL(currentChanged(int)), this, SLOT(afterTabBarClick(int)), Qt::UniqueConnection);
             }
@@ -3892,6 +4213,8 @@ char Guid::showForms(const QStringList &args)
             lastWidget = lastCalendar;
             lastCalendarLabel = new QLabel(next_arg);
             
+            lastCalendar->setProperty("guid_hide", false);
+            
             ADD_WIDGET_TO_FORM(lastCalendarLabel, lastCalendar)
         }
         
@@ -3904,6 +4227,9 @@ char Guid::showForms(const QStringList &args)
             lastCheckbox = new QCheckBox(next_arg, dlg);
             lastWidget = lastCheckbox;
             lastCheckboxLabel = new QLabel(ws.addLabel);
+            
+            lastCheckbox->setProperty("guid_checkbox_default", "unchecked");
+            lastCheckbox->setProperty("guid_hide", false);
             
             if (ws.addLabel.isEmpty())
                 ws.hideLabel = true;
@@ -3920,6 +4246,8 @@ char Guid::showForms(const QStringList &args)
             lastEntry = new QLineEdit(dlg);
             lastWidget = lastEntry;
             lastEntryLabel = new QLabel(next_arg);
+            
+            lastEntry->setProperty("guid_hide", false);
             
             ADD_WIDGET_TO_FORM(lastEntryLabel, lastEntry)
         }
@@ -3956,6 +4284,7 @@ char Guid::showForms(const QStringList &args)
             lastFileSel->setOption(QFileDialog::DontUseNativeDialog);
             lastFileSel->setFilter(QDir::AllDirs|QDir::AllEntries|QDir::Hidden|QDir::System);
             lastFileSel->setProperty("guid_file_sel_separator", dlg->property("guid_separator").toString());
+            lastFileSel->setProperty("guid_hide", false);
             
             QVariantList guidBookmarksList = guidQSsettings.value("Bookmarks").toList();
             QList<QUrl> lastFileSelBookmarks;
@@ -3993,6 +4322,8 @@ char Guid::showForms(const QStringList &args)
             lastMenu = new QMenuBar();
             lastWidget = lastMenu;
             lastMenuLabel = new QLabel(ws.addLabel);
+            
+            lastMenu->setProperty("guid_hide", false);
             
             if (lastMenuIsTopMenu)
                 lastMenu->setStyleSheet("background: white; border-top: 1px solid #F0F0F0;");
@@ -4107,6 +4438,7 @@ char Guid::showForms(const QStringList &args)
             lastPasswordLabel = new QLabel(next_arg);
             
             lastPassword->setEchoMode(QLineEdit::Password);
+            lastPassword->setProperty("guid_hide", false);
             
             ADD_WIDGET_TO_FORM(lastPasswordLabel, lastPassword)
         }
@@ -4120,6 +4452,9 @@ char Guid::showForms(const QStringList &args)
             lastSpinBox = new QSpinBox();
             lastWidget = lastSpinBox;
             lastSpinBoxLabel = new QLabel(next_arg);
+            
+            lastSpinBox->setProperty("guid_hide", false);
+            lastSpinBox->setProperty("guid_spin_box_default", INT_MIN);
             
             ADD_WIDGET_TO_FORM(lastSpinBoxLabel, lastSpinBox)
         }
@@ -4138,6 +4473,9 @@ char Guid::showForms(const QStringList &args)
             dv_locale.setNumberOptions(QLocale::RejectGroupSeparator);
             lastDoubleSpinBox->setLocale(dv_locale);
             
+            lastDoubleSpinBox->setProperty("guid_hide", false);
+            lastDoubleSpinBox->setProperty("guid_double_spin_box_default", -DBL_MAX);
+            
             ADD_WIDGET_TO_FORM(lastDoubleSpinBoxLabel, lastDoubleSpinBox)
         }
         
@@ -4151,31 +4489,41 @@ char Guid::showForms(const QStringList &args)
             lastWidget = lastText;
             lastTextLabel = new QLabel(ws.addLabel);
             
+            lastText->setProperty("guid_hide", false);
             lastText->setProperty("guid_text_content", "");
             
-            lastText->setProperty("guid_text_monitor_var_file_1", "");
-            lastText->setProperty("guid_text_monitor_var_file_2", "");
-            lastText->setProperty("guid_text_monitor_var_file_3", "");
-            lastText->setProperty("guid_text_monitor_var_file_4", "");
-            lastText->setProperty("guid_text_monitor_var_file_5", "");
-            lastText->setProperty("guid_text_monitor_var_file_6", "");
-            lastText->setProperty("guid_text_monitor_var_file_7", "");
-            lastText->setProperty("guid_text_monitor_var_file_8", "");
-            lastText->setProperty("guid_text_monitor_var_file_9", "");
+            lastText->setProperty("guid_text_monitor_marker_file_1", "");
+            lastText->setProperty("guid_text_monitor_marker_file_2", "");
+            lastText->setProperty("guid_text_monitor_marker_file_3", "");
+            lastText->setProperty("guid_text_monitor_marker_file_4", "");
+            lastText->setProperty("guid_text_monitor_marker_file_5", "");
+            lastText->setProperty("guid_text_monitor_marker_file_6", "");
+            lastText->setProperty("guid_text_monitor_marker_file_7", "");
+            lastText->setProperty("guid_text_monitor_marker_file_8", "");
+            lastText->setProperty("guid_text_monitor_marker_file_9", "");
             
-            lastText->setProperty("guid_text_def_var_val_1", "");
-            lastText->setProperty("guid_text_def_var_val_2", "");
-            lastText->setProperty("guid_text_def_var_val_3", "");
-            lastText->setProperty("guid_text_def_var_val_4", "");
-            lastText->setProperty("guid_text_def_var_val_5", "");
-            lastText->setProperty("guid_text_def_var_val_6", "");
-            lastText->setProperty("guid_text_def_var_val_7", "");
-            lastText->setProperty("guid_text_def_var_val_8", "");
-            lastText->setProperty("guid_text_def_var_val_9", "");
+            lastText->setProperty("guid_text_monitor_var_name_1", "");
+            lastText->setProperty("guid_text_monitor_var_name_2", "");
+            lastText->setProperty("guid_text_monitor_var_name_3", "");
+            lastText->setProperty("guid_text_monitor_var_name_4", "");
+            lastText->setProperty("guid_text_monitor_var_name_5", "");
+            lastText->setProperty("guid_text_monitor_var_name_6", "");
+            lastText->setProperty("guid_text_monitor_var_name_7", "");
+            lastText->setProperty("guid_text_monitor_var_name_8", "");
+            lastText->setProperty("guid_text_monitor_var_name_9", "");
             
-            lastText->setProperty("guid_text_var_set", false);
+            lastText->setProperty("guid_text_def_marker_val_1", "");
+            lastText->setProperty("guid_text_def_marker_val_2", "");
+            lastText->setProperty("guid_text_def_marker_val_3", "");
+            lastText->setProperty("guid_text_def_marker_val_4", "");
+            lastText->setProperty("guid_text_def_marker_val_5", "");
+            lastText->setProperty("guid_text_def_marker_val_6", "");
+            lastText->setProperty("guid_text_def_marker_val_7", "");
+            lastText->setProperty("guid_text_def_marker_val_8", "");
+            lastText->setProperty("guid_text_def_marker_val_9", "");
             
-            lastText->setWordWrap(true);
+            lastText->setProperty("guid_text_markers_set", false);
+            
             lastText->setContentsMargins(0, 3, 0, 0);
             lastText->setTextInteractionFlags(lastText->textInteractionFlags()|Qt::TextSelectableByMouse);
             
@@ -4192,108 +4540,135 @@ char Guid::showForms(const QStringList &args)
             }
             lastText->setText(lastTextContent);
             
-            if (!ws.monitorVarFile1.isEmpty() || !ws.monitorVarFile2.isEmpty() || !ws.monitorVarFile3.isEmpty() ||
-                !ws.monitorVarFile4.isEmpty() || !ws.monitorVarFile5.isEmpty() || !ws.monitorVarFile6.isEmpty() ||
-                !ws.monitorVarFile7.isEmpty() || !ws.monitorVarFile8.isEmpty() || !ws.monitorVarFile9.isEmpty()) {
+            if (!ws.monitorMarkerFile1.isEmpty() || !ws.monitorMarkerFile2.isEmpty() || !ws.monitorMarkerFile3.isEmpty() ||
+                !ws.monitorMarkerFile4.isEmpty() || !ws.monitorMarkerFile5.isEmpty() || !ws.monitorMarkerFile6.isEmpty() ||
+                !ws.monitorMarkerFile7.isEmpty() || !ws.monitorMarkerFile8.isEmpty() || !ws.monitorMarkerFile9.isEmpty()) {
                 lastText->setProperty("guid_text_content", lastTextContent);
                 
-                if (!ws.monitorVarFile1.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_1", ws.monitorVarFile1);
-                    if (QFile::exists(ws.monitorVarFile1)) {
-                        textWatcher->addPath(ws.monitorVarFile1);
+                if (!ws.monitorMarkerFile1.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_1", ws.monitorMarkerFile1);
+                    if (QFile::exists(ws.monitorMarkerFile1)) {
+                        textWatcher->addPath(ws.monitorMarkerFile1);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal1.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_1", ws.defVarVal1);
+                    if (!ws.monitorVarName1.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_1", ws.monitorVarName1);
+                    
+                    if (!ws.defMarkerVal1.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_1", ws.defMarkerVal1);
                 }
                 
-                if (!ws.monitorVarFile2.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_2", ws.monitorVarFile2);
-                    if (QFile::exists(ws.monitorVarFile2)) {
-                        textWatcher->addPath(ws.monitorVarFile2);
+                if (!ws.monitorMarkerFile2.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_2", ws.monitorMarkerFile2);
+                    if (QFile::exists(ws.monitorMarkerFile2)) {
+                        textWatcher->addPath(ws.monitorMarkerFile2);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal2.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_2", ws.defVarVal2);
+                    if (!ws.monitorVarName2.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_2", ws.monitorVarName2);
+                    
+                    if (!ws.defMarkerVal2.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_2", ws.defMarkerVal2);
                 }
                 
-                if (!ws.monitorVarFile3.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_3", ws.monitorVarFile3);
-                    if (QFile::exists(ws.monitorVarFile3)) {
-                        textWatcher->addPath(ws.monitorVarFile3);
+                if (!ws.monitorMarkerFile3.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_3", ws.monitorMarkerFile3);
+                    if (QFile::exists(ws.monitorMarkerFile3)) {
+                        textWatcher->addPath(ws.monitorMarkerFile3);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal3.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_3", ws.defVarVal3);
+                    if (!ws.monitorVarName3.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_3", ws.monitorVarName3);
+                    
+                    if (!ws.defMarkerVal3.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_3", ws.defMarkerVal3);
                 }
                 
-                if (!ws.monitorVarFile4.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_4", ws.monitorVarFile4);
-                    if (QFile::exists(ws.monitorVarFile4)) {
-                        textWatcher->addPath(ws.monitorVarFile4);
+                if (!ws.monitorMarkerFile4.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_4", ws.monitorMarkerFile4);
+                    if (QFile::exists(ws.monitorMarkerFile4)) {
+                        textWatcher->addPath(ws.monitorMarkerFile4);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal4.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_4", ws.defVarVal4);
+                    if (!ws.monitorVarName4.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_4", ws.monitorVarName4);
+                    
+                    if (!ws.defMarkerVal4.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_4", ws.defMarkerVal4);
                 }
                 
-                if (!ws.monitorVarFile5.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_5", ws.monitorVarFile5);
-                    if (QFile::exists(ws.monitorVarFile5)) {
-                        textWatcher->addPath(ws.monitorVarFile5);
+                if (!ws.monitorMarkerFile5.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_5", ws.monitorMarkerFile5);
+                    if (QFile::exists(ws.monitorMarkerFile5)) {
+                        textWatcher->addPath(ws.monitorMarkerFile5);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal5.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_5", ws.defVarVal5);
+                    if (!ws.monitorVarName5.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_5", ws.monitorVarName5);
+                    
+                    if (!ws.defMarkerVal5.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_5", ws.defMarkerVal5);
                 }
                 
-                if (!ws.monitorVarFile6.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_6", ws.monitorVarFile6);
-                    if (QFile::exists(ws.monitorVarFile6)) {
-                        textWatcher->addPath(ws.monitorVarFile6);
+                if (!ws.monitorMarkerFile6.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_6", ws.monitorMarkerFile6);
+                    if (QFile::exists(ws.monitorMarkerFile6)) {
+                        textWatcher->addPath(ws.monitorMarkerFile6);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal6.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_6", ws.defVarVal6);
+                    if (!ws.monitorVarName6.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_6", ws.monitorVarName6);
+                    
+                    if (!ws.defMarkerVal6.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_6", ws.defMarkerVal6);
                 }
                 
-                if (!ws.monitorVarFile7.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_7", ws.monitorVarFile7);
-                    if (QFile::exists(ws.monitorVarFile7)) {
-                        textWatcher->addPath(ws.monitorVarFile7);
+                if (!ws.monitorMarkerFile7.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_7", ws.monitorMarkerFile7);
+                    if (QFile::exists(ws.monitorMarkerFile7)) {
+                        textWatcher->addPath(ws.monitorMarkerFile7);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal7.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_7", ws.defVarVal7);
+                    if (!ws.monitorVarName7.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_7", ws.monitorVarName7);
+                    
+                    if (!ws.defMarkerVal7.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_7", ws.defMarkerVal7);
                 }
                 
-                if (!ws.monitorVarFile8.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_8", ws.monitorVarFile8);
-                    if (QFile::exists(ws.monitorVarFile8)) {
-                        textWatcher->addPath(ws.monitorVarFile8);
+                if (!ws.monitorMarkerFile8.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_8", ws.monitorMarkerFile8);
+                    if (QFile::exists(ws.monitorMarkerFile8)) {
+                        textWatcher->addPath(ws.monitorMarkerFile8);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal8.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_8", ws.defVarVal8);
+                    if (!ws.monitorVarName8.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_8", ws.monitorVarName8);
+                    
+                    if (!ws.defMarkerVal8.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_8", ws.defMarkerVal8);
                 }
                 
-                if (!ws.monitorVarFile9.isEmpty()) {
-                    lastText->setProperty("guid_text_monitor_var_file_9", ws.monitorVarFile9);
-                    if (QFile::exists(ws.monitorVarFile9)) {
-                        textWatcher->addPath(ws.monitorVarFile9);
+                if (!ws.monitorMarkerFile9.isEmpty()) {
+                    lastText->setProperty("guid_text_monitor_marker_file_9", ws.monitorMarkerFile9);
+                    if (QFile::exists(ws.monitorMarkerFile9)) {
+                        textWatcher->addPath(ws.monitorMarkerFile9);
                         connect(textWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateText(QString)), Qt::UniqueConnection);
                     }
                     
-                    if (!ws.defVarVal9.isEmpty())
-                        lastText->setProperty("guid_text_def_var_val_9", ws.defVarVal9);
+                    if (!ws.monitorVarName9.isEmpty())
+                        lastText->setProperty("guid_text_monitor_var_name_9", ws.monitorVarName9);
+                    
+                    if (!ws.defMarkerVal9.isEmpty())
+                        lastText->setProperty("guid_text_def_marker_val_9", ws.defMarkerVal9);
                 }
                 
                 setText(lastText);
@@ -4311,6 +4686,8 @@ char Guid::showForms(const QStringList &args)
             lastHRule = new QLabel();
             lastWidget = lastHRule;
             lastHRuleLabel = new QLabel(ws.addLabel);
+            
+            lastHRule->setProperty("guid_hide", false);
             
             lastHRuleCss = QString("color: " + next_arg + ";");
             lastHRule->setContentsMargins(0, 0, 0, 0);
@@ -4366,6 +4743,7 @@ char Guid::showForms(const QStringList &args)
             lastTextInfo->setProperty("guid_text_monitor_file", false);
             lastTextInfo->setProperty("guid_text_is_url", false);
             lastTextInfo->setProperty("guid_text_height", -1);
+            lastTextInfo->setProperty("guid_hide", false);
             
             ADD_WIDGET_TO_FORM(lastTextInfoLabel, lastTextInfo)
         }
@@ -4391,6 +4769,7 @@ char Guid::showForms(const QStringList &args)
             lastTextBrowser->setProperty("guid_text_monitor_file", false); // Not supported yet
             lastTextBrowser->setProperty("guid_text_is_url", false);
             lastTextBrowser->setProperty("guid_text_height", -1);
+            lastTextBrowser->setProperty("guid_hide", false);
             
             ADD_WIDGET_TO_FORM(lastTextBrowserLabel, lastTextBrowser)
         }
@@ -4405,6 +4784,7 @@ char Guid::showForms(const QStringList &args)
             lastWidget = lastCombo;
             lastComboLabel = new QLabel(next_arg);
             
+            lastCombo->setProperty("guid_hide", false);
             lastCombo->setProperty("guid_file_sep", "");
             lastCombo->setProperty("guid_file_path", "");
             lastCombo->setProperty("guid_monitor_file", false);
@@ -4435,6 +4815,7 @@ char Guid::showForms(const QStringList &args)
             lastListLayout = new QFormLayout();
             lastListContainer = new QWidget();
             
+            lastList->setProperty("guid_hide", false);
             lastList->setProperty("guid_file_sep", "");
             lastList->setProperty("guid_file_path", "");
             lastList->setProperty("guid_monitor_file", false);
@@ -4443,6 +4824,7 @@ char Guid::showForms(const QStringList &args)
             lastList->setProperty("guid_list_selection_type", "");
             lastList->setProperty("guid_list_print_column", "1");
             lastList->setProperty("guid_list_read_only_column", -1);
+            lastList->setProperty("guid_list_exclude_from_output", false);
             lastList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
             lastList->header()->setStretchLastSection(true);
             
@@ -4458,10 +4840,32 @@ char Guid::showForms(const QStringList &args)
                 lastListLayout->setAlignment(lastListButton, Qt::AlignLeft);
             }
             
+            lastList->setProperty("guid_list_exclude_from_output", ws.excludeFromOutput);
+            
             lastListContainer->setLayout(lastListLayout);
             lastListContainer->setProperty("guid_list_container", true);
             
             ADD_WIDGET_TO_FORM(lastListLabel, lastListContainer)
+        }
+        
+        // QrCode: --add-qr-code
+        else if (args.at(i) == "--add-qr-code") {
+            SWITCH_FORM_WIDGET("qr-code")
+            next_arg = NEXT_ARG;
+            SET_WIDGET_SETTINGS(next_arg)
+            
+            lastQRCodeContainer = new QLabel();
+            lastWidget = lastQRCodeContainer;
+            lastQRCodeLabel = new QLabel(ws.addLabel);
+            
+            lastQRCodeContainer->setProperty("guid_hide", false);
+            
+            if (ws.addLabel.isEmpty())
+                ws.hideLabel = true;
+            
+            createQRCode(lastQRCodeContainer, next_arg);
+            
+            ADD_WIDGET_TO_FORM(lastQRCodeLabel, lastQRCodeContainer)
         }
         
         // QSlider: --add-scale
@@ -4474,6 +4878,8 @@ char Guid::showForms(const QStringList &args)
             lastWidget = lastScale;
             lastScaleLabel = new QLabel(next_arg);
             
+            lastScale->setProperty("guid_hide", false);
+            lastScale->setProperty("guid_scale_default", INT_MIN);
             lastScale->setRange(0, 100);
             lastScaleVal = new QLabel(dlg);
             lastScaleVal->setNum(0);
@@ -4573,6 +4979,28 @@ char Guid::showForms(const QStringList &args)
          ********************************************************************************/
         
         /******************************
+         * calendar || checkbox || entry || file-sel || menu || password || spin-box || double-spin-box ||
+         * qr-code || scale || combo || list || text || hrule || text-info || text-browser
+         ******************************/
+        
+        // --hide
+        else if (args.at(i) == "--hide") {
+            if (lastWidgetId == "calendar" || lastWidgetId == "checkbox" || lastWidgetId == "entry" ||
+                lastWidgetId == "file-sel" || lastWidgetId == "menu" || lastWidgetId == "password" ||
+                lastWidgetId == "spin-box" || lastWidgetId == "double-spin-box" || lastWidgetId == "qr-code" ||
+                lastWidgetId == "scale" || lastWidgetId == "combo" || lastWidgetId == "list" || lastWidgetId == "text" ||
+                lastWidgetId == "hrule" || lastWidgetId == "text-info" || lastWidgetId == "text-browser") {
+                QSizePolicy hideSizePolicy = lastWidget->sizePolicy();
+                hideSizePolicy.setRetainSizeWhenHidden(true);
+                lastWidget->setSizePolicy(hideSizePolicy);
+                lastWidget->setProperty("guid_hide", true);
+                lastWidget->hide();
+            } else {
+                WARN_UNKNOWN_ARG("--add-entry");
+            }
+        }
+        
+        /******************************
          * checkbox
          ******************************/
         
@@ -4580,6 +5008,7 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--checked") {
             if (lastWidgetId == "checkbox") {
                 lastCheckbox->setCheckState(Qt::Checked);
+                lastCheckbox->setProperty("guid_checkbox_default", "checked");
             } else {
                 WARN_UNKNOWN_ARG("--add-checkbox");
             }
@@ -4645,6 +5074,7 @@ char Guid::showForms(const QStringList &args)
                 lastEntry->setMaximumWidth(next_arg.toInt());
             } else if (lastWidgetId == "text") {
                 lastText->setMaximumWidth(next_arg.toInt());
+                lastText->setWordWrap(true);
             } else if (lastWidgetId == "hrule") {
                 lastHRule->setMaximumWidth(next_arg.toInt());
             } else if (lastWidgetId == "password") {
@@ -4714,10 +5144,13 @@ char Guid::showForms(const QStringList &args)
             next_arg = NEXT_ARG;
             if (lastWidgetId == "spin-box") {
                 lastSpinBox->setValue(next_arg.toInt());
+                lastSpinBox->setProperty("guid_spin_box_default", next_arg.toInt());
             } else if (lastWidgetId == "double-spin-box") {
                 lastDoubleSpinBox->setValue(next_arg.toDouble());
+                lastDoubleSpinBox->setProperty("guid_double_spin_box_default", next_arg.toDouble());
             } else if (lastWidgetId == "scale") {
                 lastScale->setValue(next_arg.toInt());
+                lastScale->setProperty("guid_scale_default", next_arg.toInt());
             } else {
                 WARN_UNKNOWN_ARG("--add-spin-box");
             }
@@ -4794,6 +5227,7 @@ char Guid::showForms(const QStringList &args)
                 lastCombo->addItems(lastComboGList.val);
                 if (ws.defaultIndex > 0 && ws.defaultIndex < lastCombo->count()) {
                     lastCombo->setCurrentIndex(ws.defaultIndex);
+                    lastCombo->setProperty("guid_combo_default_index", ws.defaultIndex);
                 }
             } else {
                 WARN_UNKNOWN_ARG("--add-combo");
@@ -5054,8 +5488,13 @@ char Guid::showForms(const QStringList &args)
             lastText->setToolTip(next_arg);
         }
         
+        // --wrap
+        else if (args.at(i) == "--wrap") {
+            lastText->setWordWrap(true);
+        }
+        
         /******************************
-         * form-label || text || text-info
+         * form-label || qr-code || text || text-info
          ******************************/
         
         // --align || --bold || --italics || --underline || --small-caps || --font-family || --font-size ||
@@ -5189,6 +5628,23 @@ char Guid::showForms(const QStringList &args)
                     QColor color = QColor(0, 0, 0);
                     color.setNamedColor(backgroundColor);
                     lastTextInfo->setTextBackgroundColor(color);
+                }
+            }
+            
+            // qr-code
+            else if (lastWidgetId == "qr-code") {
+                if (args.at(i) == "--align") {
+                    next_arg = NEXT_ARG;
+                    QString alignment = next_arg;
+                    if (alignment == "left") {
+                        lastQRCodeContainer->setAlignment(Qt::AlignLeft);
+                    } else if (alignment == "center") {
+                        lastQRCodeContainer->setAlignment(Qt::AlignCenter);
+                    } else if (alignment == "right") {
+                        lastQRCodeContainer->setAlignment(Qt::AlignRight);
+                    } else {
+                        qOutErr << m_prefixErr + "argument --align: unknown value" << args.at(i) << Qt::endl;
+                    }
                 }
             }
             
@@ -5341,9 +5797,11 @@ char Guid::showForms(const QStringList &args)
                 m_okCommandToFooter = false;
                 m_okValuesToFooter = false;
             }
-            
-            if (!ws.footerName.isEmpty())
-                footer->setTitle(ws.footerName);
+        }
+        
+        // --no-cancel
+        else if (args.at(i) == "--no-cancel") {
+            noCancelButton = true;
         }
         
         // --close-to-systray
@@ -5357,9 +5815,35 @@ char Guid::showForms(const QStringList &args)
             sysTrayIconPath = next_arg;
         }
         
-        // --no-cancel
-        else if (args.at(i) == "--no-cancel") {
-            noCancelButton = true;
+        // --footer-name
+        else if (args.at(i) == "--footer-name") {
+            next_arg = NEXT_ARG;
+            footer->setTitle(next_arg);
+        }
+        
+        // --footer-entries
+        else if (args.at(i) == "--footer-entries") {
+            next_arg = NEXT_ARG;
+            int nbFooterEntries = next_arg.toInt(&ok);
+            if (ok && nbFooterEntries > 0)
+                footer->setProperty("guid_footer_nb_entries", nbFooterEntries);
+        }
+        
+        // --footer-from-file
+        else if (args.at(i) == "--footer-from-file") {
+            next_arg = NEXT_ARG;
+            SET_WIDGET_SETTINGS(next_arg)
+            
+            if (QFile::exists(next_arg)) {
+                footer->setProperty("guid_footer_file_path", next_arg);
+                updateFooterContentFromFile(footer, next_arg);
+                
+                if (ws.monitorFile) {
+                    footer->setProperty("guid_footer_monitor_file", true);
+                    footerWatcher->addPath(next_arg);
+                    connect(footerWatcher, SIGNAL(fileChanged(QString)), this, SLOT(updateFooter(QString)), Qt::UniqueConnection);
+                }
+            }
         }
         
         // --forms-date-format
@@ -5393,6 +5877,11 @@ char Guid::showForms(const QStringList &args)
         else if (args.at(i) == "--list-row-separator") {
             next_arg = NEXT_ARG;
             dlg->setProperty("guid_list_row_separator", next_arg);
+        }
+        
+        // --comment
+        else if (args.at(i) == "--comment") {
+            next_arg = NEXT_ARG;
         }
         
         // else

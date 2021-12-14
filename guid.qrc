@@ -11,8 +11,24 @@
     <file alias="8">assets/8.png</file>
     <file alias="9">assets/9.png</file>
     <file alias="10">assets/10.png</file>
+    <file alias="error">assets/error.png</file>
     <file alias="info">assets/info.png</file>
     <file alias="question-mark">assets/question-mark.png</file>
     <file alias="warning">assets/warning.png</file>
+    <file alias="0-grey">assets/0-grey.png</file>
+    <file alias="1-grey">assets/1-grey.png</file>
+    <file alias="2-grey">assets/2-grey.png</file>
+    <file alias="3-grey">assets/3-grey.png</file>
+    <file alias="4-grey">assets/4-grey.png</file>
+    <file alias="5-grey">assets/5-grey.png</file>
+    <file alias="6-grey">assets/6-grey.png</file>
+    <file alias="7-grey">assets/7-grey.png</file>
+    <file alias="8-grey">assets/8-grey.png</file>
+    <file alias="9-grey">assets/9-grey.png</file>
+    <file alias="10-grey">assets/10-grey.png</file>
+    <file alias="error-grey">assets/error-grey.png</file>
+    <file alias="info-grey">assets/info-grey.png</file>
+    <file alias="question-mark-grey">assets/question-mark-grey.png</file>
+    <file alias="warning-grey">assets/warning-grey.png</file>
 </qresource>
 </RCC>
