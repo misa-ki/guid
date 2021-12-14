@@ -1296,17 +1296,17 @@ void Guid::printHelp(const QString &category)
         Help("--timeout=TIMEOUT",
              tr("Set dialog timeout in seconds")) <<
         Help("--always-on-top",
-             "GUID ONLY! " + tr("Force the dialog to be always on top of other windows")) <<
+             tr("Force the dialog to be always on top of other windows")) <<
         Help("--no-taskbar",
-             "GUID ONLY! " + tr("Don't display the dialog in the taskbar")) <<
+             tr("Don't display the dialog in the taskbar")) <<
         Help("--attach=WINDOW",
              tr("Set the parent window to attach to")) <<
         Help("--modal",
              tr("Set the modal hint")) <<
         Help("--output-prefix-ok=PREFIX",
-             "GUID ONLY! " + tr("Set prefix for output sent to stdout")) <<
+             tr("Set prefix for output sent to stdout")) <<
         Help("--output-prefix-err=PREFIX",
-             "GUID ONLY! " + tr("Set prefix for output sent to stderr")));
+             tr("Set prefix for output sent to stderr")));
         
         /******************************
          * application
@@ -1328,7 +1328,7 @@ void Guid::printHelp(const QString &category)
         Help("--file-selection",
              tr("Display file selection dialog")) <<
         Help("--font-selection",
-             "GUID ONLY! " + tr("Display font selection dialog")) <<
+             tr("Display font selection dialog")) <<
         Help("--forms",
              tr("Display forms dialog")) <<
         Help("--info",
@@ -1358,7 +1358,7 @@ void Guid::printHelp(const QString &category)
         Help("--text=TEXT",
              tr("Set the dialog text")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set text alignment")) <<
+             tr("Set text alignment")) <<
         Help("", "") <<
         
         Help("--day=DAY",
@@ -1382,7 +1382,7 @@ void Guid::printHelp(const QString &category)
         Help("--color=VALUE",
              tr("Set the color")) <<
         Help("--custom-palette=/path/to/file.gpl",
-             "GUID ONLY! " + tr("Load a custom GPL file for standard colors")) <<
+             tr("Load a custom GPL file for standard colors")) <<
         Help("--show-palette",
              tr("Show the palette")));
         
@@ -1402,11 +1402,11 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         Help("--float=FLOATING_POINT",
-             "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+             tr("Floating point input only, preset given value")) <<
         Help("--int=INTEGER",
-             "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+             tr("Integer input only, preset given value")) <<
         Help("--values=v1|v2|v3|...",
-             "GUID ONLY! " + tr("Offer preset values to pick from")));
+             tr("Offer preset values to pick from")));
         
         /******************************
          * error
@@ -1428,7 +1428,7 @@ void Guid::printHelp(const QString &category)
         Help("", "") <<
         
         Help("--selectable-labels",
-             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+             tr("Allow to select text for copy and paste")));
         
         /******************************
          * file-selection
@@ -1508,27 +1508,27 @@ The list of variables supported is displayed at the beginning of each widget sec
         Help("--text=\"Form label (form description)\"",
              tr("Set the form label (always displayed on top, and bold by default")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set label alignment")) <<
+             tr("Set label alignment")) <<
         Help("--no-bold",
-             "GUID ONLY! " + tr("Remove bold for the form label")) <<
+             tr("Remove bold for the form label")) <<
         Help("--italics",
-             "GUID ONLY! " + tr("Set form label in italics")) <<
+             tr("Set form label in italics")) <<
         Help("--underline",
-             "GUID ONLY! " + tr("Set form label format to underline")) <<
+             tr("Set form label format to underline")) <<
         Help("--small-caps",
-             "GUID ONLY! " + tr("Set form label rendering to small-caps type")) <<
+             tr("Set form label rendering to small-caps type")) <<
         Help("--font-family=FAMILY",
-             "GUID ONLY! " + tr("Set font family for the form label")) <<
+             tr("Set font family for the form label")) <<
         Help("--font-size=SIZE",
-             "GUID ONLY! " + tr("Set font size for the form label")) <<
+             tr("Set font size for the form label")) <<
         Help("--foreground-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set form label color. Example:
+             tr(R"HEREDOC(Set form label color. Example:
     guid --forms \
          --text="Form label (form description)" \
              --foreground-color="#0000FF" \
          --add-entry="Entry field not colored")HEREDOC")) <<
         Help("--background-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC("Set form label background color. Example:
+             tr(R"HEREDOC("Set form label background color. Example:
     guid --forms \
          --text="Form label (form description)" \
          --background-color="#0000FF" \
@@ -1538,7 +1538,7 @@ The list of variables supported is displayed at the beginning of each widget sec
         // --header
         Help(R"HEREDOC(--header="[backgroundColor=COLOR@][foregroundColor=COLOR@][hideLabel=true@]
           [stop=true@]Header label")HEREDOC",
-             "GUID ONLY! " + tr(R"HEREDOC("Add a header to the form.
+             tr(R"HEREDOC("Add a header to the form.
 The header is a section without margins (so the background color fills the entire
 dialog width) under the top menu but over form fields. It's useful to display
 information (input fields added in the header are not parsed for user input). Next
@@ -1554,7 +1554,7 @@ variable "stop=true". Example:
         
         // --group
         Help("--group=\"[addLabel=Group label@][stop=true@]Group name\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add a group box (fieldset).
+             tr(R"HEREDOC(Add a group box (fieldset).
 Next fields will be added to the group unless a new "--group" is added containing
 the variable "stop=true". Example:
     guid --forms \
@@ -1569,7 +1569,7 @@ the variable "stop=true". Example:
         // --tab
         Help(R"HEREDOC(--tab="[addLabel=Tab bar label@][disableButtons=true@][stop=true@]
        [verboseTabBar=true@]Tab name")HEREDOC",
-             "GUID ONLY! " + tr(R"HEREDOC(Create a tab bar.
+             tr(R"HEREDOC(Create a tab bar.
 After adding "--tab=NAME", next fields will be added to the tab NAME unless another
 one is specified with "--tab=ANOTHER_NAME". Stop adding fields in the last tab with
 the variable "stop=true". Example:
@@ -1597,16 +1597,16 @@ To include information about the tab bar in values printed to the console, add t
 variable "verboseTabBar=true". Separators will be added in the output between tab
 fields and the selected tab will be marked with "*".)HEREDOC")) <<
         Help("--tab-selected",
-             "GUID ONLY! " + tr("Mark the tab as selected by default when the dialog is shown")) <<
+             tr("Mark the tab as selected by default when the dialog is shown")) <<
         Help("", "") <<
         
         // --col1 || --col2
         Help("--col1",
-             "GUID ONLY! " + tr(R"HEREDOC(Start a two-field row.
+             tr(R"HEREDOC(Start a two-field row.
 The next form field specified will be added in the first column. See "--col2" for
 details.)HEREDOC")) <<
         Help("--col2",
-             "GUID ONLY! " + tr(R"HEREDOC(Finish a two-field row.
+             tr(R"HEREDOC(Finish a two-field row.
 The next form field specified will be added in the second column. Example:
     guid --forms --width=500 \
          --text="The next row has two columns:" \
@@ -1616,10 +1616,10 @@ The next form field specified will be added in the second column. Example:
              --add-entry="Right entry (column 2)" --field-width=100 \
          --add-entry="Outside columns")HEREDOC")) <<
         Help("--add-hspacer=before|after",
-             "GUID ONLY! " + tr(R"HEREDOC(Add horizontal expanding spacer before or after the current
+             tr(R"HEREDOC(Add horizontal expanding spacer before or after the current
 column content)HEREDOC")) <<
         Help("--valign=top|center|bottom|baseline",
-             "GUID ONLY! " + tr(R"HEREDOC(Set vertical alignment of the current column. Example:
+             tr(R"HEREDOC(Set vertical alignment of the current column. Example:
     guid --forms --width=500 \
          --text="The next row has two columns:" \
          --col1 --valign=bottom \
@@ -1633,24 +1633,24 @@ column content)HEREDOC")) <<
         Help("--add-calendar=\"[hideLabel=true@]Calendar label\"",
              tr("Add a calendar in forms dialog")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-checkbox
         Help("--add-checkbox=\"[addLabel=Checkbox label@]Checkbox text\"",
-             "GUID ONLY! " + tr("Add a checkbox in forms dialog")) <<
+             tr("Add a checkbox in forms dialog")) <<
         Help("--checked",
-             "GUID ONLY! " + tr("Make the checkbox checked by default")) <<
+             tr("Make the checkbox checked by default")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-combo
@@ -1660,39 +1660,39 @@ so it doesn't appear in the console (no even as empty value) when user input is 
              tr(R"HEREDOC(List of values for the combo box.
 To select a specific index by default, add the variable "defaultIndex=Index number".)HEREDOC")) <<
         Help("--combo-values-from-file=[defaultIndex=Index number@][monitor=VALUE@]Path to file",
-             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as combo values (one value per line).
+             tr(R"HEREDOC(Use the file content as combo values (one value per line).
 To select a specific index by default, add the variable "defaultIndex=Index number".
 To monitor file changes, add "monitor=true". Example:
     guid --forms \
          --add-combo="Combo label" \
          --combo-values-from-file="defaultIndex=1@monitor=true@C:\\Path\\to\\file.txt")HEREDOC")) <<
         Help("--editable",
-             "GUID ONLY! " + tr("Allow the user to edit combo values")) <<
+             tr("Allow the user to edit combo values")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-entry
         Help("--add-entry=\"[hideLabel=true@]Entry label\"",
              tr("Add a text entry in forms dialog")) <<
         Help("--float=FLOATING_POINT",
-             "GUID ONLY! " + tr("Floating point input only, preset given value")) <<
+             tr("Floating point input only, preset given value")) <<
         Help("--int=INTEGER",
-             "GUID ONLY! " + tr("Integer input only, preset given value")) <<
+             tr("Integer input only, preset given value")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-file-selection
@@ -1709,10 +1709,10 @@ The selection is added and displayed in a text entry.)HEREDOC")) <<
         Help("--multiple",
              tr("Allow multiple files to be selected")) <<
         Help("--file-separator=SEPARATOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set output separator character if there are multiple files selected
+             tr(R"HEREDOC(Set output separator character if there are multiple files selected
 (default is "~"))HEREDOC")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("", "") <<
@@ -1740,7 +1740,7 @@ To hide the list label, add the variable "hideLabel=true". Example:
         Help("--list-values=List values separated by |",
              tr("List values")) <<
         Help("--list-values-from-file=\"[addValue=Value@][monitor=true@][sep=Separator@]Path to file\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as list values. Example:
+             tr(R"HEREDOC(Use the file content as list values. Example:
     guid --forms \
          --add-list="List label" \
              --column-values="Column 1|Column 2" --show-header \
@@ -1774,40 +1774,40 @@ Example with file changes monitored and with a custom separator:
         Help("--radiolist",
              tr("Add radio buttons in the first column (only one row will be selectable)")) <<
         Help("--editable",
-             "GUID ONLY! " + tr("Allow the user to edit list values")) <<
+             tr("Allow the user to edit list values")) <<
         Help("--read-only-column=Column number",
-             "GUID ONLY! " + tr("If editable, set a specific column as read only")) <<
+             tr("If editable, set a specific column as read only")) <<
         Help("--multiple",
-             "GUID ONLY! " + tr("Allow multiple rows to be selected")) <<
+             tr("Allow multiple rows to be selected")) <<
         Help("--no-selection",
-             "GUID ONLY! " + tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
+             tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
 without user interaction))HEREDOC")) <<
         Help("--print-column=NUMBER|all",
              tr(R"HEREDOC(Print a specific column to the console.
 Default is "1" (print only the first column). The value "all" can be used to print
 all columns.)HEREDOC")) <<
         Help("--print-values=selected|all",
-             "GUID ONLY! " + tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
+             tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
 with "--editable" to get updated values).)HEREDOC")) <<
         Help("--list-row-separator=SEPARATOR",
-             "GUID ONLY! " + tr("Set output separator character for list rows (default is \"~\")")) <<
+             tr("Set output separator character for list rows (default is \"~\")")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--show-header",
              tr("Show the columns header")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-menu
         Help("--add-menu=\"addLabel=Menu label@Menu settings\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add a menu in forms dialog.
+             tr(R"HEREDOC(Add a menu in forms dialog.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.
 First level menu items must be separated with the character "|". Example:
@@ -1865,7 +1865,7 @@ menu. Example:
          --add-menu="Item A;10|Item B;20" \
          --add-text="Form label" --bold)HEREDOC")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
@@ -1873,22 +1873,22 @@ Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("--add-password=\"[hideLabel=true@]Password label\"",
              tr("Add a password entry in forms dialog")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-qr-code
         Help("--add-qr-code=\"[addLabel=QR code label@]QR Code text\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add a QR code in forms dialog.
+             tr(R"HEREDOC(Add a QR code in forms dialog.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set QR code alignment")) <<
+             tr("Set QR code alignment")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
@@ -1908,65 +1908,65 @@ Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("--print-partial",
              tr("Print the value to the console each time it's changed by the user")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-spin-box
         Help("--add-spin-box=\"[hideLabel=true@]Spin box label\"",
-             "GUID ONLY! " + tr("Add a spin box in forms dialog")) <<
+             tr("Add a spin box in forms dialog")) <<
         Help("--value=VALUE",
              tr("Set initial value")) <<
         Help("--min-value=VALUE",
-             "GUID ONLY! " + tr("Set minimum value")) <<
+             tr("Set minimum value")) <<
         Help("--max-value=VALUE",
-             "GUID ONLY! " + tr("Set maximum value")) <<
+             tr("Set maximum value")) <<
         Help("--prefix=PREFIX",
-             "GUID ONLY! " + tr("Set prefix")) <<
+             tr("Set prefix")) <<
         Help("--suffix=SUFFIX",
-             "GUID ONLY! " + tr("Set suffix")) <<
+             tr("Set suffix")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-double-spin-box
         Help("--add-double-spin-box=\"[hideLabel=true@]Double spin box label\"",
-             "GUID ONLY! " + tr("Add a double spin box in forms dialog")) <<
+             tr("Add a double spin box in forms dialog")) <<
         Help("--value=VALUE",
              tr("Set initial value")) <<
         Help("--decimals=VALUE",
-             "GUID ONLY! " + tr("Set the number of decimals")) <<
+             tr("Set the number of decimals")) <<
         Help("--min-value=VALUE",
-             "GUID ONLY! " + tr("Set minimum value")) <<
+             tr("Set minimum value")) <<
         Help("--max-value=VALUE",
-             "GUID ONLY! " + tr("Set maximum value")) <<
+             tr("Set maximum value")) <<
         Help("--prefix=PREFIX",
-             "GUID ONLY! " + tr("Set prefix")) <<
+             tr("Set prefix")) <<
         Help("--suffix=SUFFIX",
-             "GUID ONLY! " + tr("Set suffix")) <<
+             tr("Set suffix")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets. Note that a hidden widget is not a user input field,
 so it doesn't appear in the console (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr(formsVarHelp)) <<
+             tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-text
         Help(R"HEREDOC(--add-text="[addLabel=Text label@][defMarkerVal1=Value@][image=Path to image@]
             [monitorMarkerFile1=Path to file@][monitorVarName1=Variable name@]Text")HEREDOC",
-             "GUID ONLY! " + tr(R"HEREDOC(Add text without field.
+             tr(R"HEREDOC(Add text without field.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.
 To add an image to the left, add the variable "image=Path to the image". Example:
@@ -1993,43 +1993,43 @@ We can replace the marker GUID_MARKER_1 with only the value of the variable "age
     guid --forms \
          --add-text="monitorMarkerFile1=/to/settings.sh@monitorVarName1=age@Age is GUID_MARKER_1.")HEREDOC")) <<
         Help("--tooltip=Tooltip text",
-             "GUID ONLY! " + tr("Set tooltip displayed when the cursor is over")) <<
+             tr("Set tooltip displayed when the cursor is over")) <<
         Help("--wrap",
              tr("Enable text wrapping")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set text alignment")) <<
+             tr("Set text alignment")) <<
         Help("--bold",
-             "GUID ONLY! " + tr("Set text in bold")) <<
+             tr("Set text in bold")) <<
         Help("--italics",
-             "GUID ONLY! " + tr("Set text in italics")) <<
+             tr("Set text in italics")) <<
         Help("--underline",
-             "GUID ONLY! " + tr("Set text format to underline")) <<
+             tr("Set text format to underline")) <<
         Help("--small-caps",
-             "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+             tr("Set text rendering to small-caps type")) <<
         Help("--font-family=FAMILY",
-             "GUID ONLY! " + tr("Set font family")) <<
+             tr("Set font family")) <<
         Help("--font-size=SIZE",
-             "GUID ONLY! " + tr("Set font size")) <<
+             tr("Set font size")) <<
         Help("--foreground-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set text color. Example:
+             tr(R"HEREDOC(Set text color. Example:
     guid --forms \
          --add-text="Lorem ipsum" --foreground-color="#0000FF")HEREDOC")) <<
         Help("--background-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set text background color. Example:
+             tr(R"HEREDOC(Set text background color. Example:
     guid --forms \
          --add-text="Lorem ipsum" --background-color="#0000FF")HEREDOC")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-hrule
         Help("--add-hrule=\"[addLabel=Rule label@]Rule color",
-             "GUID ONLY! " + tr(R"HEREDOC(Add a horizontal rule with the color specified. Example:
+             tr(R"HEREDOC(Add a horizontal rule with the color specified. Example:
     guid --forms \
          --add-text="Lorem ipsum" \
          --add-hrule="#B1B1B1" \
@@ -2037,24 +2037,24 @@ Useful mainly for positioning other widgets.)HEREDOC")) <<
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-vspacer
         Help("--add-vspacer=\"[addLabel=Vertical spacer label@]Height\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add a vertical spacer.
+             tr(R"HEREDOC(Add a vertical spacer.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("", "") <<
         
         // --add-text-info
         Help("--add-text-info=\"[hideLabel=true@]Text info label\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add text information.
+             tr(R"HEREDOC(Add text information.
 Note that this widget is a user input field only when the argument "--editable"
 is used. Otherwise, it's not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.)HEREDOC")) <<
@@ -2062,70 +2062,70 @@ is used. Otherwise, it's not a user input field, so it doesn't appear in the con
              tr("Get content from the specified file")) <<
         Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
         Help("--curl-path=\"Path to curl\"",
-             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
+             tr("Set path to the curl binary (default is \"curl\")")) <<
         Help("--editable",
              tr("Allow the user to edit text")) <<
         Help("--plain",
-             "GUID ONLY! " + tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
+             tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
 to guess automatically the format)HEREDOC")) <<
         Help("--html",
              tr("Force HTML format, otherwise guid will try to guess automatically the format")) <<
         Help("--newline-separator=SEPARATOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Replace newlines with SEPARATOR in the text printed to the console (so the
+             tr(R"HEREDOC(Replace newlines with SEPARATOR in the text printed to the console (so the
 output is only on one line))HEREDOC")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set text alignment")) <<
+             tr("Set text alignment")) <<
         Help("--bold",
-             "GUID ONLY! " + tr("Set text in bold")) <<
+             tr("Set text in bold")) <<
         Help("--italics",
-             "GUID ONLY! " + tr("Set text in italics")) <<
+             tr("Set text in italics")) <<
         Help("--underline",
-             "GUID ONLY! " + tr("Set text format to underline")) <<
+             tr("Set text format to underline")) <<
         Help("--small-caps",
-             "GUID ONLY! " + tr("Set text rendering to small-caps type")) <<
+             tr("Set text rendering to small-caps type")) <<
         Help("--font-family=FAMILY",
-             "GUID ONLY! " + tr("Set font family")) <<
+             tr("Set font family")) <<
         Help("--font=TEXT",
              tr("Set the text font")) <<
         Help("--font-size=SIZE",
-             "GUID ONLY! " + tr("Set font size")) <<
+             tr("Set font size")) <<
         Help("--foreground-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set text color. Example:
+             tr(R"HEREDOC(Set text color. Example:
     guid --forms \
          --add-text-info="Text info label" --foreground-color="#0000FF" \
              --filename="/path/to/file.txt")HEREDOC")) <<
         Help("--background-color=COLOR",
-             "GUID ONLY! " + tr(R"HEREDOC(Set text background color. Example:
+             tr(R"HEREDOC(Set text background color. Example:
     guid --forms \
          --add-text-info="Text info label" --background-color="#0000FF" \
              --filaneme="/path/to/file.txt")HEREDOC")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("--var=NAME",
-             "GUID ONLY! " + tr("Only when the field is editable.") + "\n" + tr(formsVarHelp)) <<
+             tr("Only when the field is editable.") + "\n" + tr(formsVarHelp)) <<
         Help("", "") <<
         
         // --add-text-browser
         Help("--add-text-browser=\"[hideLabel=true@]Text browser label\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Add read-only HTML information with click on links enabled.
+             tr(R"HEREDOC(Add read-only HTML information with click on links enabled.
 Note that this widget is not a user input field, so it doesn't appear in the console
 (no even as empty value) when user input is printed.)HEREDOC")) <<
         Help("--filename=/path/to/file",
              tr("Get content from the specified file")) <<
         Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
         Help("--curl-path=\"Path to curl\"",
-             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
+             tr("Set path to the curl binary (default is \"curl\")")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")) <<
+             tr("Set the field width")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--hide",
-             "GUID ONLY! " + tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
+             tr(R"HEREDOC(Hide the widget but retain its size in the dialog.
 Useful mainly for positioning other widgets.)HEREDOC")) <<
         Help("", "") <<
         
@@ -2186,7 +2186,7 @@ to exit. Variables that can be used are the following:
              tr(R"HEREDOC(Number of entries to display in the footer (most recent entries are always displayed first).
 Default is 3.)HEREDOC")) <<
         Help("--footer-from-file=\"[monitor=true@]Path to file\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as a source of footer entries.
+             tr(R"HEREDOC(Use the file content as a source of footer entries.
 To monitor file changes, add the variable "monitor=true".)HEREDOC")) <<
         Help("", "") <<
         
@@ -2194,7 +2194,7 @@ To monitor file changes, add the variable "monitor=true".)HEREDOC")) <<
         Help("--forms-date-format=PATTERN",
              tr("Set the format for the returned date")) <<
         Help("--forms-align=left|center|right",
-             "GUID ONLY! " + tr("Set label alignment for the entire form")) <<
+             tr("Set label alignment for the entire form")) <<
         Help("--separator=SEPARATOR",
              tr("Set output separator character")) <<
         Help("--comment=COMMENT",
@@ -2233,7 +2233,7 @@ It'll be ignored when parsing arguments. Example:
         Help("", "") <<
         
         Help("--selectable-labels",
-             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+             tr("Allow to select text for copy and paste")));
         
         /******************************
          * list
@@ -2243,7 +2243,7 @@ It'll be ignored when parsing arguments. Example:
         Help("--text=TEXT",
              tr("Set the dialog text")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set text alignment")) <<
+             tr("Set text alignment")) <<
         Help("", "") <<
         
         Help("--checklist",
@@ -2267,7 +2267,7 @@ all columns.)HEREDOC")) <<
         Help("", "") <<
         
         Help("--list-values-from-file=\"[monitor=true@][sep=Separator@]Path to file\"",
-             "GUID ONLY! " + tr(R"HEREDOC(Use the file content as list values.
+             tr(R"HEREDOC(Use the file content as list values.
 To monitor file changes, add the variable "monitor=true". By default, the character
 "|" is used as separator between values. To use another separator, specify it with
 the variable "sep=Separator". Example:
@@ -2278,14 +2278,14 @@ the variable "sep=Separator". Example:
         Help("", "") <<
         
         Help("--editable",
-             "GUID ONLY! " + tr("Allow the user to edit list values")) <<
+             tr("Allow the user to edit list values")) <<
         Help("--multiple",
              tr("Allow multiple rows to be selected")) <<
         Help("--no-selection",
-             "GUID ONLY! " + tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
+             tr(R"HEREDOC(Prevent row selection (useful to display information in a structured way
 without user interaction))HEREDOC")) <<
         Help("--print-values=selected|all",
-             "GUID ONLY! " + tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
+             tr(R"HEREDOC(Print selected values (by default) or all values (useful in combination
 with "--editable" to get updated values).)HEREDOC")) <<
         Help("", "") <<
         
@@ -2293,7 +2293,7 @@ with "--editable" to get updated values).)HEREDOC")) <<
              tr(R"HEREDOC(Change list default search function searching for text in the middle, not at the
 beginning)HEREDOC")) <<
         Help("--field-height=HEIGHT",
-             "GUID ONLY! " + tr("Set the field height")) <<
+             tr("Set the field height")) <<
         Help("--separator=SEPARATOR",
              tr("Set output separator character")));
         
@@ -2313,7 +2313,7 @@ beginning)HEREDOC")) <<
         Help("--listen",
              tr("Listen for commands on stdin")) <<
         Help("--selectable-labels",
-             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+             tr("Allow to select text for copy and paste")));
         
         /******************************
          * password
@@ -2321,11 +2321,11 @@ beginning)HEREDOC")) <<
         
         helpDict["password"] = CategoryHelp(tr("Password dialog options"), HelpList() <<
         Help("--prompt=TEXT",
-             "GUID ONLY! " + tr("The prompt for the user (field label)")) <<
+             tr("The prompt for the user (field label)")) <<
         Help("--username",
              tr("Add a username field")) <<
         Help("--field-width=WIDTH",
-             "GUID ONLY! " + tr("Set the field width")));
+             tr("Set the field width")));
         
         /******************************
          * progress
@@ -2373,7 +2373,7 @@ beginning)HEREDOC")) <<
         Help("", "") <<
         
         Help("--selectable-labels",
-             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+             tr("Allow to select text for copy and paste")));
         
         /******************************
          * scale
@@ -2383,7 +2383,7 @@ beginning)HEREDOC")) <<
         Help("--text=TEXT",
              tr("Set the dialog text")) <<
         Help("--align=left|center|right",
-             "GUID ONLY! " + tr("Set text alignment")) <<
+             tr("Set text alignment")) <<
         Help("", "") <<
         
         Help("--value=VALUE",
@@ -2412,7 +2412,7 @@ beginning)HEREDOC")) <<
         
         Help("--url=URL", tr("Get content from the specified URL (curl must be installed on the system)")) <<
         Help("--curl-path=\"Path to curl\"",
-             "GUID ONLY! " + tr("Set path to the curl binary (default is \"curl\")")) <<
+             tr("Set path to the curl binary (default is \"curl\")")) <<
         Help("", "") <<
         
         Help("--checkbox=TEXT",
@@ -2424,7 +2424,7 @@ beginning)HEREDOC")) <<
         Help("--font=TEXT",
              tr("Set the text font")) <<
         Help("--plain",
-             "GUID ONLY! " + tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
+             tr(R"HEREDOC(Force plain text (zenity default limitation), otherwise guid will try
 to guess automatically the format)HEREDOC")) <<
         Help("--html",
              tr("Force HTML format, otherwise guid will try to guess automatically the format")) <<
@@ -2455,7 +2455,7 @@ to guess automatically the format)HEREDOC")) <<
         Help("", "") <<
         
         Help("--selectable-labels",
-             "GUID ONLY! " + tr("Allow to select text for copy and paste")));
+             tr("Allow to select text for copy and paste")));
     }
     
     QStringList helpGeneralCats = {"help", "misc", "general", "application"}; 
